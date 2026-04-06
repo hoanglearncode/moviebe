@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ModelStatus {
+  active
+  inactive
+  deleted
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+}
+
+model Category {
+  id          String      @id
+  name        String
+  image       String?
+  parentId    String?     @map("parent_id")
+  description String?
+  position    Int         @default(0)
+  status      ModelStatus @default(active)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@map("categories")
+}
