@@ -12,12 +12,13 @@ export type AuthUser = {
   avatar?: string | null;
   lastLoginAt?: Date | null;
   emailVerified: boolean;
+  mustChangePassword: boolean;
   status: UserStatus;
   createdAt: Date;
   updatedAt: Date;
 };
 
-export type AuthPublicUser = Pick<AuthUser, "id" | "email" | "username" | "name">;
+export type AuthPublicUser = Pick<AuthUser, "id" | "email" | "username" | "name" | "mustChangePassword" | "emailVerified">;
 
 export type AuthSession = {
   accessToken: string;

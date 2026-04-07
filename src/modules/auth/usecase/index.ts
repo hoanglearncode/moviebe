@@ -63,6 +63,7 @@ export class AuthUseCase implements IAuthUseCase {
       name: parsedData.data.name ?? null,
       password: passwordHash,
       emailVerified: false,
+      mustChangePassword: false,
       status: UserStatus.ACTIVE,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -306,6 +307,7 @@ export class AuthUseCase implements IAuthUseCase {
         avatar: profile.avatar ?? null,
         provider: profile.provider,
         emailVerified: profile.emailVerified,
+        mustChangePassword: false,
         status: UserStatus.ACTIVE,
         lastLoginAt: new Date(),
         createdAt: new Date(),
@@ -348,6 +350,8 @@ export class AuthUseCase implements IAuthUseCase {
         email: user.email,
         username: user.username,
         name: user.name,
+        emailVerified: user.emailVerified,
+        mustChangePassword: user.mustChangePassword
       },
     };
   }
