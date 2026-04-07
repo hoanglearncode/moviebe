@@ -2,35 +2,39 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthUseCase = void 0;
 const uuid_1 = require("uuid");
-const base_model_1 = require("../../../share/model/base-model");
+const client_1 = require("@prisma/client");
+const http_server_1 = require("../../../share/transport/http-server");
 const dto_1 = require("../model/dto");
 class AuthUseCase {
     constructor(dependencies) {
         this.dependencies = dependencies;
     }
     async register(data) {
-        const parsedData = dto_1.RegisterPayloadDTO.parse(data);
-        const { userRepository, passwordHasher, tokenService, notificationService } = this.dependencies;
-        const existingEmail = await userRepository.findByEmail(parsedData.email);
-        if (existingEmail) {
-            throw new Error("Email already exists");
+        const parsedData = dto_1.RegisterPayloadDTO.safeParse(data);
+        if (!parsedData.success) {
+            throw new http_server_1.ValidationError("Invalid registration data", parsedData.error.issues);
         }
-        if (parsedData.username) {
-            const existingUsername = await userRepository.findByUsername(parsedData.username);
+        const { userRepository, passwordHasher, tokenService, notificationService } = this.dependencies;
+        const existingEmail = await userRepository.findByEmail(parsedData.data.email);
+        if (existingEmail) {
+            throw new http_server_1.ValidationError("Email already exists");
+        }
+        if (parsedData.data.username) {
+            const existingUsername = await userRepository.findByUsername(parsedData.data.username);
             if (existingUsername) {
-                throw new Error("Username already exists");
+                throw new http_server_1.ValidationError("Username already exists");
             }
         }
         const newUserId = (0, uuid_1.v7)();
-        const passwordHash = await passwordHasher.hash(parsedData.password);
+        const passwordHash = await passwordHasher.hash(parsedData.data.password);
         const user = {
             id: newUserId,
-            email: parsedData.email,
-            username: parsedData.username ?? null,
-            name: parsedData.name ?? null,
-            passwordHash,
-            isVerified: false,
-            status: base_model_1.ModelStatus.ACTIVE,
+            email: parsedData.data.email,
+            username: parsedData.data.username ?? null,
+            name: parsedData.data.name ?? null,
+            password: passwordHash,
+            emailVerified: false,
+            status: client_1.UserStatus.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date(),
         };
@@ -46,47 +50,63 @@ class AuthUseCase {
         return { userId: newUserId };
     }
     async login(data) {
-        const parsedData = dto_1.LoginPayloadDTO.parse(data);
+        const parsedData = dto_1.LoginPayloadDTO.safeParse(data);
+        if (!parsedData.success) {
+            throw new http_server_1.ValidationError("Invalid login data", parsedData.error.issues);
+        }
         const { userRepository, passwordHasher, tokenService } = this.dependencies;
-        const user = await userRepository.findByEmailOrUsername(parsedData.emailOrUsername);
+        const user = await userRepository.findByEmailOrUsername(parsedData.data.emailOrUsername);
         if (!user) {
-            throw new Error("Invalid credentials");
+            throw new http_server_1.UnauthorizedError("Invalid credentials");
         }
-        if (user.status !== base_model_1.ModelStatus.ACTIVE) {
-            throw new Error("Account is unavailable");
+        if (user.status !== client_1.UserStatus.ACTIVE) {
+            throw new http_server_1.UnauthorizedError("Account is unavailable");
         }
-        const isPasswordMatched = await passwordHasher.compare(parsedData.password, user.passwordHash);
+        const isPasswordMatched = await passwordHasher.compare(parsedData.data.password, user.password || "");
         if (!isPasswordMatched) {
-            throw new Error("Invalid credentials");
+            throw new http_server_1.UnauthorizedError("Invalid credentials");
         }
-        if (!user.isVerified) {
-            throw new Error("Account is not verified");
+        if (!user.emailVerified) {
+            throw new http_server_1.UnauthorizedError("Account is not verified");
         }
         const session = await tokenService.issueAuthSession(user);
         return {
-            ...session,
-            user: this.toPublicUser(user),
+            accessToken: session.accessToken,
+            refreshToken: session.refreshToken,
+            user: {
+                id: user.id,
+                email: user.email,
+                username: user.username,
+                name: user.name,
+            },
         };
     }
     async verifyEmail(data) {
-        const parsedData = dto_1.VerifyEmailPayloadDTO.parse(data);
-        const { userRepository, tokenService } = this.dependencies;
-        const payload = await tokenService.verifyActionToken(parsedData.token, "verify-email");
-        const user = await userRepository.getById(payload.userId);
+        const parsedData = dto_1.VerifyEmailPayloadDTO.safeParse(data);
+        if (!parsedData.success) {
+            throw new http_server_1.ValidationError("Invalid verification data", parsedData.error.issues);
+        }
+        const { tokenService, userRepository } = this.dependencies;
+        const { userId } = await tokenService.verifyActionToken(parsedData.data.token, "verify-email");
+        const user = await userRepository.get(userId);
         if (!user) {
-            throw new Error("User not found");
+            throw new http_server_1.NotFoundError("User");
         }
-        if (user.isVerified) {
-            return true;
-        }
-        return userRepository.markVerified(user.id);
+        await userRepository.markVerified(userId);
+        return { message: "Email verified successfully" };
     }
     async resendVerification(data) {
-        const parsedData = dto_1.ResendVerificationPayloadDTO.parse(data);
+        const parsedData = dto_1.ResendVerificationPayloadDTO.safeParse(data);
+        if (!parsedData.success) {
+            throw new http_server_1.ValidationError("Invalid resend verification data", parsedData.error.issues);
+        }
         const { userRepository, tokenService, notificationService } = this.dependencies;
-        const user = await userRepository.findByEmail(parsedData.email);
-        if (!user || user.isVerified) {
-            return true;
+        const user = await userRepository.findByEmail(parsedData.data.email);
+        if (!user) {
+            throw new http_server_1.NotFoundError("User");
+        }
+        if (user.emailVerified) {
+            throw new http_server_1.ValidationError("Email is already verified");
         }
         const verifyToken = await tokenService.issueActionToken({
             userId: user.id,
@@ -96,14 +116,18 @@ class AuthUseCase {
             email: user.email,
             token: verifyToken,
         });
-        return true;
+        return { message: "Verification email sent" };
     }
     async forgotPassword(data) {
-        const parsedData = dto_1.ForgotPasswordPayloadDTO.parse(data);
+        const parsedData = dto_1.ForgotPasswordPayloadDTO.safeParse(data);
+        if (!parsedData.success) {
+            throw new http_server_1.ValidationError("Invalid forgot password data", parsedData.error.issues);
+        }
         const { userRepository, tokenService, notificationService } = this.dependencies;
-        const user = await userRepository.findByEmail(parsedData.email);
+        const user = await userRepository.findByEmail(parsedData.data.email);
         if (!user) {
-            return true;
+            // Don't reveal if email exists or not for security
+            return { message: "If the email exists, a reset link has been sent" };
         }
         const resetToken = await tokenService.issueActionToken({
             userId: user.id,
@@ -113,22 +137,22 @@ class AuthUseCase {
             email: user.email,
             token: resetToken,
         });
-        return true;
+        return { message: "If the email exists, a reset link has been sent" };
     }
     async changePassword(data) {
-        const parsedData = dto_1.ChangePasswordPayloadDTO.parse(data);
-        const { userRepository, tokenService, passwordHasher } = this.dependencies;
-        const payload = await tokenService.verifyActionToken(parsedData.token, "reset-password");
-        const user = await userRepository.getById(payload.userId);
-        if (!user) {
-            throw new Error("User not found");
+        const parsedData = dto_1.ChangePasswordPayloadDTO.safeParse(data);
+        if (!parsedData.success) {
+            throw new http_server_1.ValidationError("Invalid change password data", parsedData.error.issues);
         }
-        const passwordHash = await passwordHasher.hash(parsedData.newPassword);
-        return userRepository.updatePassword(user.id, passwordHash);
-    }
-    toPublicUser(user) {
-        const { passwordHash: _passwordHash, ...publicUser } = user;
-        return publicUser;
+        const { tokenService, userRepository, passwordHasher } = this.dependencies;
+        const { userId } = await tokenService.verifyActionToken(parsedData.data.token, "reset-password");
+        const user = await userRepository.get(userId);
+        if (!user) {
+            throw new http_server_1.NotFoundError("User");
+        }
+        const newPasswordHash = await passwordHasher.hash(parsedData.data.newPassword);
+        await userRepository.updatePassword(userId, newPasswordHash);
+        return { message: "Password changed successfully" };
     }
 }
 exports.AuthUseCase = AuthUseCase;

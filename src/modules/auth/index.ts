@@ -1,10 +1,13 @@
 import { Router } from "express";
-import {
-  AuthHexagonDependencies,
-  IAuthUseCase,
-} from "./interface";
+import { PrismaClient } from "@prisma/client";
 import { AuthHttpService } from "./infras/transport/http-service";
+import { createAuthUserRepository } from "./infras/repository/repo";
 import { AuthUseCase } from "./usecase";
+import { HashService } from "./shared/hash";
+import { TokenService } from "./shared/token";
+import { AuthNotificationService } from "./shared/notification";
+import { prisma } from "../../share/component/prisma";
+import { IAuthUseCase } from "./interface";
 
 const buildRouter = (useCase: IAuthUseCase) => {
   const httpService = new AuthHttpService(useCase);
@@ -29,7 +32,19 @@ const buildRouter = (useCase: IAuthUseCase) => {
   return router;
 };
 
-export const setupAuthHexagon = (dependencies: AuthHexagonDependencies) => {
+export const setupAuthHexagon = (prismaClient: PrismaClient = prisma) => {
+  const userRepository = createAuthUserRepository(prismaClient);
+  const passwordHasher = new HashService();
+  const tokenService = new TokenService(prismaClient);
+  const notificationService = new AuthNotificationService();
+
+  const dependencies = {
+    userRepository,
+    passwordHasher,
+    tokenService,
+    notificationService,
+  };
+
   const useCase = new AuthUseCase(dependencies);
   return buildRouter(useCase);
 };

@@ -13,11 +13,182 @@ enum ModelStatus {
   deleted
 }
 
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+enum Role {
+  USER
+  ADMIN
+  PARTNER
 }
+
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BANNED
+  PENDING
+}
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  password      String?
+  name          String?
+  username      String?    @unique
+  avatar        String?
+  bio           String?
+  location      String?
+  avatarColor   String?    // fallback gradient khi không có avatar
+
+  role          Role       @default(USER)
+  status        UserStatus @default(ACTIVE)
+
+  emailVerified      Boolean @default(false)
+  provider           String  @default("local")
+  mustChangePassword Boolean @default(false)
+  lastLoginAt        DateTime?
+
+  phone String?
+  // twoFA Boolean @default(false)
+
+  // language       String?
+  // timezone       String?
+  // registrationIp String?
+
+  // lastActive DateTime?
+  // lastIp     String?
+  // userAgent  String?
+
+  // Denormalized để tránh join khi render UI
+  // planId      String?
+  // totalSpent  Float   @default(0)
+  // reportCount Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // AUTH
+  sessions                Session[]
+  resetTokens             PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+
+  // PROFILE
+  settings    UserSetting?
+  // genreStats  UserGenreStat[]
+  // sessionLogs SessionLog[]
+
+  // SUBSCRIPTION
+  // subscription       Subscription?
+  // subscriptionEvents SubscriptionEvent[]
+
+  // ACTIVITY & TRACKING
+  // activities   ActivityLog[]
+  // transactions Transaction[]
+  // devices      Device[]
+  // ips          IPLog[]
+
+  // CONTENT & ENGAGEMENT
+  // watchHistories   WatchHistory[]
+  // watchlist        Watchlist[]
+  // reviews          Review[]
+  // comments         Comment[]
+  // commentReactions CommentReaction[]
+
+  // CHANNEL
+  // channelMembers   ChannelMember[]
+  // ownerApplication OwnerApplication?
+
+  // MODERATION
+  // reports Report[]
+
+  @@index([email])
+  @@index([username])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model UserSetting {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  // Thông báo
+  notifications     Boolean @default(true)
+  marketingEmails   Boolean @default(false)
+  pushNotifications Boolean @default(true)
+  smsNotifications  Boolean @default(false)
+
+  // Xem phim
+  autoplay       Boolean @default(true)
+  autoQuality    Boolean @default(true)
+  alwaysSubtitle Boolean @default(false)
+  autoPreviews   Boolean @default(true)
+
+  // Quyền riêng tư
+  publicWatchlist  Boolean @default(false)
+  shareHistory     Boolean @default(false)
+  personalizedRecs Boolean @default(true)
+
+  // Referral
+  referralCode String?
+  referrals    Int     @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Thống kê thể loại phim yêu thích — dùng cho recommendation engine
+// model UserGenreStat {
+//  id        String @id @default(cuid())
+//  userId    String
+//  genre     String
+//  watchTime Int    @default(0) // phút đã xem genre này
+//
+//  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+//
+//  @@unique([userId, genre])
+//  @@index([userId])
+// }
+
+// Auth 
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  refreshToken String   @unique
+  userAgent    String?
+  ipAddress    String?
+  deviceId     String?  // liên kết với Device nếu có
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+
+
 
 model Category {
   id          String      @id

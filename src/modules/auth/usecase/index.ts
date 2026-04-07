@@ -1,5 +1,6 @@
 import { v7 } from "uuid";
-import { ModelStatus } from "../../../share/model/base-model";
+import { UserStatus } from "@prisma/client";
+import { NotFoundError, UnauthorizedError, ValidationError } from "../../../share/transport/http-server";
 import { AuthHexagonDependencies, IAuthUseCase } from "../interface";
 import {
   ChangePasswordDTO,
@@ -21,35 +22,39 @@ export class AuthUseCase implements IAuthUseCase {
   constructor(private readonly dependencies: AuthHexagonDependencies) {}
 
   async register(data: RegisterDTO): Promise<{ userId: string }> {
-    const parsedData = RegisterPayloadDTO.parse(data);
+    const parsedData = RegisterPayloadDTO.safeParse(data);
+    if (!parsedData.success) {
+      throw new ValidationError("Invalid registration data", parsedData.error.issues);
+    }
+
     const { userRepository, passwordHasher, tokenService, notificationService } =
       this.dependencies;
 
-    const existingEmail = await userRepository.findByEmail(parsedData.email);
+    const existingEmail = await userRepository.findByEmail(parsedData.data.email);
     if (existingEmail) {
-      throw new Error("Email already exists");
+      throw new ValidationError("Email already exists");
     }
 
-    if (parsedData.username) {
+    if (parsedData.data.username) {
       const existingUsername = await userRepository.findByUsername(
-        parsedData.username
+        parsedData.data.username
       );
 
       if (existingUsername) {
-        throw new Error("Username already exists");
+        throw new ValidationError("Username already exists");
       }
     }
 
     const newUserId = v7();
-    const passwordHash = await passwordHasher.hash(parsedData.password);
+    const passwordHash = await passwordHasher.hash(parsedData.data.password);
     const user: AuthUser = {
       id: newUserId,
-      email: parsedData.email,
-      username: parsedData.username ?? null,
-      name: parsedData.name ?? null,
-      passwordHash,
-      isVerified: false,
-      status: ModelStatus.ACTIVE,
+      email: parsedData.data.email,
+      username: parsedData.data.username ?? null,
+      name: parsedData.data.name ?? null,
+      password: passwordHash,
+      emailVerified: false,
+      status: UserStatus.ACTIVE,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -72,71 +77,90 @@ export class AuthUseCase implements IAuthUseCase {
   async login(
     data: LoginDTO
   ): Promise<{ accessToken: string; refreshToken: string; user: AuthPublicUser }> {
-    const parsedData = LoginPayloadDTO.parse(data);
+    const parsedData = LoginPayloadDTO.safeParse(data);
+    if (!parsedData.success) {
+      throw new ValidationError("Invalid login data", parsedData.error.issues);
+    }
+
     const { userRepository, passwordHasher, tokenService } = this.dependencies;
 
     const user = await userRepository.findByEmailOrUsername(
-      parsedData.emailOrUsername
+      parsedData.data.emailOrUsername
     );
 
     if (!user) {
-      throw new Error("Invalid credentials");
+      throw new UnauthorizedError("Invalid credentials");
     }
 
-    if (user.status !== ModelStatus.ACTIVE) {
-      throw new Error("Account is unavailable");
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedError("Account is unavailable");
     }
 
     const isPasswordMatched = await passwordHasher.compare(
-      parsedData.password,
-      user.passwordHash
+      parsedData.data.password,
+      user.password || ""
     );
 
     if (!isPasswordMatched) {
-      throw new Error("Invalid credentials");
+      throw new UnauthorizedError("Invalid credentials");
     }
 
-    if (!user.isVerified) {
-      throw new Error("Account is not verified");
+    if (!user.emailVerified) {
+      throw new UnauthorizedError("Account is not verified");
     }
 
     const session = await tokenService.issueAuthSession(user);
 
     return {
-      ...session,
-      user: this.toPublicUser(user),
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        name: user.name,
+      },
     };
   }
 
-  async verifyEmail(data: VerifyEmailDTO): Promise<boolean> {
-    const parsedData = VerifyEmailPayloadDTO.parse(data);
-    const { userRepository, tokenService } = this.dependencies;
+  async verifyEmail(data: VerifyEmailDTO): Promise<{ message: string }> {
+    const parsedData = VerifyEmailPayloadDTO.safeParse(data);
+    if (!parsedData.success) {
+      throw new ValidationError("Invalid verification data", parsedData.error.issues);
+    }
 
-    const payload = await tokenService.verifyActionToken(
-      parsedData.token,
+    const { tokenService, userRepository } = this.dependencies;
+
+    const { userId } = await tokenService.verifyActionToken(
+      parsedData.data.token,
       "verify-email"
     );
 
-    const user = await userRepository.getById(payload.userId);
+    const user = await userRepository.get(userId);
     if (!user) {
-      throw new Error("User not found");
+      throw new NotFoundError("User");
     }
 
-    if (user.isVerified) {
-      return true;
-    }
+    await userRepository.markVerified(userId);
 
-    return userRepository.markVerified(user.id);
+    return { message: "Email verified successfully" };
   }
 
-  async resendVerification(data: ResendVerificationDTO): Promise<boolean> {
-    const parsedData = ResendVerificationPayloadDTO.parse(data);
-    const { userRepository, tokenService, notificationService } =
-      this.dependencies;
+  async resendVerification(data: ResendVerificationDTO): Promise<{ message: string }> {
+    const parsedData = ResendVerificationPayloadDTO.safeParse(data);
+    if (!parsedData.success) {
+      throw new ValidationError("Invalid resend verification data", parsedData.error.issues);
+    }
 
-    const user = await userRepository.findByEmail(parsedData.email);
-    if (!user || user.isVerified) {
-      return true;
+    const { userRepository, tokenService, notificationService } = this.dependencies;
+
+    const user = await userRepository.findByEmail(parsedData.data.email);
+    if (!user) {
+      throw new NotFoundError("User");
+    }
+
+    if (user.emailVerified) {
+      throw new ValidationError("Email is already verified");
     }
 
     const verifyToken = await tokenService.issueActionToken({
@@ -149,17 +173,21 @@ export class AuthUseCase implements IAuthUseCase {
       token: verifyToken,
     });
 
-    return true;
+    return { message: "Verification email sent" };
   }
 
-  async forgotPassword(data: ForgotPasswordDTO): Promise<boolean> {
-    const parsedData = ForgotPasswordPayloadDTO.parse(data);
-    const { userRepository, tokenService, notificationService } =
-      this.dependencies;
+  async forgotPassword(data: ForgotPasswordDTO): Promise<{ message: string }> {
+    const parsedData = ForgotPasswordPayloadDTO.safeParse(data);
+    if (!parsedData.success) {
+      throw new ValidationError("Invalid forgot password data", parsedData.error.issues);
+    }
 
-    const user = await userRepository.findByEmail(parsedData.email);
+    const { userRepository, tokenService, notificationService } = this.dependencies;
+
+    const user = await userRepository.findByEmail(parsedData.data.email);
     if (!user) {
-      return true;
+      // Don't reveal if email exists or not for security
+      return { message: "If the email exists, a reset link has been sent" };
     }
 
     const resetToken = await tokenService.issueActionToken({
@@ -172,29 +200,30 @@ export class AuthUseCase implements IAuthUseCase {
       token: resetToken,
     });
 
-    return true;
+    return { message: "If the email exists, a reset link has been sent" };
   }
 
-  async changePassword(data: ChangePasswordDTO): Promise<boolean> {
-    const parsedData = ChangePasswordPayloadDTO.parse(data);
-    const { userRepository, tokenService, passwordHasher } = this.dependencies;
+  async changePassword(data: ChangePasswordDTO): Promise<{ message: string }> {
+    const parsedData = ChangePasswordPayloadDTO.safeParse(data);
+    if (!parsedData.success) {
+      throw new ValidationError("Invalid change password data", parsedData.error.issues);
+    }
 
-    const payload = await tokenService.verifyActionToken(
-      parsedData.token,
+    const { tokenService, userRepository, passwordHasher } = this.dependencies;
+
+    const { userId } = await tokenService.verifyActionToken(
+      parsedData.data.token,
       "reset-password"
     );
 
-    const user = await userRepository.getById(payload.userId);
+    const user = await userRepository.get(userId);
     if (!user) {
-      throw new Error("User not found");
+      throw new NotFoundError("User");
     }
 
-    const passwordHash = await passwordHasher.hash(parsedData.newPassword);
-    return userRepository.updatePassword(user.id, passwordHash);
-  }
+    const newPasswordHash = await passwordHasher.hash(parsedData.data.newPassword);
+    await userRepository.updatePassword(userId, newPasswordHash);
 
-  private toPublicUser(user: AuthUser): AuthPublicUser {
-    const { passwordHash: _passwordHash, ...publicUser } = user;
-    return publicUser;
+    return { message: "Password changed successfully" };
   }
 }

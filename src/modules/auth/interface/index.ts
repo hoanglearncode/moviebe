@@ -1,3 +1,4 @@
+import { IRepository } from "../../../share/interface";
 import {
   ChangePasswordDTO,
   ForgotPasswordDTO,
@@ -13,12 +14,10 @@ import {
   AuthUser,
 } from "../model/model";
 
-export interface IAuthUserRepository {
-  getById(id: string): Promise<AuthUser | null>;
+export interface IAuthUserRepository extends IRepository<AuthUser, Partial<AuthUser>, Partial<AuthUser>> {
   findByEmail(email: string): Promise<AuthUser | null>;
   findByUsername(username: string): Promise<AuthUser | null>;
   findByEmailOrUsername(identifier: string): Promise<AuthUser | null>;
-  insert(user: AuthUser): Promise<boolean>;
   markVerified(userId: string): Promise<boolean>;
   updatePassword(userId: string, passwordHash: string): Promise<boolean>;
 }
@@ -49,16 +48,20 @@ export interface IAuthNotificationService {
 
 export interface IAuthUseCase {
   register(data: RegisterDTO): Promise<{ userId: string }>;
-  login(data: LoginDTO): Promise<AuthSession & { user: AuthPublicUser }>;
-  verifyEmail(data: VerifyEmailDTO): Promise<boolean>;
-  resendVerification(data: ResendVerificationDTO): Promise<boolean>;
-  forgotPassword(data: ForgotPasswordDTO): Promise<boolean>;
-  changePassword(data: ChangePasswordDTO): Promise<boolean>;
+  login(data: LoginDTO): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    user: AuthPublicUser;
+  }>;
+  verifyEmail(data: VerifyEmailDTO): Promise<{ message: string }>;
+  resendVerification(data: ResendVerificationDTO): Promise<{ message: string }>;
+  forgotPassword(data: ForgotPasswordDTO): Promise<{ message: string }>;
+  changePassword(data: ChangePasswordDTO): Promise<{ message: string }>;
 }
 
-export type AuthHexagonDependencies = {
+export interface AuthHexagonDependencies {
   userRepository: IAuthUserRepository;
   passwordHasher: IPasswordHasher;
   tokenService: ITokenService;
   notificationService: IAuthNotificationService;
-};
+}

@@ -18,7 +18,7 @@ config();
   app.use(express.json());
 
   app.use('/v1', setupCategoryHexagon(createCategoryRepository(prisma)));
-  // app.use('/v1', setupAuthHexagon({ userRepository: createAuthUserRepository(prisma),}));
+  app.use('/v1', setupAuthHexagon(prisma));
   // app.use('/v1', setupProductHexagon(sequelize));
 
   app.listen(port, () => {
