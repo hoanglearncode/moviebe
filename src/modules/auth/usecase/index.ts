@@ -1,22 +1,31 @@
 import { v7 } from "uuid";
 import { UserStatus } from "@prisma/client";
 import { NotFoundError, UnauthorizedError, ValidationError } from "../../../share/transport/http-server";
+import { ErrorCode } from "../../../share/model/error-code";
 import { AuthHexagonDependencies, IAuthUseCase } from "../interface";
 import {
   ChangePasswordDTO,
   ChangePasswordPayloadDTO,
+  FacebookLoginPayloadDTO,
+  FacebookTO,
   ForgotPasswordDTO,
   ForgotPasswordPayloadDTO,
+  GoogleDTO,
+  GoogleLoginPayloadDTO,
+  GoogleLoginTokenCallbackPayloadDTO,
+  GoogleTokenDTO,
   LoginDTO,
   LoginPayloadDTO,
+  RefreshDTO,
   RegisterDTO,
   RegisterPayloadDTO,
   ResendVerificationDTO,
   ResendVerificationPayloadDTO,
   VerifyEmailDTO,
   VerifyEmailPayloadDTO,
+  RefreshTokenPayloadDTO
 } from "../model/dto";
-import { AuthPublicUser, AuthUser } from "../model/model";
+import { AuthResponse, AuthSocialProfile, AuthUser } from "../model/model";
 
 export class AuthUseCase implements IAuthUseCase {
   constructor(private readonly dependencies: AuthHexagonDependencies) {}
@@ -32,7 +41,7 @@ export class AuthUseCase implements IAuthUseCase {
 
     const existingEmail = await userRepository.findByEmail(parsedData.data.email);
     if (existingEmail) {
-      throw new ValidationError("Email already exists");
+      throw new ValidationError("Email already exists", undefined, ErrorCode.EMAIL_EXISTS);
     }
 
     if (parsedData.data.username) {
@@ -41,7 +50,7 @@ export class AuthUseCase implements IAuthUseCase {
       );
 
       if (existingUsername) {
-        throw new ValidationError("Username already exists");
+        throw new ValidationError("Username already exists", undefined, ErrorCode.USERNAME_EXISTS);
       }
     }
 
@@ -76,7 +85,7 @@ export class AuthUseCase implements IAuthUseCase {
 
   async login(
     data: LoginDTO
-  ): Promise<{ accessToken: string; refreshToken: string; user: AuthPublicUser }> {
+  ): Promise<AuthResponse> {
     const parsedData = LoginPayloadDTO.safeParse(data);
     if (!parsedData.success) {
       throw new ValidationError("Invalid login data", parsedData.error.issues);
@@ -89,11 +98,11 @@ export class AuthUseCase implements IAuthUseCase {
     );
 
     if (!user) {
-      throw new UnauthorizedError("Invalid credentials");
+      throw new UnauthorizedError("Invalid credentials", ErrorCode.INVALID_CREDENTIALS);
     }
 
     if (user.status !== UserStatus.ACTIVE) {
-      throw new UnauthorizedError("Account is unavailable");
+      throw new UnauthorizedError("Account is unavailable", ErrorCode.ACCOUNT_INACTIVE);
     }
 
     const isPasswordMatched = await passwordHasher.compare(
@@ -102,25 +111,79 @@ export class AuthUseCase implements IAuthUseCase {
     );
 
     if (!isPasswordMatched) {
-      throw new UnauthorizedError("Invalid credentials");
+      throw new UnauthorizedError("Invalid credentials", ErrorCode.INVALID_CREDENTIALS);
     }
 
     if (!user.emailVerified) {
-      throw new UnauthorizedError("Account is not verified");
+      throw new UnauthorizedError("Account is not verified", ErrorCode.ACCOUNT_NOT_VERIFIED);
     }
 
     const session = await tokenService.issueAuthSession(user);
 
-    return {
-      accessToken: session.accessToken,
-      refreshToken: session.refreshToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        name: user.name,
-      },
-    };
+    return this.buildAuthResponse(user, session);
+  }
+  
+  async refreshToken(data: RefreshDTO): Promise<AuthResponse> {
+    const parsedData = RefreshTokenPayloadDTO.safeParse(data);
+    if (!parsedData.success) {
+      throw new ValidationError("Invalid refresh token data", parsedData.error.issues);
+    }
+
+    const { tokenService, userRepository } = this.dependencies;
+    const session = await tokenService.refreshAuthSession(parsedData.data.refreshToken);
+    const user = await userRepository.get(session.userId);
+
+    if (!user) {
+      throw new NotFoundError("User");
+    }
+
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedError("Account is unavailable", ErrorCode.ACCOUNT_INACTIVE);
+    }
+
+    return this.buildAuthResponse(user, session);
+  }
+
+  async loginGoogle(data: GoogleDTO): Promise<AuthResponse> {
+    const parsedData = GoogleLoginPayloadDTO.safeParse(data);
+    if (!parsedData.success) {
+      throw new ValidationError("Invalid Google login data", parsedData.error.issues);
+    }
+
+    const profile = await this.dependencies.socialAuthService.verifyGoogleCredential(
+      parsedData.data.credential
+    );
+
+    return this.loginWithSocialProfile(profile);
+  }
+
+  async loginGoogleTokenCallback(data: GoogleTokenDTO): Promise<AuthResponse> {
+    const parsedData = GoogleLoginTokenCallbackPayloadDTO.safeParse(data);
+    if (!parsedData.success) {
+      throw new ValidationError(
+        "Invalid Google token callback data",
+        parsedData.error.issues
+      );
+    }
+
+    const profile = await this.dependencies.socialAuthService.getGoogleProfile(
+      parsedData.data.accessToken
+    );
+
+    return this.loginWithSocialProfile(profile);
+  }
+
+  async loginFacebook(data: FacebookTO): Promise<AuthResponse> {
+    const parsedData = FacebookLoginPayloadDTO.safeParse(data);
+    if (!parsedData.success) {
+      throw new ValidationError("Invalid Facebook login data", parsedData.error.issues);
+    }
+
+    const profile = await this.dependencies.socialAuthService.getFacebookProfile(
+      parsedData.data.accessToken
+    );
+
+    return this.loginWithSocialProfile(profile);
   }
 
   async verifyEmail(data: VerifyEmailDTO): Promise<{ message: string }> {
@@ -225,5 +288,67 @@ export class AuthUseCase implements IAuthUseCase {
     await userRepository.updatePassword(userId, newPasswordHash);
 
     return { message: "Password changed successfully" };
+  }
+
+  private async loginWithSocialProfile(profile: AuthSocialProfile): Promise<AuthResponse> {
+    const { userRepository, tokenService } = this.dependencies;
+
+    let user = await userRepository.findByEmail(profile.email);
+
+    if (!user) {
+      const newUserId = v7();
+      user = {
+        id: newUserId,
+        email: profile.email,
+        name: profile.name ?? null,
+        username: null,
+        password: null,
+        avatar: profile.avatar ?? null,
+        provider: profile.provider,
+        emailVerified: profile.emailVerified,
+        status: UserStatus.ACTIVE,
+        lastLoginAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      await userRepository.insert(user);
+    } else {
+      if (user.status !== UserStatus.ACTIVE) {
+        throw new UnauthorizedError("Account is unavailable", ErrorCode.ACCOUNT_INACTIVE);
+      }
+
+      await userRepository.update(user.id, {
+        name: user.name ?? profile.name ?? null,
+        avatar: profile.avatar ?? null,
+        provider: profile.provider,
+        emailVerified: user.emailVerified || profile.emailVerified,
+        lastLoginAt: new Date(),
+      });
+
+      user = await userRepository.get(user.id);
+      if (!user) {
+        throw new NotFoundError("User");
+      }
+    }
+
+    const session = await tokenService.issueAuthSession(user);
+    return this.buildAuthResponse(user, session);
+  }
+
+  private buildAuthResponse(
+    user: AuthUser,
+    session: { accessToken: string; refreshToken: string }
+  ): AuthResponse {
+    return {
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        name: user.name,
+      },
+    };
   }
 }

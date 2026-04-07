@@ -6,6 +6,7 @@ import { AuthUseCase } from "./usecase";
 import { HashService } from "./shared/hash";
 import { TokenService } from "./shared/token";
 import { AuthNotificationService } from "./shared/notification";
+import { SocialAuthService } from "./shared/social-auth";
 import { prisma } from "../../share/component/prisma";
 import { IAuthUseCase } from "./interface";
 
@@ -15,6 +16,13 @@ const buildRouter = (useCase: IAuthUseCase) => {
 
   router.post("/auth/register", httpService.register.bind(httpService));
   router.post("/auth/login", httpService.login.bind(httpService));
+  router.post("/auth/google/callback", httpService.loginGoogle.bind(httpService));
+  router.post(
+    "/auth/google/callback/token",
+    httpService.loginGoogleTokenCallback.bind(httpService)
+  );
+  router.post("/auth/facebook/callback", httpService.loginFacebook.bind(httpService));
+  router.post("/auth/refresh-token", httpService.refreshToken.bind(httpService));
   router.post("/auth/verify-email", httpService.verifyEmail.bind(httpService));
   router.post(
     "/auth/resend-verification",
@@ -37,12 +45,14 @@ export const setupAuthHexagon = (prismaClient: PrismaClient = prisma) => {
   const passwordHasher = new HashService();
   const tokenService = new TokenService(prismaClient);
   const notificationService = new AuthNotificationService();
+  const socialAuthService = new SocialAuthService();
 
   const dependencies = {
     userRepository,
     passwordHasher,
     tokenService,
     notificationService,
+    socialAuthService,
   };
 
   const useCase = new AuthUseCase(dependencies);

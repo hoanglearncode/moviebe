@@ -13,6 +13,18 @@ class AuthHttpService extends http_server_1.BaseHttpService {
     async login(req, res) {
         await this.handleRequest(res, () => this.authUseCase.login(req.body));
     }
+    async refreshToken(req, res) {
+        await this.handleRequest(res, () => this.authUseCase.refreshToken(req.body));
+    }
+    async loginGoogle(req, res) {
+        await this.handleRequest(res, () => this.authUseCase.loginGoogle(req.body));
+    }
+    async loginGoogleTokenCallback(req, res) {
+        await this.handleRequest(res, () => this.authUseCase.loginGoogleTokenCallback(req.body));
+    }
+    async loginFacebook(req, res) {
+        await this.handleRequest(res, () => this.authUseCase.loginFacebook(req.body));
+    }
     async verifyEmail(req, res) {
         await this.handleRequest(res, () => this.authUseCase.verifyEmail(req.body));
     }

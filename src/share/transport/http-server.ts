@@ -1,24 +1,37 @@
 import { Request, Response } from "express";
 import { IUseCase } from "../interface";
 import { PagingDTOSchema } from "../model/paging";
+import { ErrorCode } from "../model/error-code";
 
-export class ValidationError extends Error {
-  constructor(message: string, public readonly details?: any) {
+export class AppError extends Error {
+  constructor(
+    message: string,
+    public readonly code: ErrorCode,
+    public readonly status: number,
+    public readonly details?: any
+  ) {
     super(message);
+    this.name = "AppError";
+  }
+}
+
+export class ValidationError extends AppError {
+  constructor(message: string, details?: any, code: ErrorCode = ErrorCode.VALIDATION) {
+    super(message, code, 400, details);
     this.name = "ValidationError";
   }
 }
 
-export class NotFoundError extends Error {
-  constructor(resource: string) {
-    super(`${resource} not found`);
+export class NotFoundError extends AppError {
+  constructor(resource: string, code: ErrorCode = ErrorCode.NOT_FOUND) {
+    super(`${resource} not found`, code, 404);
     this.name = "NotFoundError";
   }
 }
 
-export class UnauthorizedError extends Error {
-  constructor(message: string = "Unauthorized") {
-    super(message);
+export class UnauthorizedError extends AppError {
+  constructor(message: string = "Unauthorized", code: ErrorCode = ErrorCode.UNAUTHORIZED) {
+    super(message, code, 401);
     this.name = "UnauthorizedError";
   }
 }
@@ -49,31 +62,19 @@ export abstract class BaseHttpService<Entity, CreateDTO, UpdateDTO, Cond> {
   }
 
   private handleError(error: unknown, res: Response): void {
-    if (error instanceof ValidationError) {
-      res.status(400).json({
+    if (error instanceof AppError) {
+      res.status(error.status).json({
+        code: error.code,
         message: error.message,
-        details: error.details
-      });
-      return;
-    }
-
-    if (error instanceof NotFoundError) {
-      res.status(404).json({
-        message: error.message
-      });
-      return;
-    }
-
-    if (error instanceof UnauthorizedError) {
-      res.status(401).json({
-        message: error.message
+        details: error.details,
       });
       return;
     }
 
     console.error("Unhandled error:", error);
     res.status(500).json({
-      message: "Internal server error"
+      code: ErrorCode.INTERNAL,
+      message: "Internal server error",
     });
   }
 

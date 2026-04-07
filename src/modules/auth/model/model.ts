@@ -8,6 +8,9 @@ export type AuthUser = {
   username?: string | null;
   name?: string | null;
   password?: string | null;
+  provider?: string;
+  avatar?: string | null;
+  lastLoginAt?: Date | null;
   emailVerified: boolean;
   status: UserStatus;
   createdAt: Date;
@@ -19,4 +22,16 @@ export type AuthPublicUser = Pick<AuthUser, "id" | "email" | "username" | "name"
 export type AuthSession = {
   accessToken: string;
   refreshToken: string;
+};
+
+export type AuthResponse = AuthSession & {
+  user: AuthPublicUser;
+};
+
+export type AuthSocialProfile = {
+  email: string;
+  name?: string | null;
+  avatar?: string | null;
+  emailVerified: boolean;
+  provider: "google" | "facebook";
 };

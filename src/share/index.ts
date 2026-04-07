@@ -5,6 +5,7 @@ export * from "./common/value";
 export * from "./model/base-error";
 export * from "./model/base-model";
 export * from "./model/paging";
+export * from "./model/error-code";
 
 // Interface
 export * from "./interface";

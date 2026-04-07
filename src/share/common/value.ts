@@ -22,6 +22,12 @@ export const ENV = z
     JWT_ACCESS_EXPIRES: z.string(),
     JWT_REFRESH_EXPIRES: z.string(),
 
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
+
+    FACEBOOK_CLIENT_ID: z.string().optional(),
+    FACEBOOK_CLIENT_SECRET: z.string().optional(),
+
     SMTP_HOST: z.string().optional(),
     SMTP_PORT: z.coerce.number().int().positive().default(587),
     SMTP_SECURE: stringToBoolean.default(false),
@@ -31,11 +37,7 @@ export const ENV = z
     MAIL_FROM_NAME: z.string().default("Movie App"),
     FRONTEND_URL: z.string().url().default("http://localhost:3000"),
 
-    // GOOGLE_CLIENT_ID: z.string(),
-    // GOOGLE_CLIENT_SECRET: z.string(),
 
-    // FACEBOOK_CLIENT_ID: z.string(),
-    // FACEBOOK_CLIENT_SECRET: z.string(),
 
   })
   .parse(process.env);

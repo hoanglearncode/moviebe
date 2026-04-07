@@ -4,6 +4,7 @@ exports.AuthUseCase = void 0;
 const uuid_1 = require("uuid");
 const client_1 = require("@prisma/client");
 const http_server_1 = require("../../../share/transport/http-server");
+const error_code_1 = require("../../../share/model/error-code");
 const dto_1 = require("../model/dto");
 class AuthUseCase {
     constructor(dependencies) {
@@ -17,12 +18,12 @@ class AuthUseCase {
         const { userRepository, passwordHasher, tokenService, notificationService } = this.dependencies;
         const existingEmail = await userRepository.findByEmail(parsedData.data.email);
         if (existingEmail) {
-            throw new http_server_1.ValidationError("Email already exists");
+            throw new http_server_1.ValidationError("Email already exists", undefined, error_code_1.ErrorCode.EMAIL_EXISTS);
         }
         if (parsedData.data.username) {
             const existingUsername = await userRepository.findByUsername(parsedData.data.username);
             if (existingUsername) {
-                throw new http_server_1.ValidationError("Username already exists");
+                throw new http_server_1.ValidationError("Username already exists", undefined, error_code_1.ErrorCode.USERNAME_EXISTS);
             }
         }
         const newUserId = (0, uuid_1.v7)();
@@ -57,29 +58,60 @@ class AuthUseCase {
         const { userRepository, passwordHasher, tokenService } = this.dependencies;
         const user = await userRepository.findByEmailOrUsername(parsedData.data.emailOrUsername);
         if (!user) {
-            throw new http_server_1.UnauthorizedError("Invalid credentials");
+            throw new http_server_1.UnauthorizedError("Invalid credentials", error_code_1.ErrorCode.INVALID_CREDENTIALS);
         }
         if (user.status !== client_1.UserStatus.ACTIVE) {
-            throw new http_server_1.UnauthorizedError("Account is unavailable");
+            throw new http_server_1.UnauthorizedError("Account is unavailable", error_code_1.ErrorCode.ACCOUNT_INACTIVE);
         }
         const isPasswordMatched = await passwordHasher.compare(parsedData.data.password, user.password || "");
         if (!isPasswordMatched) {
-            throw new http_server_1.UnauthorizedError("Invalid credentials");
+            throw new http_server_1.UnauthorizedError("Invalid credentials", error_code_1.ErrorCode.INVALID_CREDENTIALS);
         }
         if (!user.emailVerified) {
-            throw new http_server_1.UnauthorizedError("Account is not verified");
+            throw new http_server_1.UnauthorizedError("Account is not verified", error_code_1.ErrorCode.ACCOUNT_NOT_VERIFIED);
         }
         const session = await tokenService.issueAuthSession(user);
-        return {
-            accessToken: session.accessToken,
-            refreshToken: session.refreshToken,
-            user: {
-                id: user.id,
-                email: user.email,
-                username: user.username,
-                name: user.name,
-            },
-        };
+        return this.buildAuthResponse(user, session);
+    }
+    async refreshToken(data) {
+        const parsedData = dto_1.RefreshTokenPayloadDTO.safeParse(data);
+        if (!parsedData.success) {
+            throw new http_server_1.ValidationError("Invalid refresh token data", parsedData.error.issues);
+        }
+        const { tokenService, userRepository } = this.dependencies;
+        const session = await tokenService.refreshAuthSession(parsedData.data.refreshToken);
+        const user = await userRepository.get(session.userId);
+        if (!user) {
+            throw new http_server_1.NotFoundError("User");
+        }
+        if (user.status !== client_1.UserStatus.ACTIVE) {
+            throw new http_server_1.UnauthorizedError("Account is unavailable", error_code_1.ErrorCode.ACCOUNT_INACTIVE);
+        }
+        return this.buildAuthResponse(user, session);
+    }
+    async loginGoogle(data) {
+        const parsedData = dto_1.GoogleLoginPayloadDTO.safeParse(data);
+        if (!parsedData.success) {
+            throw new http_server_1.ValidationError("Invalid Google login data", parsedData.error.issues);
+        }
+        const profile = await this.dependencies.socialAuthService.verifyGoogleCredential(parsedData.data.credential);
+        return this.loginWithSocialProfile(profile);
+    }
+    async loginGoogleTokenCallback(data) {
+        const parsedData = dto_1.GoogleLoginTokenCallbackPayloadDTO.safeParse(data);
+        if (!parsedData.success) {
+            throw new http_server_1.ValidationError("Invalid Google token callback data", parsedData.error.issues);
+        }
+        const profile = await this.dependencies.socialAuthService.getGoogleProfile(parsedData.data.accessToken);
+        return this.loginWithSocialProfile(profile);
+    }
+    async loginFacebook(data) {
+        const parsedData = dto_1.FacebookLoginPayloadDTO.safeParse(data);
+        if (!parsedData.success) {
+            throw new http_server_1.ValidationError("Invalid Facebook login data", parsedData.error.issues);
+        }
+        const profile = await this.dependencies.socialAuthService.getFacebookProfile(parsedData.data.accessToken);
+        return this.loginWithSocialProfile(profile);
     }
     async verifyEmail(data) {
         const parsedData = dto_1.VerifyEmailPayloadDTO.safeParse(data);
@@ -153,6 +185,58 @@ class AuthUseCase {
         const newPasswordHash = await passwordHasher.hash(parsedData.data.newPassword);
         await userRepository.updatePassword(userId, newPasswordHash);
         return { message: "Password changed successfully" };
+    }
+    async loginWithSocialProfile(profile) {
+        const { userRepository, tokenService } = this.dependencies;
+        let user = await userRepository.findByEmail(profile.email);
+        if (!user) {
+            const newUserId = (0, uuid_1.v7)();
+            user = {
+                id: newUserId,
+                email: profile.email,
+                name: profile.name ?? null,
+                username: null,
+                password: null,
+                avatar: profile.avatar ?? null,
+                provider: profile.provider,
+                emailVerified: profile.emailVerified,
+                status: client_1.UserStatus.ACTIVE,
+                lastLoginAt: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
+            await userRepository.insert(user);
+        }
+        else {
+            if (user.status !== client_1.UserStatus.ACTIVE) {
+                throw new http_server_1.UnauthorizedError("Account is unavailable", error_code_1.ErrorCode.ACCOUNT_INACTIVE);
+            }
+            await userRepository.update(user.id, {
+                name: user.name ?? profile.name ?? null,
+                avatar: profile.avatar ?? null,
+                provider: profile.provider,
+                emailVerified: user.emailVerified || profile.emailVerified,
+                lastLoginAt: new Date(),
+            });
+            user = await userRepository.get(user.id);
+            if (!user) {
+                throw new http_server_1.NotFoundError("User");
+            }
+        }
+        const session = await tokenService.issueAuthSession(user);
+        return this.buildAuthResponse(user, session);
+    }
+    buildAuthResponse(user, session) {
+        return {
+            accessToken: session.accessToken,
+            refreshToken: session.refreshToken,
+            user: {
+                id: user.id,
+                email: user.email,
+                username: user.username,
+                name: user.name,
+            },
+        };
     }
 }
 exports.AuthUseCase = AuthUseCase;

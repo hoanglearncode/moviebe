@@ -21,6 +21,7 @@ exports.ENV = zod_1.z
     JWT_REFRESH_SECRET: zod_1.z.string(),
     JWT_ACCESS_EXPIRES: zod_1.z.string(),
     JWT_REFRESH_EXPIRES: zod_1.z.string(),
+    GOOGLE_CLIENT_ID: zod_1.z.string().optional(),
     SMTP_HOST: zod_1.z.string().optional(),
     SMTP_PORT: zod_1.z.coerce.number().int().positive().default(587),
     SMTP_SECURE: stringToBoolean.default(false),

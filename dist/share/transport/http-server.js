@@ -1,25 +1,35 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BaseHttpService = exports.UnauthorizedError = exports.NotFoundError = exports.ValidationError = void 0;
+exports.BaseHttpService = exports.UnauthorizedError = exports.NotFoundError = exports.ValidationError = exports.AppError = void 0;
 const paging_1 = require("../model/paging");
-class ValidationError extends Error {
-    constructor(message, details) {
+const error_code_1 = require("../model/error-code");
+class AppError extends Error {
+    constructor(message, code, status, details) {
         super(message);
+        this.code = code;
+        this.status = status;
         this.details = details;
+        this.name = "AppError";
+    }
+}
+exports.AppError = AppError;
+class ValidationError extends AppError {
+    constructor(message, details, code = error_code_1.ErrorCode.VALIDATION) {
+        super(message, code, 400, details);
         this.name = "ValidationError";
     }
 }
 exports.ValidationError = ValidationError;
-class NotFoundError extends Error {
-    constructor(resource) {
-        super(`${resource} not found`);
+class NotFoundError extends AppError {
+    constructor(resource, code = error_code_1.ErrorCode.NOT_FOUND) {
+        super(`${resource} not found`, code, 404);
         this.name = "NotFoundError";
     }
 }
 exports.NotFoundError = NotFoundError;
-class UnauthorizedError extends Error {
-    constructor(message = "Unauthorized") {
-        super(message);
+class UnauthorizedError extends AppError {
+    constructor(message = "Unauthorized", code = error_code_1.ErrorCode.UNAUTHORIZED) {
+        super(message, code, 401);
         this.name = "UnauthorizedError";
     }
 }
@@ -45,28 +55,18 @@ class BaseHttpService {
         }
     }
     handleError(error, res) {
-        if (error instanceof ValidationError) {
-            res.status(400).json({
+        if (error instanceof AppError) {
+            res.status(error.status).json({
+                code: error.code,
                 message: error.message,
-                details: error.details
-            });
-            return;
-        }
-        if (error instanceof NotFoundError) {
-            res.status(404).json({
-                message: error.message
-            });
-            return;
-        }
-        if (error instanceof UnauthorizedError) {
-            res.status(401).json({
-                message: error.message
+                details: error.details,
             });
             return;
         }
         console.error("Unhandled error:", error);
         res.status(500).json({
-            message: "Internal server error"
+            code: error_code_1.ErrorCode.INTERNAL,
+            message: "Internal server error",
         });
     }
     async createAPI(req, res) {

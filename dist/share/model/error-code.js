@@ -1,0 +1,22 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ErrorCode = void 0;
+var ErrorCode;
+(function (ErrorCode) {
+    ErrorCode[ErrorCode["VALIDATION"] = 1000] = "VALIDATION";
+    ErrorCode[ErrorCode["NOT_FOUND"] = 1001] = "NOT_FOUND";
+    ErrorCode[ErrorCode["UNAUTHORIZED"] = 1002] = "UNAUTHORIZED";
+    ErrorCode[ErrorCode["INTERNAL"] = 1003] = "INTERNAL";
+    ErrorCode[ErrorCode["EMAIL_EXISTS"] = 2000] = "EMAIL_EXISTS";
+    ErrorCode[ErrorCode["USERNAME_EXISTS"] = 2001] = "USERNAME_EXISTS";
+    ErrorCode[ErrorCode["ACCOUNT_INACTIVE"] = 2002] = "ACCOUNT_INACTIVE";
+    ErrorCode[ErrorCode["ACCOUNT_NOT_VERIFIED"] = 2003] = "ACCOUNT_NOT_VERIFIED";
+    ErrorCode[ErrorCode["INVALID_CREDENTIALS"] = 2004] = "INVALID_CREDENTIALS";
+    ErrorCode[ErrorCode["TOKEN_INVALID"] = 2100] = "TOKEN_INVALID";
+    ErrorCode[ErrorCode["TOKEN_EXPIRED"] = 2101] = "TOKEN_EXPIRED";
+    ErrorCode[ErrorCode["REFRESH_TOKEN_INVALID"] = 2102] = "REFRESH_TOKEN_INVALID";
+    ErrorCode[ErrorCode["REFRESH_TOKEN_EXPIRED"] = 2103] = "REFRESH_TOKEN_EXPIRED";
+    ErrorCode[ErrorCode["SOCIAL_GOOGLE_NO_EMAIL"] = 2200] = "SOCIAL_GOOGLE_NO_EMAIL";
+    ErrorCode[ErrorCode["SOCIAL_FACEBOOK_NO_EMAIL"] = 2201] = "SOCIAL_FACEBOOK_NO_EMAIL";
+    ErrorCode[ErrorCode["SOCIAL_TOKEN_INVALID"] = 2202] = "SOCIAL_TOKEN_INVALID";
+})(ErrorCode || (exports.ErrorCode = ErrorCode = {}));

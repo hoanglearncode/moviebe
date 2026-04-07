@@ -6,6 +6,7 @@ import { ENV } from "../../../share/common/value";
 import { ITokenService } from "../interface";
 import { AuthActionTokenPurpose, AuthSession, AuthUser } from "../model/model";
 import { UnauthorizedError } from "../../../share/transport/http-server";
+import { ErrorCode } from "../../../share/model/error-code";
 import {
   getEmailTokenModel,
   getPasswordTokenModel,
@@ -27,8 +28,22 @@ type ActionTokenModel = {
   }): Promise<{ id: string; userId: string; expiresAt: Date } | null>;
 };
 
+type SessionModel = {
+  create(args: {
+    data: {
+      userId: string;
+      refreshToken: string;
+      expiresAt: Date;
+    };
+  }): Promise<unknown>;
+  delete(args: { where: { refreshToken: string } }): Promise<unknown>;
+  findUnique(args: {
+    where: { refreshToken: string };
+  }): Promise<{ userId: string; refreshToken: string; expiresAt: Date } | null>;
+};
+
 export class TokenService implements ITokenService {
-  private readonly sessionModel;
+  private readonly sessionModel: SessionModel;
   private readonly passwordTokenModel: ActionTokenModel;
   private readonly emailTokenModel: ActionTokenModel;
 
@@ -39,30 +54,64 @@ export class TokenService implements ITokenService {
   }
 
   async issueAuthSession(user: AuthUser): Promise<AuthSession> {
-    const tokenData = {
+    const session = this.createSessionTokens({
       sub: user.id,
       email: user.email,
-    };
-
-    const accessToken = jwt.sign(tokenData, ENV.JWT_ACCESS_SECRET, {
-      expiresIn: ENV.JWT_ACCESS_EXPIRES as jwt.SignOptions["expiresIn"],
-      algorithm: "HS512",
-    });
-
-    const refreshToken = jwt.sign(tokenData, ENV.JWT_REFRESH_SECRET, {
-      expiresIn: ENV.JWT_REFRESH_EXPIRES as jwt.SignOptions["expiresIn"],
-      algorithm: "HS512",
     });
 
     await this.sessionModel.create({
       data: {
         userId: user.id,
-        refreshToken,
-        expiresAt: this.getTokenExpiry(refreshToken),
+        refreshToken: session.refreshToken,
+        expiresAt: this.getTokenExpiry(session.refreshToken),
       },
     });
 
-    return { accessToken, refreshToken };
+    return session;
+  }
+
+  async refreshAuthSession(refreshToken: string): Promise<AuthSession & { userId: string }> {
+    const session = await this.sessionModel.findUnique({
+      where: { refreshToken },
+    });
+
+    if (!session) {
+      throw new UnauthorizedError("Invalid refresh token", ErrorCode.REFRESH_TOKEN_INVALID);
+    }
+
+    if (session.expiresAt < new Date()) {
+      await this.sessionModel.delete({ where: { refreshToken } });
+      throw new UnauthorizedError("Refresh token expired", ErrorCode.REFRESH_TOKEN_EXPIRED);
+    }
+
+    const payload = jwt.verify(refreshToken, ENV.JWT_REFRESH_SECRET, {
+      algorithms: ["HS512"],
+    });
+
+    if (typeof payload === "string" || !payload.sub || !payload.email) {
+      await this.sessionModel.delete({ where: { refreshToken } });
+      throw new UnauthorizedError("Invalid refresh token", ErrorCode.REFRESH_TOKEN_INVALID);
+    }
+
+    const nextSession = this.createSessionTokens({
+      sub: String(payload.sub),
+      email: String(payload.email),
+    });
+
+    await this.sessionModel.delete({ where: { refreshToken } });
+    await this.sessionModel.create({
+      data: {
+        userId: session.userId,
+        refreshToken: nextSession.refreshToken,
+        expiresAt: this.getTokenExpiry(nextSession.refreshToken),
+      },
+    });
+
+    return {
+      userId: session.userId,
+      accessToken: nextSession.accessToken,
+      refreshToken: nextSession.refreshToken,
+    };
   }
 
   async issueActionToken(payload: {
@@ -92,12 +141,12 @@ export class TokenService implements ITokenService {
     });
 
     if (!record) {
-      throw new UnauthorizedError("Invalid token");
+      throw new UnauthorizedError("Invalid token", ErrorCode.TOKEN_INVALID);
     }
 
     if (record.expiresAt < new Date()) {
       await model.delete({ where: { id: record.id } });
-      throw new UnauthorizedError("Token expired");
+      throw new UnauthorizedError("Token expired", ErrorCode.TOKEN_EXPIRED);
     }
 
     await model.delete({ where: { id: record.id } });
@@ -112,6 +161,20 @@ export class TokenService implements ITokenService {
 
   private hashActionToken(token: string): string {
     return crypto.createHash("sha256").update(token).digest("hex");
+  }
+
+  private createSessionTokens(payload: { sub: string; email: string }): AuthSession {
+    const accessToken = jwt.sign(payload, ENV.JWT_ACCESS_SECRET, {
+      expiresIn: ENV.JWT_ACCESS_EXPIRES as jwt.SignOptions["expiresIn"],
+      algorithm: "HS512",
+    });
+
+    const refreshToken = jwt.sign(payload, ENV.JWT_REFRESH_SECRET, {
+      expiresIn: ENV.JWT_REFRESH_EXPIRES as jwt.SignOptions["expiresIn"],
+      algorithm: "HS512",
+    });
+
+    return { accessToken, refreshToken };
   }
 
   private getTokenExpiry(token: string): Date {

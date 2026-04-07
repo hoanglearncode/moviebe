@@ -20,6 +20,7 @@ __exportStar(require("./common/value"), exports);
 __exportStar(require("./model/base-error"), exports);
 __exportStar(require("./model/base-model"), exports);
 __exportStar(require("./model/paging"), exports);
+__exportStar(require("./model/error-code"), exports);
 // Interface
 __exportStar(require("./interface"), exports);
 // Component

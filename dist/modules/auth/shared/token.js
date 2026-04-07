@@ -8,6 +8,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const crypto_1 = __importDefault(require("crypto"));
 const value_1 = require("../../../share/common/value");
 const http_server_1 = require("../../../share/transport/http-server");
+const error_code_1 = require("../../../share/model/error-code");
 const dto_1 = require("../infras/repository/dto");
 class TokenService {
     constructor(prisma) {
@@ -16,26 +17,54 @@ class TokenService {
         this.emailTokenModel = (0, dto_1.getEmailTokenModel)(prisma);
     }
     async issueAuthSession(user) {
-        const tokenData = {
+        const session = this.createSessionTokens({
             sub: user.id,
             email: user.email,
-        };
-        const accessToken = jsonwebtoken_1.default.sign(tokenData, value_1.ENV.JWT_ACCESS_SECRET, {
-            expiresIn: value_1.ENV.JWT_ACCESS_EXPIRES,
-            algorithm: "HS512",
-        });
-        const refreshToken = jsonwebtoken_1.default.sign(tokenData, value_1.ENV.JWT_REFRESH_SECRET, {
-            expiresIn: value_1.ENV.JWT_REFRESH_EXPIRES,
-            algorithm: "HS512",
         });
         await this.sessionModel.create({
             data: {
                 userId: user.id,
-                refreshToken,
-                expiresAt: this.getTokenExpiry(refreshToken),
+                refreshToken: session.refreshToken,
+                expiresAt: this.getTokenExpiry(session.refreshToken),
             },
         });
-        return { accessToken, refreshToken };
+        return session;
+    }
+    async refreshAuthSession(refreshToken) {
+        const session = await this.sessionModel.findUnique({
+            where: { refreshToken },
+        });
+        if (!session) {
+            throw new http_server_1.UnauthorizedError("Invalid refresh token", error_code_1.ErrorCode.REFRESH_TOKEN_INVALID);
+        }
+        if (session.expiresAt < new Date()) {
+            await this.sessionModel.delete({ where: { refreshToken } });
+            throw new http_server_1.UnauthorizedError("Refresh token expired", error_code_1.ErrorCode.REFRESH_TOKEN_EXPIRED);
+        }
+        const payload = jsonwebtoken_1.default.verify(refreshToken, value_1.ENV.JWT_REFRESH_SECRET, {
+            algorithms: ["HS512"],
+        });
+        if (typeof payload === "string" || !payload.sub || !payload.email) {
+            await this.sessionModel.delete({ where: { refreshToken } });
+            throw new http_server_1.UnauthorizedError("Invalid refresh token", error_code_1.ErrorCode.REFRESH_TOKEN_INVALID);
+        }
+        const nextSession = this.createSessionTokens({
+            sub: String(payload.sub),
+            email: String(payload.email),
+        });
+        await this.sessionModel.delete({ where: { refreshToken } });
+        await this.sessionModel.create({
+            data: {
+                userId: session.userId,
+                refreshToken: nextSession.refreshToken,
+                expiresAt: this.getTokenExpiry(nextSession.refreshToken),
+            },
+        });
+        return {
+            userId: session.userId,
+            accessToken: nextSession.accessToken,
+            refreshToken: nextSession.refreshToken,
+        };
     }
     async issueActionToken(payload) {
         const { userId, purpose } = payload;
@@ -53,11 +82,11 @@ class TokenService {
             where: { token: this.hashActionToken(token) },
         });
         if (!record) {
-            throw new http_server_1.UnauthorizedError("Invalid token");
+            throw new http_server_1.UnauthorizedError("Invalid token", error_code_1.ErrorCode.TOKEN_INVALID);
         }
         if (record.expiresAt < new Date()) {
             await model.delete({ where: { id: record.id } });
-            throw new http_server_1.UnauthorizedError("Token expired");
+            throw new http_server_1.UnauthorizedError("Token expired", error_code_1.ErrorCode.TOKEN_EXPIRED);
         }
         await model.delete({ where: { id: record.id } });
         return { userId: record.userId };
@@ -69,6 +98,17 @@ class TokenService {
     }
     hashActionToken(token) {
         return crypto_1.default.createHash("sha256").update(token).digest("hex");
+    }
+    createSessionTokens(payload) {
+        const accessToken = jsonwebtoken_1.default.sign(payload, value_1.ENV.JWT_ACCESS_SECRET, {
+            expiresIn: value_1.ENV.JWT_ACCESS_EXPIRES,
+            algorithm: "HS512",
+        });
+        const refreshToken = jsonwebtoken_1.default.sign(payload, value_1.ENV.JWT_REFRESH_SECRET, {
+            expiresIn: value_1.ENV.JWT_REFRESH_EXPIRES,
+            algorithm: "HS512",
+        });
+        return { accessToken, refreshToken };
     }
     getTokenExpiry(token) {
         const payload = jsonwebtoken_1.default.decode(token);

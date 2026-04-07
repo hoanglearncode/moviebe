@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ChangePasswordPayloadDTO = exports.ForgotPasswordPayloadDTO = exports.ResendVerificationPayloadDTO = exports.VerifyEmailPayloadDTO = exports.LoginPayloadDTO = exports.RegisterPayloadDTO = void 0;
+exports.ChangePasswordPayloadDTO = exports.ForgotPasswordPayloadDTO = exports.ResendVerificationPayloadDTO = exports.VerifyEmailPayloadDTO = exports.FacebookLoginPayloadDTO = exports.GoogleLoginTokenCallbackPayloadDTO = exports.GoogleLoginPayloadDTO = exports.RefreshTokenPayloadDTO = exports.LoginPayloadDTO = exports.RegisterPayloadDTO = void 0;
 const zod_1 = __importDefault(require("zod"));
 exports.RegisterPayloadDTO = zod_1.default.object({
     email: zod_1.default.string().trim().toLowerCase().email("invalid email"),
@@ -19,6 +19,18 @@ exports.RegisterPayloadDTO = zod_1.default.object({
 exports.LoginPayloadDTO = zod_1.default.object({
     emailOrUsername: zod_1.default.string().trim().min(1, "email or username is required"),
     password: zod_1.default.string().min(8, "password must have at least 8 characters"),
+});
+exports.RefreshTokenPayloadDTO = zod_1.default.object({
+    refreshToken: zod_1.default.string().trim().min(1, "token is required")
+});
+exports.GoogleLoginPayloadDTO = zod_1.default.object({
+    credential: zod_1.default.string().trim().min(1, "credential is required")
+});
+exports.GoogleLoginTokenCallbackPayloadDTO = zod_1.default.object({
+    accessToken: zod_1.default.string().trim().min(1, "accessToken is required")
+});
+exports.FacebookLoginPayloadDTO = zod_1.default.object({
+    accessToken: zod_1.default.string().trim().min(1, "accessToken is required")
 });
 exports.VerifyEmailPayloadDTO = zod_1.default.object({
     token: zod_1.default.string().trim().min(1, "token is required"),
