@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BaseHttpService = exports.UnauthorizedError = exports.NotFoundError = exports.ValidationError = exports.AppError = void 0;
+exports.successResponse = successResponse;
+exports.errorResponse = errorResponse;
 const paging_1 = require("../model/paging");
 const error_code_1 = require("../model/error-code");
 class AppError extends Error {
@@ -99,3 +101,26 @@ class BaseHttpService {
     }
 }
 exports.BaseHttpService = BaseHttpService;
+/**
+ * Send success response
+ */
+function successResponse(res, data, message = "Success", statusCode = 200) {
+    res.status(statusCode).json({
+        success: true,
+        data,
+        message,
+    });
+}
+/**
+ * Send error response
+ */
+function errorResponse(res, statusCode = 500, message = "Internal server error", code = error_code_1.ErrorCode.INTERNAL.toString(), details) {
+    res.status(statusCode).json({
+        success: false,
+        error: {
+            code,
+            message,
+            details,
+        },
+    });
+}

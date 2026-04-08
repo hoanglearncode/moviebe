@@ -7,6 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+generator erd {
+  provider = "prisma-erd-generator"
+  output   = "./ERD.svg"
+}
+
 enum ModelStatus {
   active
   inactive
@@ -19,7 +24,6 @@ enum Role {
   PARTNER
 }
 
-
 enum UserStatus {
   ACTIVE
   INACTIVE
@@ -27,77 +31,113 @@ enum UserStatus {
   PENDING
 }
 
+enum PartnerStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum MovieStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  ACTIVE
+  INACTIVE
+}
+
+enum ShowtimeStatus {
+  SCHEDULED
+  STARTED
+  ENDED
+  CANCELLED
+}
+
+enum SeatType {
+  STANDARD
+  VIP
+  PREMIUM
+  ACCESSIBLE
+}
+
+enum SeatStatus {
+  AVAILABLE
+  LOCKED
+  BOOKED
+  MAINTENANCE
+}
+
+enum TicketStatus {
+  RESERVED
+  CONFIRMED
+  USED
+  CANCELLED
+  REFUNDED
+  PASSED
+}
+
+enum TransactionType {
+  TICKET_SALE
+  COMMISSION_DEDUCTED
+  WITHDRAWAL
+  REFUND
+  BONUS
+  PENALTY
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  HIDDEN
+  REMOVED
+}
+
 model User {
-  id            String     @id @default(cuid())
-  email         String     @unique
-  password      String?
-  name          String?
-  username      String?    @unique
-  avatar        String?
-  bio           String?
-  location      String?
-  avatarColor   String?    // fallback gradient khi không có avatar
-
-  role          Role       @default(USER)
-  status        UserStatus @default(ACTIVE)
-
-  emailVerified      Boolean @default(false)
-  provider           String  @default("local")
-  mustChangePassword Boolean @default(false)
+  id                 String                   @id @default(cuid())
+  email              String                   @unique
+  password           String?
+  username           String?                  @unique
+  name               String?
+  avatar             String?
+  phone              String?
+  bio                String?
+  location           String?
+  avatarColor        String?
+  provider           String                   @default("local")
+  role               Role                     @default(USER)
+  status             UserStatus               @default(ACTIVE)
+  emailVerified      Boolean                  @default(false)
+  mustChangePassword Boolean                  @default(false)
   lastLoginAt        DateTime?
-
-  phone String?
-  // twoFA Boolean @default(false)
-
-  // language       String?
-  // timezone       String?
-  // registrationIp String?
-
-  // lastActive DateTime?
-  // lastIp     String?
-  // userAgent  String?
-
-  // Denormalized để tránh join khi render UI
-  // planId      String?
-  // totalSpent  Float   @default(0)
-  // reportCount Int     @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // AUTH
-  sessions                Session[]
-  resetTokens             PasswordResetToken[]
-  emailVerificationTokens EmailVerificationToken[]
-
-  // PROFILE
-  settings    UserSetting?
-  // genreStats  UserGenreStat[]
-  // sessionLogs SessionLog[]
-
-  // SUBSCRIPTION
-  // subscription       Subscription?
-  // subscriptionEvents SubscriptionEvent[]
-
-  // ACTIVITY & TRACKING
-  // activities   ActivityLog[]
-  // transactions Transaction[]
-  // devices      Device[]
-  // ips          IPLog[]
-
-  // CONTENT & ENGAGEMENT
-  // watchHistories   WatchHistory[]
-  // watchlist        Watchlist[]
-  // reviews          Review[]
-  // comments         Comment[]
-  // commentReactions CommentReaction[]
-
-  // CHANNEL
-  // channelMembers   ChannelMember[]
-  // ownerApplication OwnerApplication?
-
-  // MODERATION
-  // reports Report[]
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @default(now()) @updatedAt
+  settings           UserSetting?
+  sessions           Session[]
+  resetTokens        PasswordResetToken[]
+  emailTokens        EmailVerificationToken[]
+  partner            Partner?
+  tickets            Ticket[]
+  transactions       Transaction[]
+  reviews            Review[]
+  ownedCheckIns      CheckIn[]
+  sentPasses         PassHistory[]            @relation("PassHistoryFromUser")
+  receivedPasses     PassHistory[]            @relation("PassHistoryToUser")
 
   @@index([email])
   @@index([username])
@@ -106,58 +146,41 @@ model User {
 }
 
 model UserSetting {
-  id     String @id @default(cuid())
-  userId String @unique
-
-  // Thông báo
-  notifications     Boolean @default(true)
-  marketingEmails   Boolean @default(false)
-  pushNotifications Boolean @default(true)
-  smsNotifications  Boolean @default(false)
-
-  // Xem phim
-  autoplay       Boolean @default(true)
-  autoQuality    Boolean @default(true)
-  alwaysSubtitle Boolean @default(false)
-  autoPreviews   Boolean @default(true)
-
-  // Quyền riêng tư
-  publicWatchlist  Boolean @default(false)
-  shareHistory     Boolean @default(false)
-  personalizedRecs Boolean @default(true)
-
-  // Referral
-  referralCode String?
-  referrals    Int     @default(0)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  notifications       Boolean  @default(true)
+  marketingEmails     Boolean  @default(false)
+  pushNotifications   Boolean  @default(true)
+  smsNotifications    Boolean  @default(false)
+  autoplay            Boolean  @default(true)
+  autoQuality         Boolean  @default(true)
+  alwaysSubtitle      Boolean  @default(false)
+  autoPreviews        Boolean  @default(true)
+  publicWatchlist     Boolean  @default(false)
+  shareHistory        Boolean  @default(false)
+  personalizedRecs    Boolean  @default(true)
+  referralCode        String?
+  referrals           Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @default(now()) @updatedAt
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// Thống kê thể loại phim yêu thích — dùng cho recommendation engine
-// model UserGenreStat {
-//  id        String @id @default(cuid())
-//  userId    String
-//  genre     String
-//  watchTime Int    @default(0) // phút đã xem genre này
-//
-//  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-//
-//  @@unique([userId, genre])
-//  @@index([userId])
-// }
-
-// Auth 
 model Session {
-  id           String   @id @default(cuid())
-  userId       String
-  refreshToken String   @unique
-  userAgent    String?
-  ipAddress    String?
-  deviceId     String?  // liên kết với Device nếu có
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String   @id @default(cuid())
+  userId         String
+  refreshToken   String   @unique
+  deviceId       String?
+  deviceName     String?
+  deviceType     String?
+  userAgent      String?
+  ipAddress      String?
+  isActive       Boolean  @default(true)
+  expiresAt      DateTime
+  lastActivityAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
@@ -169,8 +192,7 @@ model PasswordResetToken {
   userId    String
   expiresAt DateTime
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -181,14 +203,10 @@ model EmailVerificationToken {
   userId    String
   expiresAt DateTime
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
-
-
-
 
 model Category {
   id          String      @id
@@ -199,7 +217,277 @@ model Category {
   position    Int         @default(0)
   status      ModelStatus @default(active)
   createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
+  updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at")
 
   @@map("categories")
+}
+
+model Partner {
+  id                String        @id @default(cuid())
+  userId            String        @unique
+  cinemaName        String
+  address           String
+  city              String
+  country           String
+  postalCode        String?
+  phone             String
+  email             String        @unique
+  website           String?
+  logo              String?
+  taxCode           String        @unique
+  businessLicense   String?
+  bankAccountName   String
+  bankAccountNumber String
+  bankName          String
+  bankCode          String
+  status            PartnerStatus @default(PENDING)
+  approvedAt        DateTime?
+  rejectionReason   String?
+  commissionRate    Float         @default(0.1)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @default(now()) @updatedAt
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movies            Movie[]
+  showtimes         Showtime[]
+  tickets           Ticket[]
+  transactions      Transaction[]
+  wallet            PartnerWallet?
+  withdrawals       Withdrawal[]
+  checkIns          CheckIn[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Movie {
+  id          String      @id @default(cuid())
+  partnerId   String
+  title       String
+  description String?
+  genre       String
+  language    String
+  duration    Int
+  releaseDate DateTime
+  endDate     DateTime
+  posterUrl   String?
+  trailerUrl  String?
+  rating      String?
+  status      MovieStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @default(now()) @updatedAt
+  partner     Partner     @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  showtimes   Showtime[]
+  tickets     Ticket[]
+  reviews     Review[]
+
+  @@index([partnerId])
+  @@index([status])
+  @@index([releaseDate])
+  @@index([createdAt])
+}
+
+model Showtime {
+  id             String         @id @default(cuid())
+  movieId        String
+  partnerId      String
+  cinemaRoomId   String
+  startTime      DateTime
+  endTime        DateTime
+  basePrice      Int
+  status         ShowtimeStatus @default(SCHEDULED)
+  totalSeats     Int
+  availableSeats Int
+  bookedSeats    Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @default(now()) @updatedAt
+  movie          Movie          @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  partner        Partner        @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  seats          Seat[]
+  tickets        Ticket[]
+  checkIns       CheckIn[]
+
+  @@index([movieId])
+  @@index([partnerId])
+  @@index([startTime])
+  @@index([status])
+}
+
+model Seat {
+  id           String     @id @default(cuid())
+  showtimeId   String
+  seatNumber   String
+  rowLabel     String
+  columnNumber Int
+  seatType     SeatType
+  status       SeatStatus @default(AVAILABLE)
+  price        Int
+  lockedUntil  DateTime?
+  lockedBy     String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
+  showtime     Showtime   @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
+  ticket       Ticket?
+
+  @@unique([showtimeId, seatNumber])
+  @@index([showtimeId])
+  @@index([status])
+  @@index([lockedUntil])
+}
+
+model Ticket {
+  id            String       @id @default(cuid())
+  userId        String
+  showtimeId    String
+  partnerId     String
+  movieId       String
+  seatId        String       @unique
+  seatNumber    String
+  purchasePrice Int
+  partnerAmount Int
+  platformFee   Int
+  status        TicketStatus @default(RESERVED)
+  qrCode        String       @unique
+  purchasedAt   DateTime
+  usedAt        DateTime?
+  cancelledAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @default(now()) @updatedAt
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  showtime      Showtime     @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
+  partner       Partner      @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  movie         Movie        @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  seat          Seat         @relation(fields: [seatId], references: [id], onDelete: Cascade)
+  checkIn       CheckIn?
+  passHistories PassHistory[]
+  transactions  Transaction[]
+
+  @@index([userId])
+  @@index([showtimeId])
+  @@index([partnerId])
+  @@index([movieId])
+  @@index([status])
+  @@index([purchasedAt])
+}
+
+model Transaction {
+  id                String            @id @default(cuid())
+  userId            String?
+  partnerId         String?
+  ticketId          String?
+  withdrawalId      String?
+  type              TransactionType
+  status            TransactionStatus @default(PENDING)
+  amount            Int
+  paymentMethod     String?
+  paymentGatewayRef String?
+  description       String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @default(now()) @updatedAt
+  user              User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  partner           Partner?          @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  ticket            Ticket?           @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  withdrawal        Withdrawal?       @relation(fields: [withdrawalId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([partnerId])
+  @@index([ticketId])
+  @@index([withdrawalId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model PartnerWallet {
+  id             String   @id @default(cuid())
+  partnerId      String   @unique
+  balance        Int      @default(0)
+  totalEarned    Int      @default(0)
+  totalWithdrawn Int      @default(0)
+  totalRefunded  Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now()) @updatedAt
+  partner        Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+}
+
+model Withdrawal {
+  id                   String           @id @default(cuid())
+  partnerId            String
+  amount               Int
+  bankAccountNumber    String
+  bankName             String
+  bankCode             String
+  status               WithdrawalStatus @default(PENDING)
+  transactionReference String?
+  failureReason        String?
+  note                 String?
+  processedAt          DateTime?
+  approvedBy           String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @default(now()) @updatedAt
+  partner              Partner          @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  transactions         Transaction[]
+
+  @@index([partnerId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("withdrawal_requests")
+}
+
+model CheckIn {
+  id         String   @id @default(cuid())
+  ticketId   String   @unique
+  partnerId  String
+  showtimeId String
+  userId     String
+  scannedAt  DateTime
+  scannedBy  String
+  ipAddress  String?
+  deviceInfo String?
+  createdAt  DateTime @default(now())
+  ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  partner    Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  showtime   Showtime @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([partnerId])
+  @@index([showtimeId])
+  @@index([userId])
+  @@index([scannedAt])
+}
+
+model PassHistory {
+  id            String   @id @default(cuid())
+  ticketId       String
+  fromUserId     String
+  toUserId       String
+  transferredAt  DateTime
+  createdAt      DateTime @default(now())
+  ticket         Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  fromUser       User     @relation("PassHistoryFromUser", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser         User     @relation("PassHistoryToUser", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@index([transferredAt])
+}
+
+model Review {
+  id        String       @id @default(cuid())
+  movieId   String
+  userId    String
+  score     Int
+  content   String?
+  status    ReviewStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @default(now()) @updatedAt
+  movie     Movie        @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([movieId, userId])
+  @@index([movieId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }

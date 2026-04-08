@@ -1,0 +1,626 @@
+-- CreateEnum
+CREATE TYPE "ModelStatus" AS ENUM ('active', 'inactive', 'deleted');
+
+-- CreateEnum
+CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN', 'PARTNER');
+
+-- CreateEnum
+CREATE TYPE "UserStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'BANNED', 'PENDING');
+
+-- CreateEnum
+CREATE TYPE "PartnerStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED');
+
+-- CreateEnum
+CREATE TYPE "MovieStatus" AS ENUM ('DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED', 'ACTIVE', 'INACTIVE');
+
+-- CreateEnum
+CREATE TYPE "ShowtimeStatus" AS ENUM ('SCHEDULED', 'STARTED', 'ENDED', 'CANCELLED');
+
+-- CreateEnum
+CREATE TYPE "SeatType" AS ENUM ('STANDARD', 'VIP', 'PREMIUM', 'ACCESSIBLE');
+
+-- CreateEnum
+CREATE TYPE "SeatStatus" AS ENUM ('AVAILABLE', 'LOCKED', 'BOOKED', 'MAINTENANCE');
+
+-- CreateEnum
+CREATE TYPE "TicketStatus" AS ENUM ('RESERVED', 'CONFIRMED', 'USED', 'CANCELLED', 'REFUNDED', 'PASSED');
+
+-- CreateEnum
+CREATE TYPE "TransactionType" AS ENUM ('TICKET_SALE', 'COMMISSION_DEDUCTED', 'WITHDRAWAL', 'REFUND', 'BONUS', 'PENALTY');
+
+-- CreateEnum
+CREATE TYPE "TransactionStatus" AS ENUM ('PENDING', 'COMPLETED', 'FAILED', 'CANCELLED');
+
+-- CreateEnum
+CREATE TYPE "WithdrawalStatus" AS ENUM ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'CANCELLED');
+
+-- CreateEnum
+CREATE TYPE "ReviewStatus" AS ENUM ('PENDING', 'APPROVED', 'HIDDEN', 'REMOVED');
+
+-- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "password" TEXT,
+    "username" TEXT,
+    "name" TEXT,
+    "avatar" TEXT,
+    "phone" TEXT,
+    "bio" TEXT,
+    "location" TEXT,
+    "avatarColor" TEXT,
+    "provider" TEXT NOT NULL DEFAULT 'local',
+    "role" "Role" NOT NULL DEFAULT 'USER',
+    "status" "UserStatus" NOT NULL DEFAULT 'ACTIVE',
+    "emailVerified" BOOLEAN NOT NULL DEFAULT false,
+    "mustChangePassword" BOOLEAN NOT NULL DEFAULT false,
+    "lastLoginAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "UserSetting" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "notifications" BOOLEAN NOT NULL DEFAULT true,
+    "marketingEmails" BOOLEAN NOT NULL DEFAULT false,
+    "pushNotifications" BOOLEAN NOT NULL DEFAULT true,
+    "smsNotifications" BOOLEAN NOT NULL DEFAULT false,
+    "autoplay" BOOLEAN NOT NULL DEFAULT true,
+    "autoQuality" BOOLEAN NOT NULL DEFAULT true,
+    "alwaysSubtitle" BOOLEAN NOT NULL DEFAULT false,
+    "autoPreviews" BOOLEAN NOT NULL DEFAULT true,
+    "publicWatchlist" BOOLEAN NOT NULL DEFAULT false,
+    "shareHistory" BOOLEAN NOT NULL DEFAULT false,
+    "personalizedRecs" BOOLEAN NOT NULL DEFAULT true,
+    "referralCode" TEXT,
+    "referrals" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "UserSetting_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Session" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "refreshToken" TEXT NOT NULL,
+    "deviceId" TEXT,
+    "deviceName" TEXT,
+    "deviceType" TEXT,
+    "userAgent" TEXT,
+    "ipAddress" TEXT,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "lastActivityAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PasswordResetToken" (
+    "id" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PasswordResetToken_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "EmailVerificationToken" (
+    "id" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "EmailVerificationToken_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "categories" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "image" TEXT,
+    "parent_id" TEXT,
+    "description" TEXT,
+    "position" INTEGER NOT NULL DEFAULT 0,
+    "status" "ModelStatus" NOT NULL DEFAULT 'active',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Partner" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "cinemaName" TEXT NOT NULL,
+    "address" TEXT NOT NULL,
+    "city" TEXT NOT NULL,
+    "country" TEXT NOT NULL,
+    "postalCode" TEXT,
+    "phone" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "website" TEXT,
+    "logo" TEXT,
+    "taxCode" TEXT NOT NULL,
+    "businessLicense" TEXT,
+    "bankAccountName" TEXT NOT NULL,
+    "bankAccountNumber" TEXT NOT NULL,
+    "bankName" TEXT NOT NULL,
+    "bankCode" TEXT NOT NULL,
+    "status" "PartnerStatus" NOT NULL DEFAULT 'PENDING',
+    "approvedAt" TIMESTAMP(3),
+    "rejectionReason" TEXT,
+    "commissionRate" DOUBLE PRECISION NOT NULL DEFAULT 0.1,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Partner_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Movie" (
+    "id" TEXT NOT NULL,
+    "partnerId" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "genre" TEXT NOT NULL,
+    "language" TEXT NOT NULL,
+    "duration" INTEGER NOT NULL,
+    "releaseDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3) NOT NULL,
+    "posterUrl" TEXT,
+    "trailerUrl" TEXT,
+    "rating" TEXT,
+    "status" "MovieStatus" NOT NULL DEFAULT 'DRAFT',
+    "publishedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Movie_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Showtime" (
+    "id" TEXT NOT NULL,
+    "movieId" TEXT NOT NULL,
+    "partnerId" TEXT NOT NULL,
+    "cinemaRoomId" TEXT NOT NULL,
+    "startTime" TIMESTAMP(3) NOT NULL,
+    "endTime" TIMESTAMP(3) NOT NULL,
+    "basePrice" INTEGER NOT NULL,
+    "status" "ShowtimeStatus" NOT NULL DEFAULT 'SCHEDULED',
+    "totalSeats" INTEGER NOT NULL,
+    "availableSeats" INTEGER NOT NULL,
+    "bookedSeats" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Showtime_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Seat" (
+    "id" TEXT NOT NULL,
+    "showtimeId" TEXT NOT NULL,
+    "seatNumber" TEXT NOT NULL,
+    "rowLabel" TEXT NOT NULL,
+    "columnNumber" INTEGER NOT NULL,
+    "seatType" "SeatType" NOT NULL,
+    "status" "SeatStatus" NOT NULL DEFAULT 'AVAILABLE',
+    "price" INTEGER NOT NULL,
+    "lockedUntil" TIMESTAMP(3),
+    "lockedBy" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Seat_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Ticket" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "showtimeId" TEXT NOT NULL,
+    "partnerId" TEXT NOT NULL,
+    "movieId" TEXT NOT NULL,
+    "seatId" TEXT NOT NULL,
+    "seatNumber" TEXT NOT NULL,
+    "purchasePrice" INTEGER NOT NULL,
+    "partnerAmount" INTEGER NOT NULL,
+    "platformFee" INTEGER NOT NULL,
+    "status" "TicketStatus" NOT NULL DEFAULT 'RESERVED',
+    "qrCode" TEXT NOT NULL,
+    "purchasedAt" TIMESTAMP(3) NOT NULL,
+    "usedAt" TIMESTAMP(3),
+    "cancelledAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Ticket_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Transaction" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT,
+    "partnerId" TEXT,
+    "ticketId" TEXT,
+    "withdrawalId" TEXT,
+    "type" "TransactionType" NOT NULL,
+    "status" "TransactionStatus" NOT NULL DEFAULT 'PENDING',
+    "amount" INTEGER NOT NULL,
+    "paymentMethod" TEXT,
+    "paymentGatewayRef" TEXT,
+    "description" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Transaction_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PartnerWallet" (
+    "id" TEXT NOT NULL,
+    "partnerId" TEXT NOT NULL,
+    "balance" INTEGER NOT NULL DEFAULT 0,
+    "totalEarned" INTEGER NOT NULL DEFAULT 0,
+    "totalWithdrawn" INTEGER NOT NULL DEFAULT 0,
+    "totalRefunded" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PartnerWallet_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "withdrawal_requests" (
+    "id" TEXT NOT NULL,
+    "partnerId" TEXT NOT NULL,
+    "amount" INTEGER NOT NULL,
+    "bankAccountNumber" TEXT NOT NULL,
+    "bankName" TEXT NOT NULL,
+    "bankCode" TEXT NOT NULL,
+    "status" "WithdrawalStatus" NOT NULL DEFAULT 'PENDING',
+    "transactionReference" TEXT,
+    "failureReason" TEXT,
+    "note" TEXT,
+    "processedAt" TIMESTAMP(3),
+    "approvedBy" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "withdrawal_requests_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CheckIn" (
+    "id" TEXT NOT NULL,
+    "ticketId" TEXT NOT NULL,
+    "partnerId" TEXT NOT NULL,
+    "showtimeId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "scannedAt" TIMESTAMP(3) NOT NULL,
+    "scannedBy" TEXT NOT NULL,
+    "ipAddress" TEXT,
+    "deviceInfo" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "CheckIn_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PassHistory" (
+    "id" TEXT NOT NULL,
+    "ticketId" TEXT NOT NULL,
+    "fromUserId" TEXT NOT NULL,
+    "toUserId" TEXT NOT NULL,
+    "transferredAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PassHistory_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Review" (
+    "id" TEXT NOT NULL,
+    "movieId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "score" INTEGER NOT NULL,
+    "content" TEXT,
+    "status" "ReviewStatus" NOT NULL DEFAULT 'PENDING',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Review_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_username_key" ON "User"("username");
+
+-- CreateIndex
+CREATE INDEX "User_email_idx" ON "User"("email");
+
+-- CreateIndex
+CREATE INDEX "User_username_idx" ON "User"("username");
+
+-- CreateIndex
+CREATE INDEX "User_status_idx" ON "User"("status");
+
+-- CreateIndex
+CREATE INDEX "User_createdAt_idx" ON "User"("createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "UserSetting_userId_key" ON "UserSetting"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Session_refreshToken_key" ON "Session"("refreshToken");
+
+-- CreateIndex
+CREATE INDEX "Session_userId_idx" ON "Session"("userId");
+
+-- CreateIndex
+CREATE INDEX "Session_expiresAt_idx" ON "Session"("expiresAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PasswordResetToken_token_key" ON "PasswordResetToken"("token");
+
+-- CreateIndex
+CREATE INDEX "PasswordResetToken_userId_idx" ON "PasswordResetToken"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "EmailVerificationToken_token_key" ON "EmailVerificationToken"("token");
+
+-- CreateIndex
+CREATE INDEX "EmailVerificationToken_userId_idx" ON "EmailVerificationToken"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Partner_userId_key" ON "Partner"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Partner_email_key" ON "Partner"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Partner_taxCode_key" ON "Partner"("taxCode");
+
+-- CreateIndex
+CREATE INDEX "Partner_status_idx" ON "Partner"("status");
+
+-- CreateIndex
+CREATE INDEX "Partner_createdAt_idx" ON "Partner"("createdAt");
+
+-- CreateIndex
+CREATE INDEX "Movie_partnerId_idx" ON "Movie"("partnerId");
+
+-- CreateIndex
+CREATE INDEX "Movie_status_idx" ON "Movie"("status");
+
+-- CreateIndex
+CREATE INDEX "Movie_releaseDate_idx" ON "Movie"("releaseDate");
+
+-- CreateIndex
+CREATE INDEX "Movie_createdAt_idx" ON "Movie"("createdAt");
+
+-- CreateIndex
+CREATE INDEX "Showtime_movieId_idx" ON "Showtime"("movieId");
+
+-- CreateIndex
+CREATE INDEX "Showtime_partnerId_idx" ON "Showtime"("partnerId");
+
+-- CreateIndex
+CREATE INDEX "Showtime_startTime_idx" ON "Showtime"("startTime");
+
+-- CreateIndex
+CREATE INDEX "Showtime_status_idx" ON "Showtime"("status");
+
+-- CreateIndex
+CREATE INDEX "Seat_showtimeId_idx" ON "Seat"("showtimeId");
+
+-- CreateIndex
+CREATE INDEX "Seat_status_idx" ON "Seat"("status");
+
+-- CreateIndex
+CREATE INDEX "Seat_lockedUntil_idx" ON "Seat"("lockedUntil");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Seat_showtimeId_seatNumber_key" ON "Seat"("showtimeId", "seatNumber");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Ticket_seatId_key" ON "Ticket"("seatId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Ticket_qrCode_key" ON "Ticket"("qrCode");
+
+-- CreateIndex
+CREATE INDEX "Ticket_userId_idx" ON "Ticket"("userId");
+
+-- CreateIndex
+CREATE INDEX "Ticket_showtimeId_idx" ON "Ticket"("showtimeId");
+
+-- CreateIndex
+CREATE INDEX "Ticket_partnerId_idx" ON "Ticket"("partnerId");
+
+-- CreateIndex
+CREATE INDEX "Ticket_movieId_idx" ON "Ticket"("movieId");
+
+-- CreateIndex
+CREATE INDEX "Ticket_status_idx" ON "Ticket"("status");
+
+-- CreateIndex
+CREATE INDEX "Ticket_purchasedAt_idx" ON "Ticket"("purchasedAt");
+
+-- CreateIndex
+CREATE INDEX "Transaction_userId_idx" ON "Transaction"("userId");
+
+-- CreateIndex
+CREATE INDEX "Transaction_partnerId_idx" ON "Transaction"("partnerId");
+
+-- CreateIndex
+CREATE INDEX "Transaction_ticketId_idx" ON "Transaction"("ticketId");
+
+-- CreateIndex
+CREATE INDEX "Transaction_withdrawalId_idx" ON "Transaction"("withdrawalId");
+
+-- CreateIndex
+CREATE INDEX "Transaction_type_idx" ON "Transaction"("type");
+
+-- CreateIndex
+CREATE INDEX "Transaction_status_idx" ON "Transaction"("status");
+
+-- CreateIndex
+CREATE INDEX "Transaction_createdAt_idx" ON "Transaction"("createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PartnerWallet_partnerId_key" ON "PartnerWallet"("partnerId");
+
+-- CreateIndex
+CREATE INDEX "withdrawal_requests_partnerId_idx" ON "withdrawal_requests"("partnerId");
+
+-- CreateIndex
+CREATE INDEX "withdrawal_requests_status_idx" ON "withdrawal_requests"("status");
+
+-- CreateIndex
+CREATE INDEX "withdrawal_requests_createdAt_idx" ON "withdrawal_requests"("createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CheckIn_ticketId_key" ON "CheckIn"("ticketId");
+
+-- CreateIndex
+CREATE INDEX "CheckIn_partnerId_idx" ON "CheckIn"("partnerId");
+
+-- CreateIndex
+CREATE INDEX "CheckIn_showtimeId_idx" ON "CheckIn"("showtimeId");
+
+-- CreateIndex
+CREATE INDEX "CheckIn_userId_idx" ON "CheckIn"("userId");
+
+-- CreateIndex
+CREATE INDEX "CheckIn_scannedAt_idx" ON "CheckIn"("scannedAt");
+
+-- CreateIndex
+CREATE INDEX "PassHistory_ticketId_idx" ON "PassHistory"("ticketId");
+
+-- CreateIndex
+CREATE INDEX "PassHistory_fromUserId_idx" ON "PassHistory"("fromUserId");
+
+-- CreateIndex
+CREATE INDEX "PassHistory_toUserId_idx" ON "PassHistory"("toUserId");
+
+-- CreateIndex
+CREATE INDEX "PassHistory_transferredAt_idx" ON "PassHistory"("transferredAt");
+
+-- CreateIndex
+CREATE INDEX "Review_movieId_idx" ON "Review"("movieId");
+
+-- CreateIndex
+CREATE INDEX "Review_userId_idx" ON "Review"("userId");
+
+-- CreateIndex
+CREATE INDEX "Review_status_idx" ON "Review"("status");
+
+-- CreateIndex
+CREATE INDEX "Review_createdAt_idx" ON "Review"("createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Review_movieId_userId_key" ON "Review"("movieId", "userId");
+
+-- AddForeignKey
+ALTER TABLE "UserSetting" ADD CONSTRAINT "UserSetting_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PasswordResetToken" ADD CONSTRAINT "PasswordResetToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "EmailVerificationToken" ADD CONSTRAINT "EmailVerificationToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Partner" ADD CONSTRAINT "Partner_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Movie" ADD CONSTRAINT "Movie_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "Partner"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Showtime" ADD CONSTRAINT "Showtime_movieId_fkey" FOREIGN KEY ("movieId") REFERENCES "Movie"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Showtime" ADD CONSTRAINT "Showtime_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "Partner"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Seat" ADD CONSTRAINT "Seat_showtimeId_fkey" FOREIGN KEY ("showtimeId") REFERENCES "Showtime"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_showtimeId_fkey" FOREIGN KEY ("showtimeId") REFERENCES "Showtime"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "Partner"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_movieId_fkey" FOREIGN KEY ("movieId") REFERENCES "Movie"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_seatId_fkey" FOREIGN KEY ("seatId") REFERENCES "Seat"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "Partner"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_ticketId_fkey" FOREIGN KEY ("ticketId") REFERENCES "Ticket"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_withdrawalId_fkey" FOREIGN KEY ("withdrawalId") REFERENCES "withdrawal_requests"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerWallet" ADD CONSTRAINT "PartnerWallet_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "Partner"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "withdrawal_requests" ADD CONSTRAINT "withdrawal_requests_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "Partner"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CheckIn" ADD CONSTRAINT "CheckIn_ticketId_fkey" FOREIGN KEY ("ticketId") REFERENCES "Ticket"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CheckIn" ADD CONSTRAINT "CheckIn_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "Partner"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CheckIn" ADD CONSTRAINT "CheckIn_showtimeId_fkey" FOREIGN KEY ("showtimeId") REFERENCES "Showtime"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CheckIn" ADD CONSTRAINT "CheckIn_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PassHistory" ADD CONSTRAINT "PassHistory_ticketId_fkey" FOREIGN KEY ("ticketId") REFERENCES "Ticket"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PassHistory" ADD CONSTRAINT "PassHistory_fromUserId_fkey" FOREIGN KEY ("fromUserId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PassHistory" ADD CONSTRAINT "PassHistory_toUserId_fkey" FOREIGN KEY ("toUserId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Review" ADD CONSTRAINT "Review_movieId_fkey" FOREIGN KEY ("movieId") REFERENCES "Movie"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Review" ADD CONSTRAINT "Review_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

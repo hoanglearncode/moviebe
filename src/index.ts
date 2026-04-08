@@ -1,5 +1,6 @@
 import { setupCategoryHexagon } from "./modules/category";
 import { setupAuthHexagon } from "./modules/auth";
+import { setupUserHexagon } from "./modules/user";
 
 import { createCategoryRepository } from "./modules/category/infras/repository/repo";
 import { prisma } from './share/component/prisma';
@@ -9,12 +10,14 @@ import cors from "cors";
 import { ENV } from "./share/common/value";
 import { HashService } from "./modules/auth/shared/hash";
 import { Role, UserStatus } from "@prisma/client";
+import { logger } from "./modules/system/logger";
+import { requestLogger } from "./modules/system/request-logger";
 
 config();
   
 (async () => {
   await prisma.$connect();
-  console.log('Connection has been established successfully.');
+  logger.info("Database connected successfully");
 
   await ensureAdminUser();
 
@@ -22,6 +25,7 @@ config();
   const port = process.env.PORT || 3000;
 
   app.use(express.json());
+  app.use(requestLogger);
   app.use(
     cors({
       origin: [
@@ -39,10 +43,11 @@ config();
 
   app.use('/v1', setupCategoryHexagon(createCategoryRepository(prisma)));
   app.use('/v1', setupAuthHexagon(prisma));
+  app.use('/v1', setupUserHexagon(prisma));
   // app.use('/v1', setupProductHexagon(sequelize));
 
   app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+    logger.info(`Server is running on http://localhost:${port}`);
   });
 })();
 
@@ -51,7 +56,7 @@ async function ensureAdminUser() {
   const password = ENV.ADMIN_INIT_PASSWORD;
 
   if (!email || !password) {
-    console.warn("ADMIN_INIT_EMAIL or ADMIN_INIT_PASSWORD is not set. Skipping admin bootstrap.");
+    logger.warn("ADMIN_INIT_EMAIL or ADMIN_INIT_PASSWORD is not set. Skipping admin bootstrap.");
     return;
   }
 
@@ -79,5 +84,5 @@ async function ensureAdminUser() {
     },
   });
 
-  console.log(`Admin user created with email ${email}`);
+  logger.info("Admin user created", { email });
 }

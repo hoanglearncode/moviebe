@@ -112,3 +112,56 @@ export abstract class BaseHttpService<Entity, CreateDTO, UpdateDTO, Cond> {
     });
   }
 }
+
+/**
+ * ==========================================
+ * UTILITY RESPONSE FUNCTIONS
+ * ==========================================
+ */
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+}
+
+/**
+ * Send success response
+ */
+export function successResponse<T>(
+  res: Response,
+  data: T,
+  message: string = "Success",
+  statusCode: number = 200
+): void {
+  res.status(statusCode).json({
+    success: true,
+    data,
+    message,
+  } as ApiResponse<T>);
+}
+
+/**
+ * Send error response
+ */
+export function errorResponse(
+  res: Response,
+  statusCode: number = 500,
+  message: string = "Internal server error",
+  code: string = ErrorCode.INTERNAL.toString(),
+  details?: any
+): void {
+  res.status(statusCode).json({
+    success: false,
+    error: {
+      code,
+      message,
+      details,
+    },
+  } as ApiResponse<null>);
+}

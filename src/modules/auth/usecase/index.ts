@@ -287,6 +287,7 @@ export class AuthUseCase implements IAuthUseCase {
 
     const newPasswordHash = await passwordHasher.hash(parsedData.data.newPassword);
     await userRepository.updatePassword(userId, newPasswordHash);
+    if(!user.emailVerified) await userRepository.markVerified(userId);
 
     return { message: "Password changed successfully" };
   }
