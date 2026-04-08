@@ -12,8 +12,8 @@ export const ENV = z
   .object({
     PORT: z.string().default("3000"),
 
-    // ADMIN_INIT_EMAIL: z.string(),
-    // ADMIN_INIT_PASSWORD: z.string(),
+    ADMIN_INIT_EMAIL: z.string().optional(),
+    ADMIN_INIT_PASSWORD: z.string().optional(),
 
     DATABASE_URL: z.string(),
 

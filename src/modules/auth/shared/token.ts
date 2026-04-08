@@ -57,6 +57,8 @@ export class TokenService implements ITokenService {
     const session = this.createSessionTokens({
       sub: user.id,
       email: user.email,
+      scope: user.role ?? "USER",
+      status: user.status,
     });
 
     await this.sessionModel.create({
@@ -96,6 +98,8 @@ export class TokenService implements ITokenService {
     const nextSession = this.createSessionTokens({
       sub: String(payload.sub),
       email: String(payload.email),
+      scope: (payload as any).scope ?? "USER",
+      status: (payload as any).status ?? "ACTIVE"
     });
 
     await this.sessionModel.delete({ where: { refreshToken } });
@@ -163,13 +167,20 @@ export class TokenService implements ITokenService {
     return crypto.createHash("sha256").update(token).digest("hex");
   }
 
-  private createSessionTokens(payload: { sub: string; email: string }): AuthSession {
-    const accessToken = jwt.sign(payload, ENV.JWT_ACCESS_SECRET, {
+  private createSessionTokens(payload: { sub: string; email: string; scope: string; status: string | undefined }): AuthSession {
+    const normalizedPayload = {
+      sub: payload.sub,
+      email: payload.email,
+      scope: payload.scope ?? "USER",
+      status: payload.status ?? "ACTIVE",
+    };
+
+    const accessToken = jwt.sign(normalizedPayload, ENV.JWT_ACCESS_SECRET, {
       expiresIn: ENV.JWT_ACCESS_EXPIRES as jwt.SignOptions["expiresIn"],
       algorithm: "HS512",
     });
 
-    const refreshToken = jwt.sign(payload, ENV.JWT_REFRESH_SECRET, {
+    const refreshToken = jwt.sign(normalizedPayload, ENV.JWT_REFRESH_SECRET, {
       expiresIn: ENV.JWT_REFRESH_EXPIRES as jwt.SignOptions["expiresIn"],
       algorithm: "HS512",
     });

@@ -35,6 +35,7 @@ class AuthUseCase {
             name: parsedData.data.name ?? null,
             password: passwordHash,
             emailVerified: false,
+            mustChangePassword: false,
             status: client_1.UserStatus.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -200,6 +201,7 @@ class AuthUseCase {
                 avatar: profile.avatar ?? null,
                 provider: profile.provider,
                 emailVerified: profile.emailVerified,
+                mustChangePassword: false,
                 status: client_1.UserStatus.ACTIVE,
                 lastLoginAt: new Date(),
                 createdAt: new Date(),
@@ -235,6 +237,8 @@ class AuthUseCase {
                 email: user.email,
                 username: user.username,
                 name: user.name,
+                emailVerified: user.emailVerified,
+                mustChangePassword: user.mustChangePassword
             },
         };
     }

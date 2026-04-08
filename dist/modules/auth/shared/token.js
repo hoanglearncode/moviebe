@@ -20,6 +20,8 @@ class TokenService {
         const session = this.createSessionTokens({
             sub: user.id,
             email: user.email,
+            scope: user.role ?? "USER",
+            status: user.status,
         });
         await this.sessionModel.create({
             data: {
@@ -51,6 +53,8 @@ class TokenService {
         const nextSession = this.createSessionTokens({
             sub: String(payload.sub),
             email: String(payload.email),
+            scope: payload.scope ?? "USER",
+            status: payload.status ?? "ACTIVE"
         });
         await this.sessionModel.delete({ where: { refreshToken } });
         await this.sessionModel.create({
@@ -100,11 +104,17 @@ class TokenService {
         return crypto_1.default.createHash("sha256").update(token).digest("hex");
     }
     createSessionTokens(payload) {
-        const accessToken = jsonwebtoken_1.default.sign(payload, value_1.ENV.JWT_ACCESS_SECRET, {
+        const normalizedPayload = {
+            sub: payload.sub,
+            email: payload.email,
+            scope: payload.scope ?? "USER",
+            status: payload.status ?? "ACTIVE",
+        };
+        const accessToken = jsonwebtoken_1.default.sign(normalizedPayload, value_1.ENV.JWT_ACCESS_SECRET, {
             expiresIn: value_1.ENV.JWT_ACCESS_EXPIRES,
             algorithm: "HS512",
         });
-        const refreshToken = jsonwebtoken_1.default.sign(payload, value_1.ENV.JWT_REFRESH_SECRET, {
+        const refreshToken = jsonwebtoken_1.default.sign(normalizedPayload, value_1.ENV.JWT_REFRESH_SECRET, {
             expiresIn: value_1.ENV.JWT_REFRESH_EXPIRES,
             algorithm: "HS512",
         });

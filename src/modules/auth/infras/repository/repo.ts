@@ -1,4 +1,4 @@
-import { Prisma, PrismaClient, UserStatus } from "@prisma/client";
+import { Prisma, PrismaClient, UserStatus, Role } from "@prisma/client";
 import { IAuthUserRepository } from "../../interface";
 import { AuthUser } from "../../model/model";
 import { PagingDTO } from "../../../../share/model/paging";

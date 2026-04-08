@@ -1,6 +1,6 @@
 export type AuthActionTokenPurpose = "verify-email" | "reset-password";
 
-import { UserStatus } from "@prisma/client";
+import { UserStatus, Role } from "@prisma/client";
 
 export type AuthUser = {
   id: string;
@@ -10,6 +10,7 @@ export type AuthUser = {
   password?: string | null;
   provider?: string;
   avatar?: string | null;
+  role?: Role;
   lastLoginAt?: Date | null;
   emailVerified: boolean;
   mustChangePassword: boolean;
