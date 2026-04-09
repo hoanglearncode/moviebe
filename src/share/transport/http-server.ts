@@ -36,6 +36,17 @@ export class UnauthorizedError extends AppError {
   }
 }
 
+export class ConflictError extends AppError {
+  constructor(
+    message: string = "Conflict",
+    code: ErrorCode = ErrorCode.CONCURRENT_TASK_LOCKED,
+    details?: any
+  ) {
+    super(message, code, 409, details);
+    this.name = "ConflictError";
+  }
+}
+
 export abstract class BaseHttpService<Entity, CreateDTO, UpdateDTO, Cond> {
   constructor(readonly useCase: IUseCase<CreateDTO, UpdateDTO, Entity, Cond>) {}
 

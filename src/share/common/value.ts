@@ -21,6 +21,7 @@ export const ENV = z
     JWT_REFRESH_SECRET: z.string(),
     JWT_ACCESS_EXPIRES: z.string(),
     JWT_REFRESH_EXPIRES: z.string(),
+    AUTH_CONCURRENT_LOCK_TTL_MS: z.coerce.number().int().positive().default(5000),
 
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),

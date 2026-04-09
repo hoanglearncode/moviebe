@@ -8,6 +8,7 @@ import { TokenService } from "./shared/token";
 import { AuthNotificationService } from "./shared/notification";
 import { SocialAuthService } from "./shared/social-auth";
 import { prisma } from "../../share/component/prisma";
+import { concurrentLockService } from "../../share/component/concurrent-lock";
 import { IAuthUseCase } from "./interface";
 
 const buildRouter = (useCase: IAuthUseCase) => {
@@ -53,6 +54,7 @@ export const setupAuthHexagon = (prismaClient: PrismaClient = prisma) => {
     tokenService,
     notificationService,
     socialAuthService,
+    concurrentLockService,
   };
 
   const useCase = new AuthUseCase(dependencies);

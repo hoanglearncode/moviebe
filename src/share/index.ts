@@ -13,6 +13,7 @@ export * from "./interface";
 // Component
 export * from "./component/prisma";
 export * from "./component/mail";
+export * from "./component/concurrent-lock";
 
 // Repository
 export * from "./repository/generic-prisma-repo";

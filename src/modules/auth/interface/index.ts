@@ -1,4 +1,5 @@
 import { IRepository } from "../../../share/interface";
+import { IConcurrentLockService } from "../../../share/component/concurrent-lock";
 import {
   ChangePasswordDTO,
   FacebookTO,
@@ -78,4 +79,5 @@ export interface AuthHexagonDependencies {
   tokenService: ITokenService;
   notificationService: IAuthNotificationService;
   socialAuthService: ISocialAuthService;
+  concurrentLockService: IConcurrentLockService;
 }
