@@ -10,8 +10,8 @@ import cors from "cors";
 import { ENV } from "./share/common/value";
 import { HashService } from "./modules/auth/shared/hash";
 import { Role, UserStatus } from "@prisma/client";
-import { logger } from "./modules/system/logger";
-import { requestLogger } from "./modules/system/request-logger";
+import { logger } from "./modules/system/log/logger";
+import { requestLogger } from "./modules/system/log/request-logger";
 
 config();
   
@@ -20,7 +20,7 @@ config();
   logger.info("Database connected successfully");
 
   await ensureAdminUser();
-
+  
   const app = express();
   const port = process.env.PORT || 3000;
 
@@ -32,7 +32,6 @@ config();
         "http://localhost:3000",
         "http://localhost:3001",
         "http://localhost:3002",
-        "https://yourdomain.com",
       ],
       credentials: true,
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],

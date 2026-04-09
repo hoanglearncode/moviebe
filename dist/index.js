@@ -14,8 +14,8 @@ const cors_1 = __importDefault(require("cors"));
 const value_1 = require("./share/common/value");
 const hash_1 = require("./modules/auth/shared/hash");
 const client_1 = require("@prisma/client");
-const logger_1 = require("./modules/system/logger");
-const request_logger_1 = require("./modules/system/request-logger");
+const logger_1 = require("./modules/system/log/logger");
+const request_logger_1 = require("./modules/system/log/request-logger");
 (0, dotenv_1.config)();
 (async () => {
     await prisma_1.prisma.$connect();
@@ -30,7 +30,6 @@ const request_logger_1 = require("./modules/system/request-logger");
             "http://localhost:3000",
             "http://localhost:3001",
             "http://localhost:3002",
-            "https://yourdomain.com",
         ],
         credentials: true,
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],

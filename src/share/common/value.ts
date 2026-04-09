@@ -37,7 +37,10 @@ export const ENV = z
     MAIL_FROM_NAME: z.string().default("Movie App"),
     FRONTEND_URL: z.string().url().default("http://localhost:3000"),
 
-
+    PUSHER_APP_ID: z.string().optional(),
+    PUSHER_KEY: z.string().optional(),
+    PUSHER_SECRET: z.string().optional(),
+    PUSHER_CLUSTER: z.string().optional()
 
   })
   .parse(process.env);

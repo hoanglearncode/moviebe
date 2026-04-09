@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserNotificationService = void 0;
-const logger_1 = require("../../system/logger");
+const logger_1 = require("../../system/log/logger");
 /**
  * User Notification Service
  * Handles email notifications for user-related actions

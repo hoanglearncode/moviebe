@@ -2,7 +2,8 @@ import { PrismaClient } from "@prisma/client";
 import { BaseRepositoryPrisma, BaseQueryRepositoryPrisma, BaseCommandRepositoryPrisma } from "../../../../share/repository/generic-prisma-repo";
 import { IUserRepository, ISessionRepository, IUserSettingsRepository } from "../../interface";
 import { UserProfile, UserSession, UserSettings, UserListResponse } from "../../model/model";
-import { ListUsersQueryDTO } from "../../model/dto";
+import { ListUsersQueryDTO, UserCreateDTO } from "../../model/dto";
+import { PagingDTO } from "../../../../share";
 
 /**
  * ==========================================
@@ -10,11 +11,35 @@ import { ListUsersQueryDTO } from "../../model/dto";
  * ==========================================
  */
 
-export class UserRepository extends BaseRepositoryPrisma<UserProfile> implements IUserRepository {
+export class UserRepository extends BaseRepositoryPrisma<UserProfile, UserCreateDTO> implements IUserRepository {
   constructor(private prismaClient: PrismaClient) {
     const queryRepo = new BaseQueryRepositoryPrisma(prismaClient.user);
     const commandRepo = new BaseCommandRepositoryPrisma(prismaClient.user);
     super(queryRepo, commandRepo);
+  }
+
+  async get(id: string): Promise<UserProfile | null> {
+      return null;
+  }
+
+  async findByCond(cond: Partial<UserProfile>): Promise<UserProfile | null> {
+      return null;
+  }
+
+  async list(cond: Partial<UserProfile>, paging: PagingDTO): Promise<UserProfile[]> {
+      return []
+  }
+
+  async insert(data: UserProfile): Promise<boolean> {
+      return true
+  }
+
+  async delete(id: string, isHard: boolean): Promise<boolean> {
+    return true
+  }
+
+  async update(id: string, data: Partial<UserProfile>): Promise<boolean> {
+    return true
   }
 
   async findById(userId: string): Promise<UserProfile | null> {
@@ -131,6 +156,8 @@ export class SessionRepository extends BaseRepositoryPrisma<UserSession> impleme
       where: { id: sessionId },
     }) as Promise<UserSession | null>;
   }
+
+
 
   async findByUserId(userId: string): Promise<UserSession[]> {
     return this.prismaClient.session.findMany({

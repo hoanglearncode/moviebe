@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { UserUseCase, AdminUserUseCase } from "./usecase";
-import { AdminUserHttpService } from "./infras/transport/http-service";
+import { UserHttpService ,AdminUserHttpService } from "./infras/transport/http-service";
 import {
   createUserRepository,
   createSessionRepository,
@@ -18,29 +18,29 @@ import { prisma } from "../../share/component/prisma";
  * ==========================================
  */
 
-// const buildUserRouter = (useCase: IUserUseCase) => {
-//   const httpService = new UserHttpService(useCase);
-//   const router = Router();
+const buildUserRouter = (useCase: IUserUseCase) => {
+  const httpService = new UserHttpService(useCase);
+  const router = Router();
 
-//   // Profile routes
-//   router.get("/user/me", httpService.getProfile.bind(httpService));
-//   router.put("/user/me", httpService.updateProfile.bind(httpService));
-//   router.delete("/user/me", httpService.deleteAccount.bind(httpService));
+  // Profile routes
+  router.get("/user/me", httpService.getProfile.bind(httpService));
+  router.put("/user/me", httpService.updateProfile.bind(httpService));
+  router.delete("/user/me", httpService.deleteAccount.bind(httpService));
 
-//   // Password routes
-//   router.post("/user/change-password", httpService.changePassword.bind(httpService));
+  // Password routes
+  router.post("/user/change-password", httpService.changePassword.bind(httpService));
 
-//   // Session management routes
-//   router.get("/user/sessions", httpService.getSessions.bind(httpService));
-//   router.delete("/user/sessions/:sessionId", httpService.revokeSession.bind(httpService));
-//   router.delete("/user/sessions", httpService.revokeAllSessions.bind(httpService));
+  // Session management routes
+  router.get("/user/sessions", httpService.getSessions.bind(httpService));
+  router.delete("/user/sessions/:sessionId", httpService.revokeSession.bind(httpService));
+  router.delete("/user/sessions", httpService.revokeAllSessions.bind(httpService));
 
-//   // Settings routes
-//   router.get("/user/settings", httpService.getSettings.bind(httpService));
-//   router.put("/user/settings", httpService.updateSettings.bind(httpService));
+  // Settings routes
+  router.get("/user/settings", httpService.getSettings.bind(httpService));
+  router.put("/user/settings", httpService.updateSettings.bind(httpService));
 
-//   return router;
-// };
+  return router;
+};
 
 /**
  * ==========================================
@@ -124,7 +124,7 @@ export const setupUserHexagon = (prismaClient: PrismaClient = prisma) => {
 
 export const setupUserHexagonWithUseCase = (userUseCase: IUserUseCase, adminUseCase: IAdminUserUseCase) => {
   const router = Router();
-//   router.use(buildUserRouter(userUseCase));
+  router.use(buildUserRouter(userUseCase));
   router.use(buildAdminUserRouter(adminUseCase));
   return router;
 };

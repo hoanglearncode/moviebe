@@ -13,24 +13,24 @@ const prisma_1 = require("../../share/component/prisma");
  * BUILD USER ROUTES
  * ==========================================
  */
-// const buildUserRouter = (useCase: IUserUseCase) => {
-//   const httpService = new UserHttpService(useCase);
-//   const router = Router();
-//   // Profile routes
-//   router.get("/user/me", httpService.getProfile.bind(httpService));
-//   router.put("/user/me", httpService.updateProfile.bind(httpService));
-//   router.delete("/user/me", httpService.deleteAccount.bind(httpService));
-//   // Password routes
-//   router.post("/user/change-password", httpService.changePassword.bind(httpService));
-//   // Session management routes
-//   router.get("/user/sessions", httpService.getSessions.bind(httpService));
-//   router.delete("/user/sessions/:sessionId", httpService.revokeSession.bind(httpService));
-//   router.delete("/user/sessions", httpService.revokeAllSessions.bind(httpService));
-//   // Settings routes
-//   router.get("/user/settings", httpService.getSettings.bind(httpService));
-//   router.put("/user/settings", httpService.updateSettings.bind(httpService));
-//   return router;
-// };
+const buildUserRouter = (useCase) => {
+    const httpService = new http_service_1.UserHttpService(useCase);
+    const router = (0, express_1.Router)();
+    // Profile routes
+    router.get("/user/me", httpService.getProfile.bind(httpService));
+    router.put("/user/me", httpService.updateProfile.bind(httpService));
+    router.delete("/user/me", httpService.deleteAccount.bind(httpService));
+    // Password routes
+    router.post("/user/change-password", httpService.changePassword.bind(httpService));
+    // Session management routes
+    router.get("/user/sessions", httpService.getSessions.bind(httpService));
+    router.delete("/user/sessions/:sessionId", httpService.revokeSession.bind(httpService));
+    router.delete("/user/sessions", httpService.revokeAllSessions.bind(httpService));
+    // Settings routes
+    router.get("/user/settings", httpService.getSettings.bind(httpService));
+    router.put("/user/settings", httpService.updateSettings.bind(httpService));
+    return router;
+};
 /**
  * ==========================================
  * BUILD ADMIN USER ROUTES
@@ -89,7 +89,7 @@ exports.setupUserHexagon = setupUserHexagon;
  */
 const setupUserHexagonWithUseCase = (userUseCase, adminUseCase) => {
     const router = (0, express_1.Router)();
-    //   router.use(buildUserRouter(userUseCase));
+    router.use(buildUserRouter(userUseCase));
     router.use(buildAdminUserRouter(adminUseCase));
     return router;
 };

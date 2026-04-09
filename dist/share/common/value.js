@@ -33,5 +33,9 @@ exports.ENV = zod_1.z
     MAIL_FROM_EMAIL: zod_1.z.string().email().optional(),
     MAIL_FROM_NAME: zod_1.z.string().default("Movie App"),
     FRONTEND_URL: zod_1.z.string().url().default("http://localhost:3000"),
+    PUSHER_APP_ID: zod_1.z.string().optional(),
+    PUSHER_KEY: zod_1.z.string().optional(),
+    PUSHER_SECRET: zod_1.z.string().optional(),
+    PUSHER_CLUSTER: zod_1.z.string().optional()
 })
     .parse(process.env);

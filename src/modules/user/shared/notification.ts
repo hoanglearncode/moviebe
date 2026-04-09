@@ -1,5 +1,5 @@
 import { IUserNotificationService } from "../interface";
-import { logger } from "../../system/logger";
+import { logger } from "../../system/log/logger";
 
 /**
  * User Notification Service

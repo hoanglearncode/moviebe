@@ -17,6 +17,24 @@ class UserRepository extends generic_prisma_repo_1.BaseRepositoryPrisma {
         super(queryRepo, commandRepo);
         this.prismaClient = prismaClient;
     }
+    async get(id) {
+        return null;
+    }
+    async findByCond(cond) {
+        return null;
+    }
+    async list(cond, paging) {
+        return [];
+    }
+    async insert(data) {
+        return true;
+    }
+    async delete(id, isHard) {
+        return true;
+    }
+    async update(id, data) {
+        return true;
+    }
     async findById(userId) {
         return this.prismaClient.user.findUnique({
             where: { id: userId },

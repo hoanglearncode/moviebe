@@ -56,7 +56,7 @@ class AuthUseCase {
         if (!parsedData.success) {
             throw new http_server_1.ValidationError("Invalid login data", parsedData.error.issues);
         }
-        const { userRepository, passwordHasher, tokenService } = this.dependencies;
+        const { userRepository, passwordHasher, tokenService, realtimeService } = this.dependencies;
         const user = await userRepository.findByEmailOrUsername(parsedData.data.emailOrUsername);
         if (!user) {
             throw new http_server_1.UnauthorizedError("Invalid credentials", error_code_1.ErrorCode.INVALID_CREDENTIALS);
@@ -72,7 +72,8 @@ class AuthUseCase {
             throw new http_server_1.UnauthorizedError("Account is not verified", error_code_1.ErrorCode.ACCOUNT_NOT_VERIFIED);
         }
         const session = await tokenService.issueAuthSession(user);
-        return this.buildAuthResponse(user, session);
+        const socketEvent = await realtimeService.emitLoginEvent(user.id);
+        return this.buildAuthResponse(user, session, socketEvent);
     }
     async refreshToken(data) {
         const parsedData = dto_1.RefreshTokenPayloadDTO.safeParse(data);
@@ -185,6 +186,8 @@ class AuthUseCase {
         }
         const newPasswordHash = await passwordHasher.hash(parsedData.data.newPassword);
         await userRepository.updatePassword(userId, newPasswordHash);
+        if (!user.emailVerified)
+            await userRepository.markVerified(userId);
         return { message: "Password changed successfully" };
     }
     async loginWithSocialProfile(profile) {
@@ -226,9 +229,10 @@ class AuthUseCase {
             }
         }
         const session = await tokenService.issueAuthSession(user);
-        return this.buildAuthResponse(user, session);
+        const socketEvent = await this.dependencies.realtimeService.emitLoginEvent(user.id);
+        return this.buildAuthResponse(user, session, socketEvent);
     }
-    buildAuthResponse(user, session) {
+    buildAuthResponse(user, session, socketEvent) {
         return {
             accessToken: session.accessToken,
             refreshToken: session.refreshToken,
@@ -240,6 +244,7 @@ class AuthUseCase {
                 emailVerified: user.emailVerified,
                 mustChangePassword: user.mustChangePassword
             },
+            socketEvent,
         };
     }
 }

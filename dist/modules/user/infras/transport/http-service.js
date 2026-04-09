@@ -1,156 +1,168 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AdminUserHttpService = void 0;
+exports.AdminUserHttpService = exports.UserHttpService = void 0;
 const http_server_1 = require("../../../../share/transport/http-server");
 /**
  * User HTTP Service - handles user profile and session routes
  */
-// export class UserHttpService {
-//   constructor(private useCase: IUserUseCase) {}
-//   /**
-//    * GET /api/user/me - Get current user profile
-//    */
-//   async getProfile(req: Request, res: Response): Promise<void> {
-//     try {
-//       const userId = (req as any).user?.id; // From auth middleware
-//       if (!userId) {
-//         return errorResponse(res, 401, "Unauthorized", "USER_NOT_AUTHENTICATED");
-//       }
-//       const profile = await this.useCase.getProfile(userId);
-//       successResponse(res, profile, "Profile retrieved successfully");
-//     } catch (error: any) {
-//       errorResponse(res, error.statusCode || 500, error.message, error.code);
-//     }
-//   }
-//   /**
-//    * PUT /api/user/me - Update current user profile
-//    */
-//   async updateProfile(req: Request, res: Response): Promise<void> {
-//     try {
-//       const userId = (req as any).user?.id;
-//       if (!userId) {
-//         return errorResponse(res, 401, "Unauthorized");
-//       }
-//       const data: UpdateProfileDTO = req.body;
-//       const updated = await this.useCase.updateProfile(userId, data);
-//       successResponse(res, updated, "Profile updated successfully");
-//     } catch (error: any) {
-//       errorResponse(res, error.statusCode || 400, error.message, error.code);
-//     }
-//   }
-//   /**
-//    * DELETE /api/user/me - Delete account
-//    */
-//   async deleteAccount(req: Request, res: Response): Promise<void> {
-//     try {
-//       const userId = (req as any).user?.id;
-//       if (!userId) {
-//         return errorResponse(res, 401, "Unauthorized");
-//       }
-//       const result = await this.useCase.deleteAccount(userId);
-//       successResponse(res, result, "Account deleted successfully");
-//     } catch (error: any) {
-//       errorResponse(res, error.statusCode || 500, error.message, error.code);
-//     }
-//   }
-//   /**
-//    * POST /api/user/change-password - Change password
-//    */
-//   async changePassword(req: Request, res: Response): Promise<void> {
-//     try {
-//       const userId = (req as any).user?.id;
-//       if (!userId) {
-//         return errorResponse(res, 401, "Unauthorized");
-//       }
-//       const data: ChangePasswordDTO = req.body;
-//       const result = await this.useCase.changePassword(userId, data);
-//       successResponse(res, result, "Password changed successfully");
-//     } catch (error: any) {
-//       errorResponse(res, error.statusCode || 400, error.message, error.code);
-//     }
-//   }
-//   /**
-//    * GET /api/user/sessions - Get active sessions
-//    */
-//   async getSessions(req: Request, res: Response): Promise<void> {
-//     try {
-//       const userId = (req as any).user?.id;
-//       if (!userId) {
-//         return errorResponse(res, 401, "Unauthorized");
-//       }
-//       const query: GetSessionsQueryDTO = {
-//         limit: req.query.limit ? parseInt(req.query.limit as string) : 20,
-//         offset: req.query.offset ? parseInt(req.query.offset as string) : 0,
-//         orderBy: (req.query.orderBy as "createdAt" | "lastActivityAt") || "createdAt",
-//       };
-//       const sessions = await this.useCase.getSessions(userId, query);
-//       successResponse(res, sessions, "Sessions retrieved successfully");
-//     } catch (error: any) {
-//       errorResponse(res, error.statusCode || 500, error.message, error.code);
-//     }
-//   }
-//   /**
-//    * DELETE /api/user/sessions/:sessionId - Revoke session
-//    */
-//   async revokeSession(req: Request, res: Response): Promise<void> {
-//     try {
-//       const userId = (req as any).user?.id;
-//       const { sessionId } = req.params;
-//       if (!userId) {
-//         return errorResponse(res, 401, "Unauthorized");
-//       }
-//       const result = await this.useCase.revokeSession(userId, sessionId);
-//       successResponse(res, result, "Session revoked successfully");
-//     } catch (error: any) {
-//       errorResponse(res, error.statusCode || 400, error.message, error.code);
-//     }
-//   }
-//   /**
-//    * DELETE /api/user/sessions - Revoke all sessions
-//    */
-//   async revokeAllSessions(req: Request, res: Response): Promise<void> {
-//     try {
-//       const userId = (req as any).user?.id;
-//       if (!userId) {
-//         return errorResponse(res, 401, "Unauthorized");
-//       }
-//       const result = await this.useCase.revokeAllSessions(userId);
-//       successResponse(res, result, "All sessions revoked successfully");
-//     } catch (error: any) {
-//       errorResponse(res, error.statusCode || 500, error.message, error.code);
-//     }
-//   }
-//   /**
-//    * GET /api/user/settings - Get settings
-//    */
-//   async getSettings(req: Request, res: Response): Promise<void> {
-//     try {
-//       const userId = (req as any).user?.id;
-//       if (!userId) {
-//         return errorResponse(res, 401, "Unauthorized");
-//       }
-//       const settings = await this.useCase.getSettings(userId);
-//       successResponse(res, settings, "Settings retrieved successfully");
-//     } catch (error: any) {
-//       errorResponse(res, error.statusCode || 500, error.message, error.code);
-//     }
-//   }
-//   /**
-//    * PUT /api/user/settings - Update settings
-//    */
-//   async updateSettings(req: Request, res: Response): Promise<void> {
-//     try {
-//       const userId = (req as any).user?.id;
-//       if (!userId) {
-//         return errorResponse(res, 401, "Unauthorized");
-//       }
-//       const updated = await this.useCase.updateSettings(userId, req.body);
-//       successResponse(res, updated, "Settings updated successfully");
-//     } catch (error: any) {
-//       errorResponse(res, error.statusCode || 400, error.message, error.code);
-//     }
-//   }
-// }
+class UserHttpService {
+    constructor(useCase) {
+        this.useCase = useCase;
+    }
+    /**
+     * GET /api/user/me - Get current user profile
+     */
+    async getProfile(req, res) {
+        try {
+            const userId = req.user?.id; // From auth middleware
+            if (!userId) {
+                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized", "USER_NOT_AUTHENTICATED");
+            }
+            const profile = await this.useCase.getProfile(userId);
+            (0, http_server_1.successResponse)(res, profile, "Profile retrieved successfully");
+        }
+        catch (error) {
+            (0, http_server_1.errorResponse)(res, error.statusCode || 500, error.message, error.code);
+        }
+    }
+    /**
+     * PUT /api/user/me - Update current user profile
+     */
+    async updateProfile(req, res) {
+        try {
+            const userId = req.user?.id;
+            if (!userId) {
+                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized");
+            }
+            const data = req.body;
+            const updated = await this.useCase.updateProfile(userId, data);
+            (0, http_server_1.successResponse)(res, updated, "Profile updated successfully");
+        }
+        catch (error) {
+            (0, http_server_1.errorResponse)(res, error.statusCode || 400, error.message, error.code);
+        }
+    }
+    /**
+     * DELETE /api/user/me - Delete account
+     */
+    async deleteAccount(req, res) {
+        try {
+            const userId = req.user?.id;
+            if (!userId) {
+                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized");
+            }
+            const result = await this.useCase.deleteAccount(userId);
+            (0, http_server_1.successResponse)(res, result, "Account deleted successfully");
+        }
+        catch (error) {
+            (0, http_server_1.errorResponse)(res, error.statusCode || 500, error.message, error.code);
+        }
+    }
+    /**
+     * POST /api/user/change-password - Change password
+     */
+    async changePassword(req, res) {
+        try {
+            const userId = req.user?.id;
+            if (!userId) {
+                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized");
+            }
+            const data = req.body;
+            const result = await this.useCase.changePassword(userId, data);
+            (0, http_server_1.successResponse)(res, result, "Password changed successfully");
+        }
+        catch (error) {
+            (0, http_server_1.errorResponse)(res, error.statusCode || 400, error.message, error.code);
+        }
+    }
+    /**
+     * GET /api/user/sessions - Get active sessions
+     */
+    async getSessions(req, res) {
+        try {
+            const userId = req.user?.id;
+            if (!userId) {
+                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized");
+            }
+            const query = {
+                limit: req.query.limit ? parseInt(req.query.limit) : 20,
+                offset: req.query.offset ? parseInt(req.query.offset) : 0,
+                orderBy: req.query.orderBy || "createdAt",
+            };
+            const sessions = await this.useCase.getSessions(userId, query);
+            (0, http_server_1.successResponse)(res, sessions, "Sessions retrieved successfully");
+        }
+        catch (error) {
+            (0, http_server_1.errorResponse)(res, error.statusCode || 500, error.message, error.code);
+        }
+    }
+    /**
+     * DELETE /api/user/sessions/:sessionId - Revoke session
+     */
+    async revokeSession(req, res) {
+        try {
+            const userId = req.user?.id;
+            const { sessionId } = req.params;
+            if (!userId) {
+                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized");
+            }
+            const result = await this.useCase.revokeSession(userId, sessionId);
+            (0, http_server_1.successResponse)(res, result, "Session revoked successfully");
+        }
+        catch (error) {
+            (0, http_server_1.errorResponse)(res, error.statusCode || 400, error.message, error.code);
+        }
+    }
+    /**
+     * DELETE /api/user/sessions - Revoke all sessions
+     */
+    async revokeAllSessions(req, res) {
+        try {
+            const userId = req.user?.id;
+            if (!userId) {
+                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized");
+            }
+            const result = await this.useCase.revokeAllSessions(userId);
+            (0, http_server_1.successResponse)(res, result, "All sessions revoked successfully");
+        }
+        catch (error) {
+            (0, http_server_1.errorResponse)(res, error.statusCode || 500, error.message, error.code);
+        }
+    }
+    /**
+     * GET /api/user/settings - Get settings
+     */
+    async getSettings(req, res) {
+        try {
+            const userId = req.user?.id;
+            if (!userId) {
+                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized");
+            }
+            const settings = await this.useCase.getSettings(userId);
+            (0, http_server_1.successResponse)(res, settings, "Settings retrieved successfully");
+        }
+        catch (error) {
+            (0, http_server_1.errorResponse)(res, error.statusCode || 500, error.message, error.code);
+        }
+    }
+    /**
+     * PUT /api/user/settings - Update settings
+     */
+    async updateSettings(req, res) {
+        try {
+            const userId = req.user?.id;
+            if (!userId) {
+                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized");
+            }
+            const updated = await this.useCase.updateSettings(userId, req.body);
+            (0, http_server_1.successResponse)(res, updated, "Settings updated successfully");
+        }
+        catch (error) {
+            (0, http_server_1.errorResponse)(res, error.statusCode || 400, error.message, error.code);
+        }
+    }
+}
+exports.UserHttpService = UserHttpService;
 /**
  * Admin User HTTP Service - handles admin user management routes
  */
