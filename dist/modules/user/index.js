@@ -1,99 +1,75 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setupUserHexagonWithUseCase = exports.setupUserHexagon = void 0;
+exports.setupUserHexagon = void 0;
 const express_1 = require("express");
-const usecase_1 = require("./usecase");
+const admin_user_usecase_1 = require("./usecase/admin-user.usecase");
+const user_usecase_1 = require("./usecase/user.usecase");
 const http_service_1 = require("./infras/transport/http-service");
-const repo_1 = require("./infras/repository/repo");
+const session_repo_1 = require("./infras/repository/session-repo");
+const user_repo_1 = require("./infras/repository/user-repo");
+const setting_repo_1 = require("./infras/repository/setting-repo");
 const hash_1 = require("./shared/hash");
 const notification_1 = require("./shared/notification");
+const avatar_color_service_1 = require("./shared/avatar-color.service");
 const prisma_1 = require("../../share/component/prisma");
 const auth_1 = require("../../share/middleware/auth");
-/**
- * ==========================================
- * BUILD USER ROUTES
- * ==========================================
- */
 const buildUserRouter = (useCase) => {
     const httpService = new http_service_1.UserHttpService(useCase);
     const router = (0, express_1.Router)();
     router.use(...(0, auth_1.protect)());
-    // Profile routes
-    router.get("/user/me", httpService.getProfile.bind(httpService));
-    router.put("/user/me", httpService.updateProfile.bind(httpService));
-    router.delete("/user/me", httpService.deleteAccount.bind(httpService));
-    // Password routes
-    router.post("/user/change-password", httpService.changePassword.bind(httpService));
-    // Session management routes
-    router.get("/user/sessions", httpService.getSessions.bind(httpService));
-    router.delete("/user/sessions/:sessionId", httpService.revokeSession.bind(httpService));
-    router.delete("/user/sessions", httpService.revokeAllSessions.bind(httpService));
-    // Settings routes
-    router.get("/user/settings", httpService.getSettings.bind(httpService));
-    router.put("/user/settings", httpService.updateSettings.bind(httpService));
+    router.get("/me", httpService.getProfile.bind(httpService));
+    router.put("/me", httpService.updateProfile.bind(httpService));
+    router.delete("/me", httpService.deleteAccount.bind(httpService));
+    router.post("/change-password", httpService.changePassword.bind(httpService));
+    router.get("/sessions", httpService.getSessions.bind(httpService));
+    router.delete("/sessions/:sessionId", httpService.revokeSession.bind(httpService));
+    router.delete("/sessions", httpService.revokeAllSessions.bind(httpService));
+    router.get("/settings", httpService.getSettings.bind(httpService));
+    router.put("/settings", httpService.updateSettings.bind(httpService));
     return router;
 };
-/**
- * ==========================================
- * BUILD ADMIN USER ROUTES
- * ==========================================
- */
 const buildAdminUserRouter = (useCase) => {
     const httpService = new http_service_1.AdminUserHttpService(useCase);
     const router = (0, express_1.Router)();
     router.use(...(0, auth_1.protect)(auth_1.adminMiddleware));
-    // User management routes
-    router.get("/admin/users", httpService.listUsers.bind(httpService));
-    router.get("/admin/users/:id", httpService.getUser.bind(httpService));
-    router.post("/admin/users", httpService.createUser.bind(httpService));
-    router.put("/admin/users/:id", httpService.updateUser.bind(httpService));
-    router.delete("/admin/users/:id", httpService.deleteUser.bind(httpService));
-    // User status & security routes
-    router.patch("/admin/users/:id/status", httpService.changeUserStatus.bind(httpService));
-    router.post("/admin/users/:id/reset-password", httpService.resetUserPassword.bind(httpService));
-    router.post("/admin/users/:id/verify-email", httpService.verifyUserEmail.bind(httpService));
-    router.delete("/admin/users/:id/sessions", httpService.revokeAllUserSessions.bind(httpService));
+    // analytic
+    router.get("/users/stats", httpService.getStats.bind(httpService));
+    router.get("/users", httpService.list.bind(httpService));
+    router.get("/users/:id", httpService.getUser.bind(httpService));
+    router.post("/users", httpService.createUser.bind(httpService));
+    router.put("/users/:id", httpService.updateUser.bind(httpService));
+    router.delete("/users/:id", httpService.deleteUser.bind(httpService));
+    router.patch("/users/:id/status", httpService.changeUserStatus.bind(httpService));
+    router.post("/users/:id/reset-password", httpService.resetUserPassword.bind(httpService));
+    router.post("/users/:id/verify-email", httpService.verifyUserEmail.bind(httpService));
+    router.delete("/users/:id/sessions", httpService.revokeAllUserSessions.bind(httpService));
+    // Seed routes
+    router.post("/users/seed", httpService.seedUsers.bind(httpService));
+    router.get("/users/seed/stats", httpService.getSeedStatistics.bind(httpService));
+    router.delete("/users/seed", httpService.clearSeedUsers.bind(httpService));
     return router;
 };
-/**
- * ==========================================
- * SETUP USER HEXAGON
- * ==========================================
- */
 const setupUserHexagon = (prismaClient = prisma_1.prisma) => {
-    const userRepository = (0, repo_1.createUserRepository)(prismaClient);
-    const sessionRepository = (0, repo_1.createSessionRepository)(prismaClient);
-    const userSettingsRepository = (0, repo_1.createUserSettingsRepository)(prismaClient);
-    // Initialize services
+    const userRepository = (0, user_repo_1.createUserRepository)(prismaClient);
+    const sessionRepository = (0, session_repo_1.createSessionRepository)(prismaClient);
+    const userSettingsRepository = (0, setting_repo_1.createUserSettingRepository)(prismaClient);
     const passwordHasher = new hash_1.HashService();
     const notificationService = new notification_1.UserNotificationService();
-    // Create dependencies object
+    const avatarColorService = new avatar_color_service_1.AvatarColorService();
     const dependencies = {
         userRepository,
         sessionRepository,
         userSettingsRepository,
         passwordHasher,
         notificationService,
+        avatarColorService,
+        prisma: prismaClient,
     };
-    // Create use cases
-    const userUseCase = new usecase_1.UserUseCase(dependencies);
-    const adminUserUseCase = new usecase_1.AdminUserUseCase(dependencies);
-    // Create router with combined routes
+    const userUseCase = new user_usecase_1.UserUseCase(dependencies);
+    const adminUserUseCase = new admin_user_usecase_1.AdminUserUseCase(dependencies);
     const router = (0, express_1.Router)();
-    router.use(buildUserRouter(userUseCase));
-    router.use(buildAdminUserRouter(adminUserUseCase));
+    router.use("/user", buildUserRouter(userUseCase));
+    router.use("/admin", buildAdminUserRouter(adminUserUseCase));
     return router;
 };
 exports.setupUserHexagon = setupUserHexagon;
-/**
- * ==========================================
- * EXPORT FOR TESTING
- * ==========================================
- */
-const setupUserHexagonWithUseCase = (userUseCase, adminUseCase) => {
-    const router = (0, express_1.Router)();
-    router.use(buildUserRouter(userUseCase));
-    router.use(buildAdminUserRouter(adminUseCase));
-    return router;
-};
-exports.setupUserHexagonWithUseCase = setupUserHexagonWithUseCase;

@@ -47,6 +47,9 @@ exports.ENV = zod_1.z
     PUSHER_APP_ID: zod_1.z.string().optional(),
     PUSHER_KEY: zod_1.z.string().optional(),
     PUSHER_SECRET: zod_1.z.string().optional(),
-    PUSHER_CLUSTER: zod_1.z.string().optional()
+    PUSHER_CLUSTER: zod_1.z.string().optional(),
+    CLOUDINARY_CLOUD_NAME: zod_1.z.string().optional(),
+    CLOUDINARY_API_SECRET: zod_1.z.string().optional(),
+    CLOUDINARY_API_KEY: zod_1.z.string().optional()
 })
     .parse(process.env);
