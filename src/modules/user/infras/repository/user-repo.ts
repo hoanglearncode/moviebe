@@ -247,10 +247,15 @@ export class PrismaUserRepository implements IUserRepository {
       ];
     }
 
-    if (email)    where.email = email;
+    if (email) where.email = email;
     if (username) where.username = username;
-    if (role)     where.role = role;
-    if (status)   where.status = status;
+    if (role) where.role = role;
+
+    if (status) {
+      where.status = status;
+    } else {
+      where.status = { not: "INACTIVE" };
+    }
 
     return where;
   }
