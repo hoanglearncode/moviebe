@@ -20,4 +20,5 @@ var ErrorCode;
     ErrorCode[ErrorCode["SOCIAL_GOOGLE_NO_EMAIL"] = 2200] = "SOCIAL_GOOGLE_NO_EMAIL";
     ErrorCode[ErrorCode["SOCIAL_FACEBOOK_NO_EMAIL"] = 2201] = "SOCIAL_FACEBOOK_NO_EMAIL";
     ErrorCode[ErrorCode["SOCIAL_TOKEN_INVALID"] = 2202] = "SOCIAL_TOKEN_INVALID";
+    ErrorCode[ErrorCode["Duplicate"] = 2203] = "Duplicate";
 })(ErrorCode || (exports.ErrorCode = ErrorCode = {}));
