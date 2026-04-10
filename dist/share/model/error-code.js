@@ -7,6 +7,7 @@ var ErrorCode;
     ErrorCode[ErrorCode["NOT_FOUND"] = 1001] = "NOT_FOUND";
     ErrorCode[ErrorCode["UNAUTHORIZED"] = 1002] = "UNAUTHORIZED";
     ErrorCode[ErrorCode["INTERNAL"] = 1003] = "INTERNAL";
+    ErrorCode[ErrorCode["CONCURRENT_TASK_LOCKED"] = 1004] = "CONCURRENT_TASK_LOCKED";
     ErrorCode[ErrorCode["EMAIL_EXISTS"] = 2000] = "EMAIL_EXISTS";
     ErrorCode[ErrorCode["USERNAME_EXISTS"] = 2001] = "USERNAME_EXISTS";
     ErrorCode[ErrorCode["ACCOUNT_INACTIVE"] = 2002] = "ACCOUNT_INACTIVE";

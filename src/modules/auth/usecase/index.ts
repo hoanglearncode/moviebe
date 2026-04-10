@@ -40,7 +40,7 @@ export class AuthUseCase implements IAuthUseCase {
     return this.dependencies.concurrentLockService.runExclusive(
       this.getRegisterLockKeys(parsedData.data.email, parsedData.data.username),
       async () => {
-        const { userRepository, passwordHasher, tokenService, notificationService } =
+        const { userRepository, passwordHasher, tokenService, notificationService, avatarColorService } =
           this.dependencies;
 
         const existingEmail = await userRepository.findByEmail(parsedData.data.email);
@@ -60,15 +60,20 @@ export class AuthUseCase implements IAuthUseCase {
 
         const newUserId = v7();
         const passwordHash = await passwordHasher.hash(parsedData.data.password);
+        const avatarColor = avatarColorService.generateAvatarColor(parsedData.data.email);
         const user: AuthUser = {
           id: newUserId,
           email: parsedData.data.email,
           username: parsedData.data.username ?? null,
           name: parsedData.data.name ?? null,
           password: passwordHash,
+          avatar: null,
+          avatarColor,
+          provider: "local",
           emailVerified: false,
           mustChangePassword: false,
           status: UserStatus.ACTIVE,
+          lastLoginAt: new Date(),
           createdAt: new Date(),
           updatedAt: new Date(),
         };
@@ -133,7 +138,9 @@ export class AuthUseCase implements IAuthUseCase {
         }
 
         const session = await tokenService.issueAuthSession(user);
-
+        await userRepository.update(user.id, {
+          lastLoginAt: new Date(),
+        });
         return this.buildAuthResponse(user, session);
       },
       {
@@ -306,6 +313,7 @@ export class AuthUseCase implements IAuthUseCase {
 
     const newPasswordHash = await passwordHasher.hash(parsedData.data.newPassword);
     await userRepository.updatePassword(userId, newPasswordHash);
+    await userRepository.update(userId, { mustChangePassword: false })
     if(!user.emailVerified) await userRepository.markVerified(userId);
 
     return { message: "Password changed successfully" };
@@ -315,12 +323,13 @@ export class AuthUseCase implements IAuthUseCase {
     return this.dependencies.concurrentLockService.runExclusive(
       this.getRegisterLockKeys(profile.email),
       async () => {
-        const { userRepository, tokenService } = this.dependencies;
+        const { userRepository, tokenService, avatarColorService } = this.dependencies;
 
         let user = await userRepository.findByEmail(profile.email);
 
         if (!user) {
           const newUserId = v7();
+          const avatarColor = avatarColorService.generateAvatarColor(profile.email);
           user = {
             id: newUserId,
             email: profile.email,
@@ -328,6 +337,7 @@ export class AuthUseCase implements IAuthUseCase {
             username: null,
             password: null,
             avatar: profile.avatar ?? null,
+            avatarColor,
             provider: profile.provider,
             emailVerified: profile.emailVerified,
             mustChangePassword: false,
@@ -399,6 +409,8 @@ export class AuthUseCase implements IAuthUseCase {
         id: user.id,
         email: user.email,
         username: user.username,
+        role: user.role,
+        avatar: user.avatar,
         name: user.name,
         emailVerified: user.emailVerified,
         mustChangePassword: user.mustChangePassword

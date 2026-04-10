@@ -12,12 +12,16 @@ import { HashService } from "./modules/auth/shared/hash";
 import { Role, UserStatus } from "@prisma/client";
 import { logger } from "./modules/system/log/logger";
 import { requestLogger } from "./modules/system/log/request-logger";
+import { initializeQueueInfrastructure, shutdownQueueInfrastructure } from "./queue";
+
+import { createUploadRouter } from './share/transport/upload.router';
 
 config();
   
 (async () => {
   await prisma.$connect();
   logger.info("Database connected successfully");
+  await initializeQueueInfrastructure();
 
   await ensureAdminUser();
   
@@ -26,6 +30,7 @@ config();
 
   app.use(express.json());
   app.use(requestLogger);
+  
   app.use(
     cors({
       origin: [
@@ -43,12 +48,29 @@ config();
   app.use('/v1', setupCategoryHexagon(createCategoryRepository(prisma)));
   app.use('/v1', setupAuthHexagon(prisma));
   app.use('/v1', setupUserHexagon(prisma));
+
+  app.use('/v1', createUploadRouter());
   // app.use('/v1', setupProductHexagon(sequelize));
 
   app.listen(port, () => {
     logger.info(`Server is running on http://localhost:${port}`);
   });
 })();
+
+const shutdown = async (signal: string) => {
+  logger.info(`Received ${signal}, shutting down application`);
+  await shutdownQueueInfrastructure();
+  await prisma.$disconnect();
+  process.exit(0);
+};
+
+process.on("SIGINT", () => {
+  void shutdown("SIGINT");
+});
+
+process.on("SIGTERM", () => {
+  void shutdown("SIGTERM");
+});
 
 async function ensureAdminUser() {
   const email = ENV.ADMIN_INIT_EMAIL;

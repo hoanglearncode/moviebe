@@ -2,303 +2,156 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminUserHttpService = exports.UserHttpService = void 0;
 const http_server_1 = require("../../../../share/transport/http-server");
-/**
- * User HTTP Service - handles user profile and session routes
- */
-class UserHttpService {
+class UserHttpService extends http_server_1.BaseHttpService {
     constructor(useCase) {
-        this.useCase = useCase;
+        super(useCase);
+        this.userUseCase = useCase;
     }
-    /**
-     * GET /api/user/me - Get current user profile
-     */
     async getProfile(req, res) {
-        try {
-            const userId = req.user?.id; // From auth middleware
-            if (!userId) {
-                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized", "USER_NOT_AUTHENTICATED");
-            }
-            const profile = await this.useCase.getProfile(userId);
-            (0, http_server_1.successResponse)(res, profile, "Profile retrieved successfully");
-        }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 500, error.message, error.code);
-        }
+        await this.handleRequest(res, async () => {
+            return this.userUseCase.getProfile(this.getAuthenticatedUserId(req));
+        });
     }
-    /**
-     * PUT /api/user/me - Update current user profile
-     */
     async updateProfile(req, res) {
-        try {
-            const userId = req.user?.id;
-            if (!userId) {
-                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized");
-            }
-            const data = req.body;
-            const updated = await this.useCase.updateProfile(userId, data);
-            (0, http_server_1.successResponse)(res, updated, "Profile updated successfully");
-        }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 400, error.message, error.code);
-        }
+        await this.handleRequest(res, async () => {
+            return this.userUseCase.updateProfile(this.getAuthenticatedUserId(req), req.body);
+        });
     }
-    /**
-     * DELETE /api/user/me - Delete account
-     */
     async deleteAccount(req, res) {
-        try {
-            const userId = req.user?.id;
-            if (!userId) {
-                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized");
-            }
-            const result = await this.useCase.deleteAccount(userId);
-            (0, http_server_1.successResponse)(res, result, "Account deleted successfully");
-        }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 500, error.message, error.code);
-        }
+        await this.handleRequest(res, async () => {
+            return this.userUseCase.deleteAccount(this.getAuthenticatedUserId(req));
+        });
     }
-    /**
-     * POST /api/user/change-password - Change password
-     */
     async changePassword(req, res) {
-        try {
-            const userId = req.user?.id;
-            if (!userId) {
-                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized");
-            }
-            const data = req.body;
-            const result = await this.useCase.changePassword(userId, data);
-            (0, http_server_1.successResponse)(res, result, "Password changed successfully");
-        }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 400, error.message, error.code);
-        }
+        await this.handleRequest(res, async () => {
+            return this.userUseCase.changePassword(this.getAuthenticatedUserId(req), req.body);
+        });
     }
-    /**
-     * GET /api/user/sessions - Get active sessions
-     */
     async getSessions(req, res) {
-        try {
-            const userId = req.user?.id;
-            if (!userId) {
-                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized");
-            }
+        await this.handleRequest(res, async () => {
             const query = {
-                limit: req.query.limit ? parseInt(req.query.limit) : 20,
-                offset: req.query.offset ? parseInt(req.query.offset) : 0,
+                limit: this.parseNumberQuery(req.query.limit, 20),
+                offset: this.parseNumberQuery(req.query.offset, 0),
                 orderBy: req.query.orderBy || "createdAt",
             };
-            const sessions = await this.useCase.getSessions(userId, query);
-            (0, http_server_1.successResponse)(res, sessions, "Sessions retrieved successfully");
-        }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 500, error.message, error.code);
-        }
+            return this.userUseCase.getSessions(this.getAuthenticatedUserId(req), query);
+        });
     }
-    /**
-     * DELETE /api/user/sessions/:sessionId - Revoke session
-     */
     async revokeSession(req, res) {
-        try {
-            const userId = req.user?.id;
-            const { sessionId } = req.params;
-            if (!userId) {
-                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized");
-            }
-            const result = await this.useCase.revokeSession(userId, sessionId);
-            (0, http_server_1.successResponse)(res, result, "Session revoked successfully");
-        }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 400, error.message, error.code);
-        }
+        await this.handleRequest(res, async () => {
+            return this.userUseCase.revokeSession(this.getAuthenticatedUserId(req), String(req.params.sessionId || ""));
+        });
     }
-    /**
-     * DELETE /api/user/sessions - Revoke all sessions
-     */
     async revokeAllSessions(req, res) {
-        try {
-            const userId = req.user?.id;
-            if (!userId) {
-                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized");
-            }
-            const result = await this.useCase.revokeAllSessions(userId);
-            (0, http_server_1.successResponse)(res, result, "All sessions revoked successfully");
-        }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 500, error.message, error.code);
-        }
+        await this.handleRequest(res, async () => {
+            return this.userUseCase.revokeAllSessions(this.getAuthenticatedUserId(req));
+        });
     }
-    /**
-     * GET /api/user/settings - Get settings
-     */
     async getSettings(req, res) {
-        try {
-            const userId = req.user?.id;
-            if (!userId) {
-                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized");
-            }
-            const settings = await this.useCase.getSettings(userId);
-            (0, http_server_1.successResponse)(res, settings, "Settings retrieved successfully");
-        }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 500, error.message, error.code);
-        }
+        await this.handleRequest(res, async () => {
+            return this.userUseCase.getSettings(this.getAuthenticatedUserId(req));
+        });
     }
-    /**
-     * PUT /api/user/settings - Update settings
-     */
     async updateSettings(req, res) {
-        try {
-            const userId = req.user?.id;
-            if (!userId) {
-                return (0, http_server_1.errorResponse)(res, 401, "Unauthorized");
-            }
-            const updated = await this.useCase.updateSettings(userId, req.body);
-            (0, http_server_1.successResponse)(res, updated, "Settings updated successfully");
+        await this.handleRequest(res, async () => {
+            return this.userUseCase.updateSettings(this.getAuthenticatedUserId(req), req.body);
+        });
+    }
+    getAuthenticatedUserId(req) {
+        const userId = req.user?.id;
+        if (!userId) {
+            throw new http_server_1.UnauthorizedError("Unauthorized");
         }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 400, error.message, error.code);
+        return userId;
+    }
+    parseNumberQuery(value, fallback) {
+        if (Array.isArray(value)) {
+            return this.parseNumberQuery(value[0], fallback);
         }
+        if (value === undefined) {
+            return fallback;
+        }
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : fallback;
     }
 }
 exports.UserHttpService = UserHttpService;
-/**
- * Admin User HTTP Service - handles admin user management routes
- */
-class AdminUserHttpService {
+class AdminUserHttpService extends http_server_1.BaseHttpService {
     constructor(useCase) {
-        this.useCase = useCase;
+        super(useCase);
+        this.adminUserUseCase = useCase;
     }
-    /**
-     * GET /api/admin/users - List users with pagination and filtering
-     */
     async listUsers(req, res) {
-        try {
+        await this.handleRequest(res, async () => {
             const query = {
-                page: req.query.page ? parseInt(req.query.page) : 1,
-                limit: req.query.limit ? parseInt(req.query.limit) : 20,
-                keyword: req.query.keyword,
-                email: req.query.email,
-                username: req.query.username,
-                role: req.query.role,
-                status: req.query.status,
-                sortBy: req.query.sortBy || "createdAt",
-                sortOrder: req.query.sortOrder || "desc",
+                page: this.parseNumberQuery(req.query.page, 1),
+                limit: this.parseNumberQuery(req.query.limit, 20),
+                keyword: this.parseStringQuery(req.query.keyword),
+                email: this.parseStringQuery(req.query.email),
+                username: this.parseStringQuery(req.query.username),
+                role: this.parseStringQuery(req.query.role),
+                status: this.parseStringQuery(req.query.status),
+                sortBy: this.parseStringQuery(req.query.sortBy) ||
+                    "createdAt",
+                sortOrder: this.parseStringQuery(req.query.sortOrder) ||
+                    "desc",
             };
-            const users = await this.useCase.listUsers(query);
-            (0, http_server_1.successResponse)(res, users, "Users retrieved successfully");
-        }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 500, error.message, error.code);
-        }
+            return this.adminUserUseCase.listUsers(query);
+        });
     }
-    /**
-     * GET /api/admin/users/:id - Get user by ID
-     */
     async getUser(req, res) {
-        try {
-            const id = String(req.params.id || "");
-            const user = await this.useCase.getUserById(id);
-            (0, http_server_1.successResponse)(res, user, "User retrieved successfully");
-        }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 404, error.message, error.code);
-        }
+        await this.handleRequest(res, async () => {
+            return this.adminUserUseCase.getUserById(String(req.params.id || ""));
+        });
     }
-    /**
-     * POST /api/admin/users - Create user (admin)
-     */
     async createUser(req, res) {
-        try {
-            const data = req.body;
-            const result = await this.useCase.createUser(data);
-            (0, http_server_1.successResponse)(res, result, "User created successfully", 201);
-        }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 400, error.message, error.code);
-        }
+        await this.handleRequest(res, async () => this.adminUserUseCase.createUser(req.body), 201);
     }
-    /**
-     * PUT /api/admin/users/:id - Update user
-     */
     async updateUser(req, res) {
-        try {
-            const id = String(req.params.id || "");
-            const data = req.body;
-            const updated = await this.useCase.updateUser(id, data);
-            (0, http_server_1.successResponse)(res, updated, "User updated successfully");
-        }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 400, error.message, error.code);
-        }
+        await this.handleRequest(res, async () => {
+            return this.adminUserUseCase.updateUser(String(req.params.id || ""), req.body);
+        });
     }
-    /**
-     * PATCH /api/admin/users/:id/status - Change user status
-     */
     async changeUserStatus(req, res) {
-        try {
-            const id = String(req.params.id || "");
-            const data = req.body;
-            const result = await this.useCase.changeUserStatus(id, data);
-            (0, http_server_1.successResponse)(res, result, "User status changed successfully");
-        }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 400, error.message, error.code);
-        }
+        await this.handleRequest(res, async () => {
+            return this.adminUserUseCase.changeUserStatus(String(req.params.id || ""), req.body);
+        });
     }
-    /**
-     * POST /api/admin/users/:id/reset-password - Reset user password
-     */
     async resetUserPassword(req, res) {
-        try {
-            const id = String(req.params.id || "");
-            const data = req.body;
-            const result = await this.useCase.resetUserPassword(id, data);
-            (0, http_server_1.successResponse)(res, result, "Password reset successfully");
-        }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 400, error.message, error.code);
-        }
+        await this.handleRequest(res, async () => {
+            return this.adminUserUseCase.resetUserPassword(String(req.params.id || ""), req.body);
+        });
     }
-    /**
-     * POST /api/admin/users/:id/verify-email - Verify user email
-     */
     async verifyUserEmail(req, res) {
-        try {
-            const id = String(req.params.id || "");
-            const result = await this.useCase.verifyUserEmail(id);
-            (0, http_server_1.successResponse)(res, result, "Email verified successfully");
-        }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 400, error.message, error.code);
-        }
+        await this.handleRequest(res, async () => {
+            return this.adminUserUseCase.verifyUserEmail(String(req.params.id || ""));
+        });
     }
-    /**
-     * DELETE /api/admin/users/:id/sessions - Revoke all user sessions
-     */
     async revokeAllUserSessions(req, res) {
-        try {
-            const id = String(req.params.id || "");
-            const result = await this.useCase.revokeAllUserSessions(id);
-            (0, http_server_1.successResponse)(res, result, "All user sessions revoked");
-        }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 400, error.message, error.code);
-        }
+        await this.handleRequest(res, async () => {
+            return this.adminUserUseCase.revokeAllUserSessions(String(req.params.id || ""));
+        });
     }
-    /**
-     * DELETE /api/admin/users/:id - Delete user (soft delete)
-     */
     async deleteUser(req, res) {
-        try {
-            const id = String(req.params.id || "");
-            const result = await this.useCase.deleteUser(id);
-            (0, http_server_1.successResponse)(res, result, "User deleted successfully");
+        await this.handleRequest(res, async () => {
+            return this.adminUserUseCase.deleteUser(String(req.params.id || ""));
+        });
+    }
+    parseNumberQuery(value, fallback) {
+        if (Array.isArray(value)) {
+            return this.parseNumberQuery(value[0], fallback);
         }
-        catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 400, error.message, error.code);
+        if (value === undefined) {
+            return fallback;
         }
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : fallback;
+    }
+    parseStringQuery(value) {
+        if (Array.isArray(value)) {
+            return this.parseStringQuery(value[0]);
+        }
+        return value === undefined ? undefined : String(value);
     }
 }
 exports.AdminUserHttpService = AdminUserHttpService;

@@ -3,13 +3,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthNotificationService = void 0;
 const value_1 = require("../../../share/common/value");
 const mail_1 = require("../../../share/component/mail");
+const queue_1 = require("../../../queue");
+const logger_1 = require("../../system/log/logger");
 class AuthNotificationService {
     constructor(emailService = mail_1.mailService) {
         this.emailService = emailService;
     }
     async sendVerifyEmail(input) {
         const verifyUrl = `${value_1.ENV.FRONTEND_URL}/verify-email?token=${encodeURIComponent(input.token)}`;
-        await this.emailService.send({
+        await this.dispatchEmail({
             to: input.email,
             subject: "Verify your email address",
             html: this.renderTemplate({
@@ -29,7 +31,7 @@ class AuthNotificationService {
     }
     async sendResetPasswordEmail(input) {
         const resetUrl = `${value_1.ENV.FRONTEND_URL}/reset-password?token=${encodeURIComponent(input.token)}`;
-        await this.emailService.send({
+        await this.dispatchEmail({
             to: input.email,
             subject: "Reset your password",
             html: this.renderTemplate({
@@ -46,6 +48,24 @@ class AuthNotificationService {
                 `Reset token: ${input.token}`,
             ].join("\n"),
         });
+    }
+    async dispatchEmail(input) {
+        if (!queue_1.isQueueEnabled) {
+            await this.emailService.send(input);
+            return;
+        }
+        try {
+            await (0, queue_1.enqueueEmailJob)(input, {
+                jobId: `mail:${input.to}:${Date.now()}`,
+            });
+        }
+        catch (error) {
+            logger_1.logger.warn("Queue email dispatch failed, falling back to direct mail send", {
+                to: input.to,
+                error: error.message,
+            });
+            await this.emailService.send(input);
+        }
     }
     renderTemplate(input) {
         return `

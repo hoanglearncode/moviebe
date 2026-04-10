@@ -7,6 +7,7 @@ import { HashService } from "./shared/hash";
 import { TokenService } from "./shared/token";
 import { AuthNotificationService } from "./shared/notification";
 import { SocialAuthService } from "./shared/social-auth";
+import { AvatarColorService } from "../user/shared/avatar-color.service";
 import { prisma } from "../../share/component/prisma";
 import { concurrentLockService } from "../../share/component/concurrent-lock";
 import { IAuthUseCase } from "./interface";
@@ -47,6 +48,7 @@ export const setupAuthHexagon = (prismaClient: PrismaClient = prisma) => {
   const tokenService = new TokenService(prismaClient);
   const notificationService = new AuthNotificationService();
   const socialAuthService = new SocialAuthService();
+  const avatarColorService = new AvatarColorService();
 
   const dependencies = {
     userRepository,
@@ -55,6 +57,7 @@ export const setupAuthHexagon = (prismaClient: PrismaClient = prisma) => {
     notificationService,
     socialAuthService,
     concurrentLockService,
+    avatarColorService,
   };
 
   const useCase = new AuthUseCase(dependencies);

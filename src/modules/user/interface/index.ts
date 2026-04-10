@@ -1,43 +1,45 @@
-import { IRepository } from "../../../share/interface";
+import { IRepository, IUseCase } from "../../../share/interface";
+import { PagingDTO } from "../../../share/model/paging";
+import { PrismaClient } from "@prisma/client";
 import {
-  UpdateProfileDTO,
-  ChangePasswordDTO,
-  GetSettingsDTO,
-  UpdateSettingsDTO,
-  GetSessionsQueryDTO,
-  RevokeSessionDTO,
-  CreateUserDTO,
-  UpdateUserDTO,
-  ChangeUserStatusDTO,
-  ResetUserPasswordDTO,
-  ListUsersQueryDTO,
+  UpdateProfileDTO, ChangePasswordDTO, UpdateSettingsDTO,
+  GetSessionsQueryDTO, CreateUserDTO, UpdateUserDTO,
+  ChangeUserStatusDTO, ResetUserPasswordDTO, ListUsersQueryDTO, UserCondDTO,
+  SeedUsersDTO,
 } from "../model/dto";
 import {
-  UserProfile,
-  UserSession,
-  UserSettings,
-  SessionListResponse,
-  UserListResponse,
-  OwnUserProfile,
+  UserProfile, UserSession, UserSettings,
+  SessionListResponse, OwnUserProfile, UserListResponse,
 } from "../model/model";
+import { SeedSummary } from "../shared/seed.service";
 
-/**
- * ==========================================
- * USER PROFILE REPOSITORIES
- * ==========================================
- */
+// ==========================================
+// REPOSITORIES
+// ==========================================
 
-export interface IUserRepository extends IRepository<UserProfile, Partial<UserProfile>, Partial<UserProfile>> {
+export interface IUserRepository
+  // NOTE: IRepository<Entity, Cond, UpdateDTO>
+  // Cond = Partial<UserProfile> cho các method generic (get, findByCond, list, insert, update, delete)
+  extends IRepository<UserProfile, Partial<UserProfile>, Partial<UserProfile>> {
+
+  // Domain-specific methods — ngoài những gì base interface đã có
   findById(userId: string): Promise<UserProfile | null>;
   findByEmail(email: string): Promise<UserProfile | null>;
   findByUsername(username: string): Promise<UserProfile | null>;
   updateProfile(userId: string, data: Partial<UserProfile>): Promise<UserProfile>;
+  updatePassword(userId: string, passwordHash: string): Promise<boolean>;
   deleteUser(userId: string): Promise<boolean>;
-  listUsers(query: ListUsersQueryDTO): Promise<UserListResponse>;
   countUsers(): Promise<number>;
+
+  // NOTE: Tại sao cần listUsers riêng?
+  // base IRepository.list(cond: Partial<UserProfile>, paging) quá generic
+  // Admin cần filter bằng ListUsersQueryDTO (keyword, role, status, sortBy...)
+  // Không thể dùng Partial<UserProfile> cho keyword search nhiều field.
+  listUsers(cond: ListUsersQueryDTO): Promise<{ items: OwnUserProfile[]; total: number }>;
 }
 
-export interface ISessionRepository extends IRepository<UserSession, Partial<UserSession>, Partial<UserSession>> {
+export interface ISessionRepository
+  extends IRepository<UserSession, Partial<UserSession>, Partial<UserSession>> {
   findById(sessionId: string): Promise<UserSession | null>;
   findByUserId(userId: string): Promise<UserSession[]>;
   revokeSession(sessionId: string): Promise<boolean>;
@@ -49,14 +51,12 @@ export interface ISessionRepository extends IRepository<UserSession, Partial<Use
 export interface IUserSettingsRepository
   extends IRepository<UserSettings, Partial<UserSettings>, Partial<UserSettings>> {
   findByUserId(userId: string): Promise<UserSettings | null>;
-  updateByUserId(userId: string, data: Partial<UserSettings>): Promise<UserSettings>;
+  upsertByUserId(userId: string, data: Partial<UserSettings>): Promise<UserSettings>;
 }
 
-/**
- * ==========================================
- * SERVICES
- * ==========================================
- */
+// ==========================================
+// SERVICES
+// ==========================================
 
 export interface IPasswordHasher {
   hash(rawValue: string): Promise<string>;
@@ -70,57 +70,58 @@ export interface IUserNotificationService {
   sendWelcomeEmail(input: { email: string; name: string }): Promise<void>;
 }
 
-/**
- * ==========================================
- * USE CASES
- * ==========================================
- */
+// ==========================================
+// USE CASES
+// ==========================================
 
-/**
- * IUserUseCase - User Profile & Session Management
- */
 export interface IUserUseCase {
-  // Profile
   getProfile(userId: string): Promise<OwnUserProfile>;
   updateProfile(userId: string, data: UpdateProfileDTO): Promise<OwnUserProfile>;
   deleteAccount(userId: string): Promise<{ message: string }>;
-
-  // Password
   changePassword(userId: string, data: ChangePasswordDTO): Promise<{ message: string }>;
-
-  // Sessions
   getSessions(userId: string, query?: GetSessionsQueryDTO): Promise<SessionListResponse>;
   revokeSession(userId: string, sessionId: string): Promise<{ message: string }>;
   revokeAllSessions(userId: string): Promise<{ message: string }>;
-
-  // Settings
   getSettings(userId: string): Promise<UserSettings>;
   updateSettings(userId: string, data: UpdateSettingsDTO): Promise<UserSettings>;
 }
 
-/**
- * IAdminUserUseCase - Admin User Management
- */
-export interface IAdminUserUseCase {
-  // User Management
-  listUsers(query: ListUsersQueryDTO): Promise<UserListResponse>;
-  getUserById(userId: string): Promise<UserProfile>;
-  createUser(data: CreateUserDTO): Promise<{ userId: string }>;
-  updateUser(userId: string, data: UpdateUserDTO): Promise<UserProfile>;
-  deleteUser(userId: string): Promise<{ message: string }>;
-
-  // User Status & Security
+export interface IAdminUserUseCase
+  extends IUseCase<CreateUserDTO, UpdateUserDTO, OwnUserProfile, UserCondDTO> {
+  listWithMeta(cond: ListUsersQueryDTO): Promise<UserListResponse>;
   changeUserStatus(userId: string, data: ChangeUserStatusDTO): Promise<{ message: string }>;
   resetUserPassword(userId: string, data: ResetUserPasswordDTO): Promise<{ temporaryPassword: string }>;
   verifyUserEmail(userId: string): Promise<{ message: string }>;
   revokeAllUserSessions(userId: string): Promise<{ message: string }>;
+  seedUsers(data: SeedUsersDTO): Promise<SeedSummary>;
+  clearSeedUsers(): Promise<{ deletedCount: number }>;
+  getSeedStatistics(): Promise<{
+    totalSeedUsers: number;
+    roles: Record<string, number>;
+    statuses: Record<string, number>;
+  }>;
+  getStats(): Promise<{
+    total: number;
+    active: number;
+    inactive: number;
+    banned: number;
+    pending: number;
+  }>;
 }
 
-/**
- * ==========================================
- * HEXAGON DEPENDENCIES
- * ==========================================
- */
+// ==========================================
+// DEPENDENCY BUNDLES
+// ==========================================
+
+export interface IPasswordHasher {
+  hash(rawValue: string): Promise<string>;
+  compare(rawValue: string, hashedValue: string): Promise<boolean>;
+}
+
+export interface IAvatarColorService {
+  generateAvatarColor(identifier: string): string;
+  getRandomAvatarColor(): string;
+}
 
 export interface UserHexagonDependencies {
   userRepository: IUserRepository;
@@ -128,9 +129,11 @@ export interface UserHexagonDependencies {
   userSettingsRepository: IUserSettingsRepository;
   passwordHasher: IPasswordHasher;
   notificationService: IUserNotificationService;
+  avatarColorService: IAvatarColorService;
 }
 
+// NOTE: Admin dùng chung dependencies với user thông thường
+// Vì cùng truy cập cùng bảng DB, chỉ khác ở logic nghiệp vụ
 export interface AdminUserHexagonDependencies extends UserHexagonDependencies {
-  // Can extend with additional admin-specific services
+  prisma: PrismaClient;
 }
-

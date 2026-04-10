@@ -8,6 +8,7 @@ const repo_1 = require("./infras/repository/repo");
 const hash_1 = require("./shared/hash");
 const notification_1 = require("./shared/notification");
 const prisma_1 = require("../../share/component/prisma");
+const auth_1 = require("../../share/middleware/auth");
 /**
  * ==========================================
  * BUILD USER ROUTES
@@ -16,6 +17,7 @@ const prisma_1 = require("../../share/component/prisma");
 const buildUserRouter = (useCase) => {
     const httpService = new http_service_1.UserHttpService(useCase);
     const router = (0, express_1.Router)();
+    router.use(...(0, auth_1.protect)());
     // Profile routes
     router.get("/user/me", httpService.getProfile.bind(httpService));
     router.put("/user/me", httpService.updateProfile.bind(httpService));
@@ -39,6 +41,7 @@ const buildUserRouter = (useCase) => {
 const buildAdminUserRouter = (useCase) => {
     const httpService = new http_service_1.AdminUserHttpService(useCase);
     const router = (0, express_1.Router)();
+    router.use(...(0, auth_1.protect)(auth_1.adminMiddleware));
     // User management routes
     router.get("/admin/users", httpService.listUsers.bind(httpService));
     router.get("/admin/users/:id", httpService.getUser.bind(httpService));
@@ -77,7 +80,7 @@ const setupUserHexagon = (prismaClient = prisma_1.prisma) => {
     const adminUserUseCase = new usecase_1.AdminUserUseCase(dependencies);
     // Create router with combined routes
     const router = (0, express_1.Router)();
-    //   router.use(buildUserRouter(userUseCase));
+    router.use(buildUserRouter(userUseCase));
     router.use(buildAdminUserRouter(adminUserUseCase));
     return router;
 };

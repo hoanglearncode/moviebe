@@ -73,6 +73,11 @@ export interface IAuthUseCase {
   changePassword(data: ChangePasswordDTO): Promise<{ message: string }>;
 }
 
+export interface IAvatarColorService {
+  generateAvatarColor(identifier: string): string;
+  getRandomAvatarColor(): string;
+}
+
 export interface AuthHexagonDependencies {
   userRepository: IAuthUserRepository;
   passwordHasher: IPasswordHasher;
@@ -80,4 +85,5 @@ export interface AuthHexagonDependencies {
   notificationService: IAuthNotificationService;
   socialAuthService: ISocialAuthService;
   concurrentLockService: IConcurrentLockService;
+  avatarColorService: IAvatarColorService;
 }
