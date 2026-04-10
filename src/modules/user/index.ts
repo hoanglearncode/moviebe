@@ -11,22 +11,21 @@ import { UserNotificationService } from "./shared/notification";
 import { AvatarColorService } from "./shared/avatar-color.service";
 import { IUserUseCase, IAdminUserUseCase } from "./interface";
 import { prisma } from "../../share/component/prisma";
-import { adminMiddleware, protect } from "../../share/middleware/auth";
+import { adminMiddleware, authenticate, protect } from "../../share/middleware/auth";
 
 const buildUserRouter = (useCase: IUserUseCase) => {
   const httpService = new UserHttpService(useCase);
   const router = Router();
-  router.use(...protect());
 
-  router.get("/me", httpService.getProfile.bind(httpService));
-  router.put("/me", httpService.updateProfile.bind(httpService));
-  router.delete("/me", httpService.deleteAccount.bind(httpService));
-  router.post("/change-password", httpService.changePassword.bind(httpService));
-  router.get("/sessions", httpService.getSessions.bind(httpService));
-  router.delete("/sessions/:sessionId", httpService.revokeSession.bind(httpService));
-  router.delete("/sessions", httpService.revokeAllSessions.bind(httpService));
-  router.get("/settings", httpService.getSettings.bind(httpService));
-  router.put("/settings", httpService.updateSettings.bind(httpService));
+  router.get("/me", ...authenticate(), httpService.getProfile.bind(httpService));
+  router.put("/me", ...protect(), httpService.updateProfile.bind(httpService));
+  router.delete("/me", ...protect(), httpService.deleteAccount.bind(httpService));
+  router.post("/change-password", ...protect(), httpService.changePassword.bind(httpService));
+  router.get("/sessions", ...protect(), httpService.getSessions.bind(httpService));
+  router.delete("/sessions/:sessionId", ...protect(), httpService.revokeSession.bind(httpService));
+  router.delete("/sessions", ...protect(), httpService.revokeAllSessions.bind(httpService));
+  router.get("/settings", ...protect(), httpService.getSettings.bind(httpService));
+  router.put("/settings", ...protect(), httpService.updateSettings.bind(httpService));
 
   return router;
 };

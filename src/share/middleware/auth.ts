@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { UserStatus } from "@prisma/client";
 import { ENV } from "../common/value";
 import { ErrorCode } from "../model/error-code";
+import { prisma } from "../component/prisma";
 import { errorResponse } from "../transport/http-server";
 import { logger } from "../../modules/system/log/logger";
 
@@ -62,6 +63,34 @@ const assignUserFromPayload = (
   };
 };
 
+const syncUserFromDatabase = async (req: AuthenticatedRequest): Promise<boolean> => {
+  if (!req.user?.id) {
+    return false;
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    select: {
+      email: true,
+      role: true,
+      status: true,
+    },
+  });
+
+  if (!dbUser) {
+    return false;
+  }
+
+  req.user = {
+    ...req.user,
+    email: dbUser.email,
+    role: dbUser.role,
+    status: dbUser.status,
+  };
+
+  return true;
+};
+
 const handleAuthFailure = (
   res: Response,
   message: string,
@@ -79,21 +108,34 @@ export const authMiddleware = (
   res: Response,
   next: NextFunction
 ): void => {
-  try {
-    const token = extractBearerToken(req);
-    if (!token) {
-      return handleAuthFailure(res, "Missing or invalid authorization header");
-    }
+  (async () => {
+    try {
+      const token = extractBearerToken(req);
+      if (!token) {
+        return handleAuthFailure(res, "Missing or invalid authorization header");
+      }
 
-    const payload = decodeAccessToken(token);
-    assignUserFromPayload(req, payload);
-    next();
-  } catch (error: any) {
-    logger.error("[Auth Middleware] Token verification failed", {
+      const payload = decodeAccessToken(token);
+      assignUserFromPayload(req, payload);
+
+      const synced = await syncUserFromDatabase(req);
+      if (!synced) {
+        return handleAuthFailure(res, "Invalid or expired token");
+      }
+
+      next();
+    } catch (error: any) {
+      logger.error("[Auth Middleware] Token verification failed", {
+        message: error.message,
+      });
+      return handleAuthFailure(res, "Invalid or expired token");
+    }
+  })().catch((error: any) => {
+    logger.error("[Auth Middleware] Unexpected error", {
       message: error.message,
     });
     return handleAuthFailure(res, "Invalid or expired token");
-  }
+  });
 };
 
 /**
@@ -165,6 +207,11 @@ export const requireActiveUser: RequestHandler = (
 
 export const adminMiddleware = requireRole("ADMIN");
 export const partnerMiddleware = requireRole("PARTNER", "ADMIN");
+
+export const authenticate = (...guards: RequestHandler[]): RequestHandler[] => [
+  authMiddleware,
+  ...guards,
+];
 
 export const protect = (...guards: RequestHandler[]): RequestHandler[] => [
   authMiddleware,
