@@ -1,130 +1,86 @@
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
-import { UserUseCase, AdminUserUseCase } from "./usecase";
-import { UserHttpService ,AdminUserHttpService } from "./infras/transport/http-service";
-import {
-  createUserRepository,
-  createSessionRepository,
-  createUserSettingsRepository,
-} from "./infras/repository/repo";
+import { AdminUserUseCase } from "./usecase/admin-user.usecase";
+import { UserUseCase } from "./usecase/user.usecase";
+import { UserHttpService, AdminUserHttpService } from "./infras/transport/http-service";
+import { createSessionRepository } from "./infras/repository/session-repo";
+import { createUserRepository } from "./infras/repository/user-repo";
+import { createUserSettingRepository } from "./infras/repository/setting-repo";
 import { HashService } from "./shared/hash";
 import { UserNotificationService } from "./shared/notification";
+import { AvatarColorService } from "./shared/avatar-color.service";
 import { IUserUseCase, IAdminUserUseCase } from "./interface";
 import { prisma } from "../../share/component/prisma";
-
-/**
- * ==========================================
- * BUILD USER ROUTES
- * ==========================================
- */
+import { adminMiddleware, protect } from "../../share/middleware/auth";
 
 const buildUserRouter = (useCase: IUserUseCase) => {
   const httpService = new UserHttpService(useCase);
   const router = Router();
+  router.use(...protect());
 
-  // Profile routes
-  router.get("/user/me", httpService.getProfile.bind(httpService));
-  router.put("/user/me", httpService.updateProfile.bind(httpService));
-  router.delete("/user/me", httpService.deleteAccount.bind(httpService));
-
-  // Password routes
-  router.post("/user/change-password", httpService.changePassword.bind(httpService));
-
-  // Session management routes
-  router.get("/user/sessions", httpService.getSessions.bind(httpService));
-  router.delete("/user/sessions/:sessionId", httpService.revokeSession.bind(httpService));
-  router.delete("/user/sessions", httpService.revokeAllSessions.bind(httpService));
-
-  // Settings routes
-  router.get("/user/settings", httpService.getSettings.bind(httpService));
-  router.put("/user/settings", httpService.updateSettings.bind(httpService));
+  router.get("/me", httpService.getProfile.bind(httpService));
+  router.put("/me", httpService.updateProfile.bind(httpService));
+  router.delete("/me", httpService.deleteAccount.bind(httpService));
+  router.post("/change-password", httpService.changePassword.bind(httpService));
+  router.get("/sessions", httpService.getSessions.bind(httpService));
+  router.delete("/sessions/:sessionId", httpService.revokeSession.bind(httpService));
+  router.delete("/sessions", httpService.revokeAllSessions.bind(httpService));
+  router.get("/settings", httpService.getSettings.bind(httpService));
+  router.put("/settings", httpService.updateSettings.bind(httpService));
 
   return router;
 };
-
-/**
- * ==========================================
- * BUILD ADMIN USER ROUTES
- * ==========================================
- */
 
 const buildAdminUserRouter = (useCase: IAdminUserUseCase) => {
   const httpService = new AdminUserHttpService(useCase);
   const router = Router();
+  router.use(...protect(adminMiddleware));
 
-  // User management routes
-  router.get("/admin/users", httpService.listUsers.bind(httpService));
-  router.get("/admin/users/:id", httpService.getUser.bind(httpService));
-  router.post("/admin/users", httpService.createUser.bind(httpService));
-  router.put("/admin/users/:id", httpService.updateUser.bind(httpService));
-  router.delete("/admin/users/:id", httpService.deleteUser.bind(httpService));
+  // analytic
+  router.get("/users/stats", httpService.getStats.bind(httpService));
 
-  // User status & security routes
-  router.patch(
-    "/admin/users/:id/status",
-    httpService.changeUserStatus.bind(httpService)
-  );
-  router.post(
-    "/admin/users/:id/reset-password",
-    httpService.resetUserPassword.bind(httpService)
-  );
-  router.post(
-    "/admin/users/:id/verify-email",
-    httpService.verifyUserEmail.bind(httpService)
-  );
-  router.delete(
-    "/admin/users/:id/sessions",
-    httpService.revokeAllUserSessions.bind(httpService)
-  );
+  router.get("/users", httpService.list.bind(httpService));
+  router.get("/users/:id", httpService.getUser.bind(httpService));
+  router.post("/users", httpService.createUser.bind(httpService));
+  router.put("/users/:id", httpService.updateUser.bind(httpService));
+  router.delete("/users/:id", httpService.deleteUser.bind(httpService));
+  router.patch("/users/:id/status", httpService.changeUserStatus.bind(httpService));
+  router.post("/users/:id/reset-password", httpService.resetUserPassword.bind(httpService));
+  router.post("/users/:id/verify-email", httpService.verifyUserEmail.bind(httpService));
+  router.delete("/users/:id/sessions", httpService.revokeAllUserSessions.bind(httpService));
+
+  // Seed routes
+  router.post("/users/seed", httpService.seedUsers.bind(httpService));
+  router.get("/users/seed/stats", httpService.getSeedStatistics.bind(httpService));
+  router.delete("/users/seed", httpService.clearSeedUsers.bind(httpService));
 
   return router;
 };
 
-/**
- * ==========================================
- * SETUP USER HEXAGON
- * ==========================================
- */
-
 export const setupUserHexagon = (prismaClient: PrismaClient = prisma) => {
   const userRepository = createUserRepository(prismaClient);
   const sessionRepository = createSessionRepository(prismaClient);
-  const userSettingsRepository = createUserSettingsRepository(prismaClient);
-
-  // Initialize services
+  const userSettingsRepository = createUserSettingRepository(prismaClient);
   const passwordHasher = new HashService();
   const notificationService = new UserNotificationService();
+  const avatarColorService = new AvatarColorService();
 
-  // Create dependencies object
   const dependencies = {
     userRepository,
     sessionRepository,
     userSettingsRepository,
     passwordHasher,
     notificationService,
+    avatarColorService,
+    prisma: prismaClient,
   };
 
-  // Create use cases
   const userUseCase = new UserUseCase(dependencies);
-  const adminUserUseCase = new AdminUserUseCase(dependencies);
+  const adminUserUseCase = new AdminUserUseCase(dependencies as any);
 
-  // Create router with combined routes
   const router = Router();
-//   router.use(buildUserRouter(userUseCase));
-  router.use(buildAdminUserRouter(adminUserUseCase));
+  router.use("/user", buildUserRouter(userUseCase));
+  router.use("/admin", buildAdminUserRouter(adminUserUseCase));
 
-  return router;
-};
-
-/**
- * ==========================================
- * EXPORT FOR TESTING
- * ==========================================
- */
-
-export const setupUserHexagonWithUseCase = (userUseCase: IUserUseCase, adminUseCase: IAdminUserUseCase) => {
-  const router = Router();
-  router.use(buildUserRouter(userUseCase));
-  router.use(buildAdminUserRouter(adminUseCase));
   return router;
 };

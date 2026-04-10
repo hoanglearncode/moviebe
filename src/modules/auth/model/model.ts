@@ -12,6 +12,7 @@ export type AuthUser = {
   avatar?: string | null;
   role?: Role;
   lastLoginAt?: Date | null;
+  avatarColor?: string;
   emailVerified: boolean;
   mustChangePassword: boolean;
   status: UserStatus;
@@ -19,7 +20,7 @@ export type AuthUser = {
   updatedAt: Date;
 };
 
-export type AuthPublicUser = Pick<AuthUser, "id" | "email" | "username" | "name" | "mustChangePassword" | "emailVerified">;
+export type AuthPublicUser = Pick<AuthUser, "id" | "email" | "username" | "name" | "mustChangePassword" | "emailVerified" | "role" | "avatar">;
 
 export type AuthSession = {
   accessToken: string;

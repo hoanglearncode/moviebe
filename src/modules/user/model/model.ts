@@ -52,6 +52,7 @@ export type OwnUserProfile = PublicUserProfile & {
   emailVerified: boolean;
   role: Role;
   lastLoginAt: Date | null;
+  status: UserStatus;
 };
 
 /**
@@ -63,7 +64,8 @@ export type OwnUserProfile = PublicUserProfile & {
 export type UserSession = {
   id: string;
   userId: string;
-  token: string;
+  refreshToken: string;
+  deviceId?: string | null;
   deviceName?: string | null;
   deviceType?: string | null; // Mobile, Desktop, Tablet
   ipAddress?: string | null;
@@ -78,7 +80,7 @@ export type UserSession = {
 /**
  * Session response (without sensitive token)
  */
-export type SessionResponse = Omit<UserSession, "token">;
+export type SessionResponse = Omit<UserSession, "refreshToken">;
 
 /**
  * ==========================================
@@ -125,7 +127,7 @@ export type SessionListResponse = {
 };
 
 export type UserListResponse = {
-  items: UserProfile[];
+  items: OwnUserProfile[];
   total: number;
   page: number;
   limit: number;

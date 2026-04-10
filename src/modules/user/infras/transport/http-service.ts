@@ -1,322 +1,299 @@
 import { Request, Response } from "express";
-import { IUserUseCase, IAdminUserUseCase } from "../../interface";
-import { successResponse, errorResponse } from "../../../../share/transport/http-server";
 import {
-  UpdateProfileDTO,
+  BaseHttpService,
+  UnauthorizedError,
+} from "../../../../share/transport/http-server";
+import { IAdminUserUseCase, IUserUseCase } from "../../interface";
+import {
   ChangePasswordDTO,
-  GetSessionsQueryDTO,
-  UpdateSettingsDTO,
-  CreateUserDTO,
-  UpdateUserDTO,
   ChangeUserStatusDTO,
-  ResetUserPasswordDTO,
+  CreateUserDTO,
+  GetSessionsQueryDTO,
   ListUsersQueryDTO,
+  ResetUserPasswordDTO,
+  UpdateProfileDTO,
+  UpdateSettingsDTO,
+  UpdateUserDTO,
+  ListUsersQueryPayloadSchema,
+  SeedUsersDTO,
+  SeedUsersPayloadSchema,
 } from "../../model/dto";
 
-/**
- * User HTTP Service - handles user profile and session routes
- */
-export class UserHttpService {
-  constructor(private useCase: IUserUseCase) {}
+type AuthenticatedRequest = Request & {
+  user?: {
+    id?: string;
+  };
+};
 
-  /**
-   * GET /api/user/me - Get current user profile
-   */
-  async getProfile(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = (req as any).user?.id; // From auth middleware
-      if (!userId) {
-        return errorResponse(res, 401, "Unauthorized", "USER_NOT_AUTHENTICATED");
-      }
+export class UserHttpService extends BaseHttpService<any, any, any, any> {
+  private readonly userUseCase: IUserUseCase;
 
-      const profile = await this.useCase.getProfile(userId);
-      successResponse(res, profile, "Profile retrieved successfully");
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 500, error.message, error.code);
-    }
+  constructor(useCase: IUserUseCase) {
+    super(useCase as any);
+    this.userUseCase = useCase;
   }
 
-  /**
-   * PUT /api/user/me - Update current user profile
-   */
-  async updateProfile(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = (req as any).user?.id;
-      if (!userId) {
-        return errorResponse(res, 401, "Unauthorized");
-      }
-
-      const data: UpdateProfileDTO = req.body;
-      const updated = await this.useCase.updateProfile(userId, data);
-      successResponse(res, updated, "Profile updated successfully");
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 400, error.message, error.code);
-    }
+  async getProfile(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      return this.userUseCase.getProfile(this.getAuthenticatedUserId(req));
+    });
   }
 
-  /**
-   * DELETE /api/user/me - Delete account
-   */
-  async deleteAccount(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = (req as any).user?.id;
-      if (!userId) {
-        return errorResponse(res, 401, "Unauthorized");
-      }
-
-      const result = await this.useCase.deleteAccount(userId);
-      successResponse(res, result, "Account deleted successfully");
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 500, error.message, error.code);
-    }
+  async updateProfile(req: Request<any, any, UpdateProfileDTO>, res: Response) {
+    await this.handleRequest(res, async () => {
+      return this.userUseCase.updateProfile(this.getAuthenticatedUserId(req), req.body);
+    });
   }
 
-  /**
-   * POST /api/user/change-password - Change password
-   */
-  async changePassword(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = (req as any).user?.id;
-      if (!userId) {
-        return errorResponse(res, 401, "Unauthorized");
-      }
-
-      const data: ChangePasswordDTO = req.body;
-      const result = await this.useCase.changePassword(userId, data);
-      successResponse(res, result, "Password changed successfully");
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 400, error.message, error.code);
-    }
+  async deleteAccount(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      return this.userUseCase.deleteAccount(this.getAuthenticatedUserId(req));
+    });
   }
 
-  /**
-   * GET /api/user/sessions - Get active sessions
-   */
-  async getSessions(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = (req as any).user?.id;
-      if (!userId) {
-        return errorResponse(res, 401, "Unauthorized");
-      }
+  async changePassword(req: Request<any, any, ChangePasswordDTO>, res: Response) {
+    await this.handleRequest(res, async () => {
+      return this.userUseCase.changePassword(this.getAuthenticatedUserId(req), req.body);
+    });
+  }
 
+  async getSessions(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
       const query: GetSessionsQueryDTO = {
-        limit: req.query.limit ? parseInt(req.query.limit as string) : 20,
-        offset: req.query.offset ? parseInt(req.query.offset as string) : 0,
+        limit: 1000,
+        offset: 1,
         orderBy: (req.query.orderBy as "createdAt" | "lastActivityAt") || "createdAt",
       };
 
-      const sessions = await this.useCase.getSessions(userId, query);
-      successResponse(res, sessions, "Sessions retrieved successfully");
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 500, error.message, error.code);
-    }
+      return this.userUseCase.getSessions(this.getAuthenticatedUserId(req), query);
+    });
   }
 
-  /**
-   * DELETE /api/user/sessions/:sessionId - Revoke session
-   */
-  async revokeSession(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = (req as any).user?.id;
-      const { sessionId } = req.params;
-
-      if (!userId) {
-        return errorResponse(res, 401, "Unauthorized");
-      }
-
-      const result = await this.useCase.revokeSession(userId, sessionId);
-      successResponse(res, result, "Session revoked successfully");
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 400, error.message, error.code);
-    }
+  async revokeSession(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      return this.userUseCase.revokeSession(
+        this.getAuthenticatedUserId(req),
+        String(req.params.sessionId || "")
+      );
+    });
   }
 
-  /**
-   * DELETE /api/user/sessions - Revoke all sessions
-   */
-  async revokeAllSessions(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = (req as any).user?.id;
-      if (!userId) {
-        return errorResponse(res, 401, "Unauthorized");
-      }
-
-      const result = await this.useCase.revokeAllSessions(userId);
-      successResponse(res, result, "All sessions revoked successfully");
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 500, error.message, error.code);
-    }
+  async revokeAllSessions(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      return this.userUseCase.revokeAllSessions(this.getAuthenticatedUserId(req));
+    });
   }
 
-  /**
-   * GET /api/user/settings - Get settings
-   */
-  async getSettings(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = (req as any).user?.id;
-      if (!userId) {
-        return errorResponse(res, 401, "Unauthorized");
-      }
-
-      const settings = await this.useCase.getSettings(userId);
-      successResponse(res, settings, "Settings retrieved successfully");
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 500, error.message, error.code);
-    }
+  async getSettings(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      return this.userUseCase.getSettings(this.getAuthenticatedUserId(req));
+    });
   }
 
-  /**
-   * PUT /api/user/settings - Update settings
-   */
-  async updateSettings(req: Request, res: Response): Promise<void> {
-    try {
-      const userId = (req as any).user?.id;
-      if (!userId) {
-        return errorResponse(res, 401, "Unauthorized");
-      }
+  async updateSettings(req: Request<any, any, UpdateSettingsDTO>, res: Response) {
+    await this.handleRequest(res, async () => {
+      return this.userUseCase.updateSettings(this.getAuthenticatedUserId(req), req.body);
+    });
+  }
 
-      const updated = await this.useCase.updateSettings(userId, req.body);
-      successResponse(res, updated, "Settings updated successfully");
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 400, error.message, error.code);
+  private getAuthenticatedUserId(req: Request): string {
+    const userId = (req as AuthenticatedRequest).user?.id;
+
+    if (!userId) {
+      throw new UnauthorizedError("Unauthorized");
     }
+
+    return userId;
+  }
+
+  private parseNumberQuery(
+    value: string | string[] | undefined,
+    fallback: number
+  ): number {
+    if (Array.isArray(value)) {
+      return this.parseNumberQuery(value[0], fallback);
+    }
+
+    if (value === undefined) {
+      return fallback;
+    }
+
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
   }
 }
 
-/**
- * Admin User HTTP Service - handles admin user management routes
- */
-export class AdminUserHttpService {
-  constructor(private useCase: IAdminUserUseCase) {}
+export class AdminUserHttpService extends BaseHttpService<any, any, any, any> {
+  private readonly adminUserUseCase: IAdminUserUseCase;
+
+  constructor(useCase: IAdminUserUseCase) {
+    super(useCase as any);
+    this.adminUserUseCase = useCase;
+  }
+
+  async list(req: Request, res: Response) {
+    try {
+      const cond = ListUsersQueryPayloadSchema.parse(req.query);
+
+      const result = await this.adminUserUseCase.listWithMeta(cond);
+
+      res.status(200).json({
+        data: result.items,
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+        totalPages: result.totalPages,
+        cond,
+        filter: cond,
+      });
+    } catch (error) {
+      res.status(400).json({
+        message: (error as Error).message,
+      });
+    }
+  }
+
+
+  async getUser(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      return this.adminUserUseCase.getDetail(String(req.params.id || ""));
+    });
+  }
+
+  async createUser(req: Request<any, any, CreateUserDTO>, res: Response) {
+    await this.handleRequest(
+      res,
+      async () => this.adminUserUseCase.create(req.body),
+      201
+    );
+  }
+
+  async updateUser(req: Request<any, any, UpdateUserDTO>, res: Response) {
+    await this.handleRequest(res, async () => {
+      return this.adminUserUseCase.update(String(req.params.id || ""), req.body);
+    });
+  }
+
+  async changeUserStatus(req: Request<any, any, ChangeUserStatusDTO>, res: Response) {
+    await this.handleRequest(res, async () => {
+      return this.adminUserUseCase.changeUserStatus(String(req.params.id || ""), req.body);
+    });
+  }
+
+  async resetUserPassword(
+    req: Request<any, any, ResetUserPasswordDTO>,
+    res: Response
+  ) {
+    await this.handleRequest(res, async () => {
+      return this.adminUserUseCase.resetUserPassword(
+        String(req.params.id || ""),
+        req.body
+      );
+    });
+  }
+
+  async verifyUserEmail(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      return this.adminUserUseCase.verifyUserEmail(String(req.params.id || ""));
+    });
+  }
+
+  async revokeAllUserSessions(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      return this.adminUserUseCase.revokeAllUserSessions(String(req.params.id || ""));
+    });
+  }
 
   /**
-   * GET /api/admin/users - List users with pagination and filtering
+   * Seed users endpoint - Bulk create random users
+   * POST /admin/users/seed
+   * Body: { count: number, batchSize?: number, ... }
    */
-  async listUsers(req: Request, res: Response): Promise<void> {
+  async seedUsers(req: Request<any, any, SeedUsersDTO>, res: Response) {
     try {
-      const query: ListUsersQueryDTO = {
-        page: req.query.page ? parseInt(req.query.page as string) : 1,
-        limit: req.query.limit ? parseInt(req.query.limit as string) : 20,
-        keyword: req.query.keyword as string,
-        email: req.query.email as string,
-        username: req.query.username as string,
-        role: req.query.role as any,
-        status: req.query.status as any,
-        sortBy: (req.query.sortBy as "createdAt" | "name" | "email") || "createdAt",
-        sortOrder: (req.query.sortOrder as "asc" | "desc") || "desc",
+      const validatedData = SeedUsersPayloadSchema.parse(req.body);
+      const result = await this.adminUserUseCase.seedUsers(validatedData);
+
+      res.status(201).json({
+        message: `Successfully seeded ${result.totalCreated} users`,
+        data: {
+          totalRequested: result.totalRequested,
+          totalCreated: result.totalCreated,
+          totalFailed: result.totalFailed,
+          duration: `${result.duration}ms`,
+          startTime: result.startTime,
+          endTime: result.endTime,
+          errors: result.errors.length > 0 ? result.errors : undefined,
+        },
+      });
+    } catch (error) {
+      res.status(400).json({
+        message: (error as Error).message,
+      });
+    }
+  }
+
+  /**
+   * Clear seed users endpoint - Delete all seed users
+   * DELETE /admin/users/seed
+   */
+  async clearSeedUsers(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      const result = await this.adminUserUseCase.clearSeedUsers();
+      return {
+        message: `Deleted ${result.deletedCount} seed users`,
+        data: result,
       };
-
-      const users = await this.useCase.listUsers(query);
-      successResponse(res, users, "Users retrieved successfully");
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 500, error.message, error.code);
-    }
+    });
   }
 
   /**
-   * GET /api/admin/users/:id - Get user by ID
+   * Get seed statistics endpoint
+   * GET /admin/users/seed/stats
    */
-  async getUser(req: Request, res: Response): Promise<void> {
-    try {
-      const id = String(req.params.id || "");
-      const user = await this.useCase.getUserById(id);
-      successResponse(res, user, "User retrieved successfully");
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 404, error.message, error.code);
-    }
+  async getSeedStatistics(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      return await this.adminUserUseCase.getSeedStatistics();
+    });
   }
 
   /**
-   * POST /api/admin/users - Create user (admin)
+   * Get user statistics endpoint
+   * GET /admin/users/stats
    */
-  async createUser(req: Request, res: Response): Promise<void> {
-    try {
-      const data: CreateUserDTO = req.body;
-      const result = await this.useCase.createUser(data);
-      successResponse(res, result, "User created successfully", 201);
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 400, error.message, error.code);
-    }
+  async getStats(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      return await this.adminUserUseCase.getStats();
+    });
   }
 
-  /**
-   * PUT /api/admin/users/:id - Update user
-   */
-  async updateUser(req: Request, res: Response): Promise<void> {
-    try {
-      const id = String(req.params.id || "");
-      const data: UpdateUserDTO = req.body;
-      const updated = await this.useCase.updateUser(id, data);
-      successResponse(res, updated, "User updated successfully");
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 400, error.message, error.code);
-    }
+  async deleteUser(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      return this.adminUserUseCase.delete(String(req.params.id || ""));
+    });
   }
 
-  /**
-   * PATCH /api/admin/users/:id/status - Change user status
-   */
-  async changeUserStatus(req: Request, res: Response): Promise<void> {
-    try {
-      const id = String(req.params.id || "");
-      const data: ChangeUserStatusDTO = req.body;
-      const result = await this.useCase.changeUserStatus(id, data);
-      successResponse(res, result, "User status changed successfully");
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 400, error.message, error.code);
+  private parseNumberQuery(
+    value: string | string[] | undefined,
+    fallback: number
+  ): number {
+    if (Array.isArray(value)) {
+      return this.parseNumberQuery(value[0], fallback);
     }
+
+    if (value === undefined) {
+      return fallback;
+    }
+
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
   }
 
-  /**
-   * POST /api/admin/users/:id/reset-password - Reset user password
-   */
-  async resetUserPassword(req: Request, res: Response): Promise<void> {
-    try {
-      const id = String(req.params.id || "");
-      const data: ResetUserPasswordDTO = req.body;
-      const result = await this.useCase.resetUserPassword(id, data);
-      successResponse(res, result, "Password reset successfully");
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 400, error.message, error.code);
+  private parseStringQuery(value: string | string[] | undefined): string | undefined {
+    if (Array.isArray(value)) {
+      return this.parseStringQuery(value[0]);
     }
-  }
 
-  /**
-   * POST /api/admin/users/:id/verify-email - Verify user email
-   */
-  async verifyUserEmail(req: Request, res: Response): Promise<void> {
-    try {
-      const id = String(req.params.id || "");
-      const result = await this.useCase.verifyUserEmail(id);
-      successResponse(res, result, "Email verified successfully");
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 400, error.message, error.code);
-    }
-  }
-
-  /**
-   * DELETE /api/admin/users/:id/sessions - Revoke all user sessions
-   */
-  async revokeAllUserSessions(req: Request, res: Response): Promise<void> {
-    try {
-      const id = String(req.params.id || "");
-      const result = await this.useCase.revokeAllUserSessions(id);
-      successResponse(res, result, "All user sessions revoked");
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 400, error.message, error.code);
-    }
-  }
-
-  /**
-   * DELETE /api/admin/users/:id - Delete user (soft delete)
-   */
-  async deleteUser(req: Request, res: Response): Promise<void> {
-    try {
-      const id = String(req.params.id || "");
-      const result = await this.useCase.deleteUser(id);
-      successResponse(res, result, "User deleted successfully");
-    } catch (error: any) {
-      errorResponse(res, error.statusCode || 400, error.message, error.code);
-    }
+    return value === undefined ? undefined : String(value);
   }
 }

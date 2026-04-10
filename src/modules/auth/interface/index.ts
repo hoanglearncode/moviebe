@@ -1,4 +1,5 @@
 import { IRepository } from "../../../share/interface";
+import { IConcurrentLockService } from "../../../share/component/concurrent-lock";
 import {
   ChangePasswordDTO,
   FacebookTO,
@@ -72,10 +73,17 @@ export interface IAuthUseCase {
   changePassword(data: ChangePasswordDTO): Promise<{ message: string }>;
 }
 
+export interface IAvatarColorService {
+  generateAvatarColor(identifier: string): string;
+  getRandomAvatarColor(): string;
+}
+
 export interface AuthHexagonDependencies {
   userRepository: IAuthUserRepository;
   passwordHasher: IPasswordHasher;
   tokenService: ITokenService;
   notificationService: IAuthNotificationService;
   socialAuthService: ISocialAuthService;
+  concurrentLockService: IConcurrentLockService;
+  avatarColorService: IAvatarColorService;
 }

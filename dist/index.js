@@ -16,10 +16,12 @@ const hash_1 = require("./modules/auth/shared/hash");
 const client_1 = require("@prisma/client");
 const logger_1 = require("./modules/system/log/logger");
 const request_logger_1 = require("./modules/system/log/request-logger");
+const queue_1 = require("./queue");
 (0, dotenv_1.config)();
 (async () => {
     await prisma_1.prisma.$connect();
     logger_1.logger.info("Database connected successfully");
+    await (0, queue_1.initializeQueueInfrastructure)();
     await ensureAdminUser();
     const app = (0, express_1.default)();
     const port = process.env.PORT || 3000;
@@ -43,6 +45,18 @@ const request_logger_1 = require("./modules/system/log/request-logger");
         logger_1.logger.info(`Server is running on http://localhost:${port}`);
     });
 })();
+const shutdown = async (signal) => {
+    logger_1.logger.info(`Received ${signal}, shutting down application`);
+    await (0, queue_1.shutdownQueueInfrastructure)();
+    await prisma_1.prisma.$disconnect();
+    process.exit(0);
+};
+process.on("SIGINT", () => {
+    void shutdown("SIGINT");
+});
+process.on("SIGTERM", () => {
+    void shutdown("SIGTERM");
+});
 async function ensureAdminUser() {
     const email = value_1.ENV.ADMIN_INIT_EMAIL;
     const password = value_1.ENV.ADMIN_INIT_PASSWORD;

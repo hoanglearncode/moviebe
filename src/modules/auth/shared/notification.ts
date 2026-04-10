@@ -1,6 +1,8 @@
 import { IAuthNotificationService } from "../interface";
 import { ENV } from "../../../share/common/value";
 import { MailService, mailService } from "../../../share/component/mail";
+import { enqueueEmailJob, isQueueEnabled } from "../../../queue";
+import { logger } from "../../system/log/logger";
 
 export class AuthNotificationService implements IAuthNotificationService {
   constructor(private readonly emailService: MailService = mailService) {}
@@ -10,7 +12,7 @@ export class AuthNotificationService implements IAuthNotificationService {
       input.token
     )}`;
 
-    await this.emailService.send({
+    await this.dispatchEmail({
       to: input.email,
       subject: "Verify your email address",
       html: this.renderTemplate({
@@ -35,7 +37,7 @@ export class AuthNotificationService implements IAuthNotificationService {
       input.token
     )}`;
 
-    await this.emailService.send({
+    await this.dispatchEmail({
       to: input.email,
       subject: "Reset your password",
       html: this.renderTemplate({
@@ -53,6 +55,31 @@ export class AuthNotificationService implements IAuthNotificationService {
         `Reset token: ${input.token}`,
       ].join("\n"),
     });
+  }
+
+  private async dispatchEmail(input: {
+    to: string;
+    subject: string;
+    html: string;
+    text: string;
+  }): Promise<void> {
+    if (!isQueueEnabled) {
+      await this.emailService.send(input);
+      return;
+    }
+
+    try {
+      await enqueueEmailJob(input, {
+        jobId: `mail:${input.to}:${Date.now()}`,
+      });
+    } catch (error) {
+      logger.warn("Queue email dispatch failed, falling back to direct mail send", {
+        to: input.to,
+        error: (error as Error).message,
+      });
+
+      await this.emailService.send(input);
+    }
   }
 
   private renderTemplate(input: {

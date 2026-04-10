@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BaseHttpService = exports.UnauthorizedError = exports.NotFoundError = exports.ValidationError = exports.AppError = void 0;
+exports.BaseHttpService = exports.ConflictError = exports.UnauthorizedError = exports.NotFoundError = exports.ValidationError = exports.AppError = void 0;
 exports.successResponse = successResponse;
 exports.errorResponse = errorResponse;
 const paging_1 = require("../model/paging");
@@ -36,6 +36,13 @@ class UnauthorizedError extends AppError {
     }
 }
 exports.UnauthorizedError = UnauthorizedError;
+class ConflictError extends AppError {
+    constructor(message = "Conflict", code = error_code_1.ErrorCode.CONCURRENT_TASK_LOCKED, details) {
+        super(message, code, 409, details);
+        this.name = "ConflictError";
+    }
+}
+exports.ConflictError = ConflictError;
 class BaseHttpService {
     constructor(useCase) {
         this.useCase = useCase;

@@ -26,6 +26,7 @@ __exportStar(require("./interface"), exports);
 // Component
 __exportStar(require("./component/prisma"), exports);
 __exportStar(require("./component/mail"), exports);
+__exportStar(require("./component/concurrent-lock"), exports);
 // Repository
 __exportStar(require("./repository/generic-prisma-repo"), exports);
 // Transport

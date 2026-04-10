@@ -1,44 +1,69 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserSettingsRepository = exports.SessionRepository = exports.UserRepository = void 0;
+exports.PrismaUserSettingsRepository = exports.PrismaSessionRepository = exports.PrismaUserRepository = void 0;
 exports.createUserRepository = createUserRepository;
 exports.createSessionRepository = createSessionRepository;
 exports.createUserSettingsRepository = createUserSettingsRepository;
-const generic_prisma_repo_1 = require("../../../../share/repository/generic-prisma-repo");
-/**
- * ==========================================
- * USER REPOSITORY
- * ==========================================
- */
-class UserRepository extends generic_prisma_repo_1.BaseRepositoryPrisma {
+const client_1 = require("@prisma/client");
+class PrismaUserRepository {
     constructor(prismaClient) {
-        const queryRepo = new generic_prisma_repo_1.BaseQueryRepositoryPrisma(prismaClient.user);
-        const commandRepo = new generic_prisma_repo_1.BaseCommandRepositoryPrisma(prismaClient.user);
-        super(queryRepo, commandRepo);
         this.prismaClient = prismaClient;
     }
     async get(id) {
-        return null;
+        return this.prismaClient.user.findUnique({
+            where: { id },
+        });
     }
     async findByCond(cond) {
-        return null;
+        return this.prismaClient.user.findFirst({
+            where: cond,
+        });
     }
     async list(cond, paging) {
-        return [];
+        const { page, limit } = paging;
+        const where = cond;
+        paging.total = await this.prismaClient.user.count({ where });
+        return this.prismaClient.user.findMany({
+            where,
+            skip: (page - 1) * limit,
+            take: limit,
+            orderBy: { createdAt: "desc" },
+        });
     }
     async insert(data) {
-        return true;
-    }
-    async delete(id, isHard) {
+        await this.prismaClient.user.create({
+            data,
+        });
         return true;
     }
     async update(id, data) {
+        await this.prismaClient.user.update({
+            where: { id },
+            data: {
+                ...data,
+                updatedAt: new Date(),
+            },
+        });
+        return true;
+    }
+    async delete(id, isHard = false) {
+        if (isHard) {
+            await this.prismaClient.user.delete({
+                where: { id },
+            });
+            return true;
+        }
+        await this.prismaClient.user.update({
+            where: { id },
+            data: {
+                status: client_1.UserStatus.INACTIVE,
+                updatedAt: new Date(),
+            },
+        });
         return true;
     }
     async findById(userId) {
-        return this.prismaClient.user.findUnique({
-            where: { id: userId },
-        });
+        return this.get(userId);
     }
     async findByEmail(email) {
         return this.prismaClient.user.findUnique({
@@ -46,7 +71,7 @@ class UserRepository extends generic_prisma_repo_1.BaseRepositoryPrisma {
         });
     }
     async findByUsername(username) {
-        return this.prismaClient.user.findUnique({
+        return this.prismaClient.user.findFirst({
             where: { username },
         });
     }
@@ -59,31 +84,21 @@ class UserRepository extends generic_prisma_repo_1.BaseRepositoryPrisma {
             },
         });
     }
-    async deleteUser(userId) {
-        // Soft delete by changing status
-        const result = await this.prismaClient.user.update({
-            where: { id: userId },
-            data: {
-                status: "INACTIVE",
-                updatedAt: new Date(),
-            },
-        });
-        return !!result;
-    }
     async updatePassword(userId, passwordHash) {
-        const result = await this.prismaClient.user.update({
+        await this.prismaClient.user.update({
             where: { id: userId },
             data: {
                 password: passwordHash,
                 updatedAt: new Date(),
             },
         });
-        return !!result;
+        return true;
+    }
+    async deleteUser(userId) {
+        return this.delete(userId, false);
     }
     async listUsers(query) {
-        const { page, limit, keyword, email, username, role, status, sortBy, sortOrder } = query;
-        const offset = (page - 1) * limit;
-        // Build where clause
+        const { page, limit, keyword, email, username, role, status, sortBy, sortOrder, } = query;
         const where = {};
         if (keyword) {
             where.OR = [
@@ -92,25 +107,27 @@ class UserRepository extends generic_prisma_repo_1.BaseRepositoryPrisma {
                 { name: { contains: keyword, mode: "insensitive" } },
             ];
         }
-        if (email)
+        if (email) {
             where.email = email;
-        if (username)
+        }
+        if (username) {
             where.username = username;
-        if (role)
+        }
+        if (role) {
             where.role = role;
-        if (status)
+        }
+        if (status) {
             where.status = status;
-        // Fetch total count
+        }
         const total = await this.prismaClient.user.count({ where });
-        // Fetch paginated results
         const items = await this.prismaClient.user.findMany({
             where,
-            skip: offset,
+            skip: (page - 1) * limit,
             take: limit,
             orderBy: { [sortBy]: sortOrder },
         });
         return {
-            items,
+            items: items,
             total,
             page,
             limit,
@@ -121,18 +138,54 @@ class UserRepository extends generic_prisma_repo_1.BaseRepositoryPrisma {
         return this.prismaClient.user.count();
     }
 }
-exports.UserRepository = UserRepository;
-/**
- * ==========================================
- * SESSION REPOSITORY
- * ==========================================
- */
-class SessionRepository extends generic_prisma_repo_1.BaseRepositoryPrisma {
+exports.PrismaUserRepository = PrismaUserRepository;
+class PrismaSessionRepository {
     constructor(prismaClient) {
-        const queryRepo = new generic_prisma_repo_1.BaseQueryRepositoryPrisma(prismaClient.session);
-        const commandRepo = new generic_prisma_repo_1.BaseCommandRepositoryPrisma(prismaClient.session);
-        super(queryRepo, commandRepo);
         this.prismaClient = prismaClient;
+    }
+    async get(id) {
+        return this.findById(id);
+    }
+    async findByCond(cond) {
+        return this.prismaClient.session.findFirst({
+            where: cond,
+        });
+    }
+    async list(cond, paging) {
+        const { page, limit } = paging;
+        const where = cond;
+        paging.total = await this.prismaClient.session.count({ where });
+        return this.prismaClient.session.findMany({
+            where,
+            skip: (page - 1) * limit,
+            take: limit,
+            orderBy: { createdAt: "desc" },
+        });
+    }
+    async insert(data) {
+        await this.prismaClient.session.create({
+            data,
+        });
+        return true;
+    }
+    async update(id, data) {
+        await this.prismaClient.session.update({
+            where: { id },
+            data: {
+                ...data,
+                updatedAt: new Date(),
+            },
+        });
+        return true;
+    }
+    async delete(id, isHard = false) {
+        if (isHard) {
+            await this.prismaClient.session.delete({
+                where: { id },
+            });
+            return true;
+        }
+        return this.revokeSession(id);
     }
     async findById(sessionId) {
         return this.prismaClient.session.findUnique({
@@ -146,26 +199,31 @@ class SessionRepository extends generic_prisma_repo_1.BaseRepositoryPrisma {
         });
     }
     async revokeSession(sessionId) {
-        const result = await this.prismaClient.session.update({
+        await this.prismaClient.session.update({
             where: { id: sessionId },
-            data: { isActive: false, updatedAt: new Date() },
+            data: {
+                isActive: false,
+                updatedAt: new Date(),
+            },
         });
-        return !!result;
+        return true;
     }
     async revokeAllSessionsByUserId(userId) {
         const result = await this.prismaClient.session.updateMany({
-            where: { userId },
-            data: { isActive: false, updatedAt: new Date() },
+            where: { userId, isActive: true },
+            data: {
+                isActive: false,
+                updatedAt: new Date(),
+            },
         });
         return result.count;
     }
     async findActiveSession(sessionId) {
-        return this.prismaClient.session.findUnique({
-            where: { id: sessionId },
-        }).then((session) => {
-            if (!session || !session.isActive)
-                return null;
-            return session;
+        return this.prismaClient.session.findFirst({
+            where: {
+                id: sessionId,
+                isActive: true,
+            },
         });
     }
     async deleteExpiredSessions() {
@@ -177,41 +235,86 @@ class SessionRepository extends generic_prisma_repo_1.BaseRepositoryPrisma {
         return result.count;
     }
 }
-exports.SessionRepository = SessionRepository;
-/**
- * ==========================================
- * USER SETTINGS REPOSITORY
- * ==========================================
- */
-class UserSettingsRepository extends generic_prisma_repo_1.BaseRepositoryPrisma {
+exports.PrismaSessionRepository = PrismaSessionRepository;
+class PrismaUserSettingsRepository {
     constructor(prismaClient) {
-        const queryRepo = new generic_prisma_repo_1.BaseQueryRepositoryPrisma(prismaClient.userSetting);
-        const commandRepo = new generic_prisma_repo_1.BaseCommandRepositoryPrisma(prismaClient.userSetting);
-        super(queryRepo, commandRepo);
         this.prismaClient = prismaClient;
+    }
+    async get(id) {
+        return this.prismaClient.userSetting.findUnique({
+            where: { id },
+        });
+    }
+    async findByCond(cond) {
+        return this.prismaClient.userSetting.findFirst({
+            where: cond,
+        });
+    }
+    async list(cond, paging) {
+        const { page, limit } = paging;
+        const where = cond;
+        paging.total = await this.prismaClient.userSetting.count({ where });
+        return this.prismaClient.userSetting.findMany({
+            where,
+            skip: (page - 1) * limit,
+            take: limit,
+            orderBy: { createdAt: "desc" },
+        });
+    }
+    async insert(data) {
+        await this.prismaClient.userSetting.create({
+            data,
+        });
+        return true;
+    }
+    async update(id, data) {
+        await this.prismaClient.userSetting.update({
+            where: { id },
+            data: {
+                ...data,
+                updatedAt: new Date(),
+            },
+        });
+        return true;
+    }
+    async delete(id, isHard = false) {
+        if (!isHard) {
+            await this.prismaClient.userSetting.delete({
+                where: { id },
+            });
+            return true;
+        }
+        await this.prismaClient.userSetting.delete({
+            where: { id },
+        });
+        return true;
     }
     async findByUserId(userId) {
         return this.prismaClient.userSetting.findUnique({
             where: { userId },
         });
     }
-    async updateByUserId(userId, data) {
-        return this.prismaClient.userSetting.update({
+    async upsertByUserId(userId, data) {
+        return this.prismaClient.userSetting.upsert({
             where: { userId },
-            data,
+            update: {
+                ...data,
+                updatedAt: new Date(),
+            },
+            create: {
+                userId,
+                ...data,
+            },
         });
     }
 }
-exports.UserSettingsRepository = UserSettingsRepository;
-/**
- * Factory functions
- */
+exports.PrismaUserSettingsRepository = PrismaUserSettingsRepository;
 function createUserRepository(prismaClient) {
-    return new UserRepository(prismaClient);
+    return new PrismaUserRepository(prismaClient);
 }
 function createSessionRepository(prismaClient) {
-    return new SessionRepository(prismaClient);
+    return new PrismaSessionRepository(prismaClient);
 }
 function createUserSettingsRepository(prismaClient) {
-    return new UserSettingsRepository(prismaClient);
+    return new PrismaUserSettingsRepository(prismaClient);
 }
