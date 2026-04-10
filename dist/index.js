@@ -17,6 +17,7 @@ const client_1 = require("@prisma/client");
 const logger_1 = require("./modules/system/log/logger");
 const request_logger_1 = require("./modules/system/log/request-logger");
 const queue_1 = require("./queue");
+const upload_router_1 = require("./share/transport/upload.router");
 (0, dotenv_1.config)();
 (async () => {
     await prisma_1.prisma.$connect();
@@ -40,6 +41,7 @@ const queue_1 = require("./queue");
     app.use('/v1', (0, category_1.setupCategoryHexagon)((0, repo_1.createCategoryRepository)(prisma_1.prisma)));
     app.use('/v1', (0, auth_1.setupAuthHexagon)(prisma_1.prisma));
     app.use('/v1', (0, user_1.setupUserHexagon)(prisma_1.prisma));
+    app.use('/v1', (0, upload_router_1.createUploadRouter)());
     // app.use('/v1', setupProductHexagon(sequelize));
     app.listen(port, () => {
         logger_1.logger.info(`Server is running on http://localhost:${port}`);

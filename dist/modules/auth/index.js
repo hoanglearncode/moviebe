@@ -9,6 +9,7 @@ const hash_1 = require("./shared/hash");
 const token_1 = require("./shared/token");
 const notification_1 = require("./shared/notification");
 const social_auth_1 = require("./shared/social-auth");
+const avatar_color_service_1 = require("../user/shared/avatar-color.service");
 const prisma_1 = require("../../share/component/prisma");
 const concurrent_lock_1 = require("../../share/component/concurrent-lock");
 const buildRouter = (useCase) => {
@@ -32,6 +33,7 @@ const setupAuthHexagon = (prismaClient = prisma_1.prisma) => {
     const tokenService = new token_1.TokenService(prismaClient);
     const notificationService = new notification_1.AuthNotificationService();
     const socialAuthService = new social_auth_1.SocialAuthService();
+    const avatarColorService = new avatar_color_service_1.AvatarColorService();
     const dependencies = {
         userRepository,
         passwordHasher,
@@ -39,6 +41,7 @@ const setupAuthHexagon = (prismaClient = prisma_1.prisma) => {
         notificationService,
         socialAuthService,
         concurrentLockService: concurrent_lock_1.concurrentLockService,
+        avatarColorService,
     };
     const useCase = new usecase_1.AuthUseCase(dependencies);
     return buildRouter(useCase);

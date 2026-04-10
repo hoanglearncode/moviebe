@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminUserHttpService = exports.UserHttpService = void 0;
 const http_server_1 = require("../../../../share/transport/http-server");
+const dto_1 = require("../../model/dto");
 class UserHttpService extends http_server_1.BaseHttpService {
     constructor(useCase) {
         super(useCase);
@@ -30,8 +31,8 @@ class UserHttpService extends http_server_1.BaseHttpService {
     async getSessions(req, res) {
         await this.handleRequest(res, async () => {
             const query = {
-                limit: this.parseNumberQuery(req.query.limit, 20),
-                offset: this.parseNumberQuery(req.query.offset, 0),
+                limit: 1000,
+                offset: 1,
                 orderBy: req.query.orderBy || "createdAt",
             };
             return this.userUseCase.getSessions(this.getAuthenticatedUserId(req), query);
@@ -81,35 +82,37 @@ class AdminUserHttpService extends http_server_1.BaseHttpService {
         super(useCase);
         this.adminUserUseCase = useCase;
     }
-    async listUsers(req, res) {
-        await this.handleRequest(res, async () => {
-            const query = {
-                page: this.parseNumberQuery(req.query.page, 1),
-                limit: this.parseNumberQuery(req.query.limit, 20),
-                keyword: this.parseStringQuery(req.query.keyword),
-                email: this.parseStringQuery(req.query.email),
-                username: this.parseStringQuery(req.query.username),
-                role: this.parseStringQuery(req.query.role),
-                status: this.parseStringQuery(req.query.status),
-                sortBy: this.parseStringQuery(req.query.sortBy) ||
-                    "createdAt",
-                sortOrder: this.parseStringQuery(req.query.sortOrder) ||
-                    "desc",
-            };
-            return this.adminUserUseCase.listUsers(query);
-        });
+    async list(req, res) {
+        try {
+            const cond = dto_1.ListUsersQueryPayloadSchema.parse(req.query);
+            const result = await this.adminUserUseCase.listWithMeta(cond);
+            res.status(200).json({
+                data: result.items,
+                total: result.total,
+                page: result.page,
+                limit: result.limit,
+                totalPages: result.totalPages,
+                cond,
+                filter: cond,
+            });
+        }
+        catch (error) {
+            res.status(400).json({
+                message: error.message,
+            });
+        }
     }
     async getUser(req, res) {
         await this.handleRequest(res, async () => {
-            return this.adminUserUseCase.getUserById(String(req.params.id || ""));
+            return this.adminUserUseCase.getDetail(String(req.params.id || ""));
         });
     }
     async createUser(req, res) {
-        await this.handleRequest(res, async () => this.adminUserUseCase.createUser(req.body), 201);
+        await this.handleRequest(res, async () => this.adminUserUseCase.create(req.body), 201);
     }
     async updateUser(req, res) {
         await this.handleRequest(res, async () => {
-            return this.adminUserUseCase.updateUser(String(req.params.id || ""), req.body);
+            return this.adminUserUseCase.update(String(req.params.id || ""), req.body);
         });
     }
     async changeUserStatus(req, res) {
@@ -132,9 +135,68 @@ class AdminUserHttpService extends http_server_1.BaseHttpService {
             return this.adminUserUseCase.revokeAllUserSessions(String(req.params.id || ""));
         });
     }
+    /**
+     * Seed users endpoint - Bulk create random users
+     * POST /admin/users/seed
+     * Body: { count: number, batchSize?: number, ... }
+     */
+    async seedUsers(req, res) {
+        try {
+            const validatedData = dto_1.SeedUsersPayloadSchema.parse(req.body);
+            const result = await this.adminUserUseCase.seedUsers(validatedData);
+            res.status(201).json({
+                message: `Successfully seeded ${result.totalCreated} users`,
+                data: {
+                    totalRequested: result.totalRequested,
+                    totalCreated: result.totalCreated,
+                    totalFailed: result.totalFailed,
+                    duration: `${result.duration}ms`,
+                    startTime: result.startTime,
+                    endTime: result.endTime,
+                    errors: result.errors.length > 0 ? result.errors : undefined,
+                },
+            });
+        }
+        catch (error) {
+            res.status(400).json({
+                message: error.message,
+            });
+        }
+    }
+    /**
+     * Clear seed users endpoint - Delete all seed users
+     * DELETE /admin/users/seed
+     */
+    async clearSeedUsers(req, res) {
+        await this.handleRequest(res, async () => {
+            const result = await this.adminUserUseCase.clearSeedUsers();
+            return {
+                message: `Deleted ${result.deletedCount} seed users`,
+                data: result,
+            };
+        });
+    }
+    /**
+     * Get seed statistics endpoint
+     * GET /admin/users/seed/stats
+     */
+    async getSeedStatistics(req, res) {
+        await this.handleRequest(res, async () => {
+            return await this.adminUserUseCase.getSeedStatistics();
+        });
+    }
+    /**
+     * Get user statistics endpoint
+     * GET /admin/users/stats
+     */
+    async getStats(req, res) {
+        await this.handleRequest(res, async () => {
+            return await this.adminUserUseCase.getStats();
+        });
+    }
     async deleteUser(req, res) {
         await this.handleRequest(res, async () => {
-            return this.adminUserUseCase.deleteUser(String(req.params.id || ""));
+            return this.adminUserUseCase.delete(String(req.params.id || ""));
         });
     }
     parseNumberQuery(value, fallback) {

@@ -17,7 +17,7 @@ class AuthUseCase {
             throw new http_server_1.ValidationError("Invalid registration data", parsedData.error.issues);
         }
         return this.dependencies.concurrentLockService.runExclusive(this.getRegisterLockKeys(parsedData.data.email, parsedData.data.username), async () => {
-            const { userRepository, passwordHasher, tokenService, notificationService } = this.dependencies;
+            const { userRepository, passwordHasher, tokenService, notificationService, avatarColorService } = this.dependencies;
             const existingEmail = await userRepository.findByEmail(parsedData.data.email);
             if (existingEmail) {
                 throw new http_server_1.ValidationError("Email already exists", undefined, error_code_1.ErrorCode.EMAIL_EXISTS);
@@ -30,15 +30,20 @@ class AuthUseCase {
             }
             const newUserId = (0, uuid_1.v7)();
             const passwordHash = await passwordHasher.hash(parsedData.data.password);
+            const avatarColor = avatarColorService.generateAvatarColor(parsedData.data.email);
             const user = {
                 id: newUserId,
                 email: parsedData.data.email,
                 username: parsedData.data.username ?? null,
                 name: parsedData.data.name ?? null,
                 password: passwordHash,
+                avatar: null,
+                avatarColor,
+                provider: "local",
                 emailVerified: false,
                 mustChangePassword: false,
                 status: client_1.UserStatus.ACTIVE,
+                lastLoginAt: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
@@ -79,6 +84,9 @@ class AuthUseCase {
                 throw new http_server_1.UnauthorizedError("Account is not verified", error_code_1.ErrorCode.ACCOUNT_NOT_VERIFIED);
             }
             const session = await tokenService.issueAuthSession(user);
+            await userRepository.update(user.id, {
+                lastLoginAt: new Date(),
+            });
             return this.buildAuthResponse(user, session);
         }, {
             ttlMs: value_1.ENV.AUTH_CONCURRENT_LOCK_TTL_MS,
@@ -196,16 +204,18 @@ class AuthUseCase {
         }
         const newPasswordHash = await passwordHasher.hash(parsedData.data.newPassword);
         await userRepository.updatePassword(userId, newPasswordHash);
+        await userRepository.update(userId, { mustChangePassword: false });
         if (!user.emailVerified)
             await userRepository.markVerified(userId);
         return { message: "Password changed successfully" };
     }
     async loginWithSocialProfile(profile) {
         return this.dependencies.concurrentLockService.runExclusive(this.getRegisterLockKeys(profile.email), async () => {
-            const { userRepository, tokenService } = this.dependencies;
+            const { userRepository, tokenService, avatarColorService } = this.dependencies;
             let user = await userRepository.findByEmail(profile.email);
             if (!user) {
                 const newUserId = (0, uuid_1.v7)();
+                const avatarColor = avatarColorService.generateAvatarColor(profile.email);
                 user = {
                     id: newUserId,
                     email: profile.email,
@@ -213,6 +223,7 @@ class AuthUseCase {
                     username: null,
                     password: null,
                     avatar: profile.avatar ?? null,
+                    avatarColor,
                     provider: profile.provider,
                     emailVerified: profile.emailVerified,
                     mustChangePassword: false,
