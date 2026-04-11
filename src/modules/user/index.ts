@@ -14,6 +14,8 @@ import { mailService } from "../../share/component/mail";
 import { authenticate, protect, requirePermission } from "../../share/middleware/auth";
 import { setupSettingHexagon, createSettingUseCase } from "../system/setting";
 import { PERMISSIONS } from "../../share/security/permissions";
+import { AuthNotificationService } from "../auth/shared/notification";
+import { TokenService } from "../auth/shared/token";
 
 const buildUserRouter = (useCase: IUserUseCase) => {
   const httpService = new UserHttpService(useCase);
@@ -125,8 +127,10 @@ export const setupUserHexagon = (prismaClient: PrismaClient = prisma) => {
   const sessionRepository = createSessionRepository(prismaClient);
   const passwordHasher = new HashService();
   const notificationService = new UserNotificationService(mailService);
+  const authNotificationService = new AuthNotificationService();
   const avatarColorService = new AvatarColorService();
   const userSettingService = createSettingUseCase(prismaClient);
+  const tokenService = new TokenService(prismaClient);
 
   const dependencies = {
     userRepository,
@@ -140,7 +144,7 @@ export const setupUserHexagon = (prismaClient: PrismaClient = prisma) => {
   };
 
   const userUseCase = new UserUseCase(dependencies);
-  const adminUserUseCase = new AdminUserUseCase(dependencies as any);
+  const adminUserUseCase = new AdminUserUseCase(dependencies as any, authNotificationService, tokenService);
 
   const router = Router();
   router.use("/user", buildUserRouter(userUseCase));

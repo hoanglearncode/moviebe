@@ -12,6 +12,7 @@ import {
 import { ErrEmailAlreadyExists, ErrUserNotFound, ErrUsernameAlreadyExists } from "../model/errors";
 import { OwnUserProfile, UserListResponse } from "../model/model";
 import { SeedService, SeedSummary } from "../shared/seed";
+import { IAuthNotificationService, ITokenService } from "../../auth/interface"
 
 export class AdminUserUseCase implements IAdminUserUseCase {
   private readonly userRepo: AdminUserHexagonDependencies["userRepository"];
@@ -22,8 +23,11 @@ export class AdminUserUseCase implements IAdminUserUseCase {
   private readonly avatarColorService: AdminUserHexagonDependencies["avatarColorService"];
   private readonly prisma: AdminUserHexagonDependencies["prisma"];
   private readonly userSettingService?: IUserSetting;
+  private readonly authNotifications: IAuthNotificationService;
+  private readonly tokenService: ITokenService
+  
 
-  constructor(deps: AdminUserHexagonDependencies) {
+  constructor(deps: AdminUserHexagonDependencies, authNotifications: IAuthNotificationService, authTokenService: ITokenService) {
     this.userRepo = deps.userRepository;
     this.sessionRepo = deps.sessionRepository;
     this.settingsRepo = deps.userSettingsRepository;
@@ -32,6 +36,8 @@ export class AdminUserUseCase implements IAdminUserUseCase {
     this.avatarColorService = deps.avatarColorService;
     this.prisma = deps.prisma;
     this.userSettingService = deps.userSettingService;
+    this.authNotifications = authNotifications;
+    this.tokenService = authTokenService;
   }
 
   async list(cond: ListUsersQueryDTO, paging: PagingDTO): Promise<OwnUserProfile[]> {
@@ -105,11 +111,22 @@ export class AdminUserUseCase implements IAdminUserUseCase {
           console.error(`⚠️ Failed to create default settings for user ${id}:`, error),
         );
     }
-
-    if(data.sendEmailWellCome) {
+    
+    if(data.sendEmailWellCome && data.emailVerified) {
       this.notifier
         .sendWelcomeEmail({ email: data.email, name: data.name ?? data.email })
         .catch(console.error);
+    }
+
+    if(!data.emailVerified) {
+      const verifyToken = await this.tokenService.issueActionToken({
+        userId: id,
+        purpose: "verify-email",
+      });
+      await this.authNotifications.sendVerifyEmail({
+        email: data.email,
+        token: verifyToken,
+      });
     }
 
     return id;

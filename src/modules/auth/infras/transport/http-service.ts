@@ -27,7 +27,14 @@ export class AuthHttpService extends BaseHttpService<any, RegisterDTO, any, any>
   }
 
   async login(req: Request<any, any, LoginDTO>, res: Response) {
-    await this.handleRequest(res, () => this.authUseCase.login(req.body));
+    await this.handleRequest(res, () =>
+      this.authUseCase.login(req.body, {
+        userAgent: req.headers["user-agent"],
+        ipAddress:
+          (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
+          req.socket.remoteAddress,
+      })
+    );
   }
 
   async refreshToken(req: Request<any, any, RefreshDTO>, res: Response) {
@@ -35,15 +42,36 @@ export class AuthHttpService extends BaseHttpService<any, RegisterDTO, any, any>
   }
 
   async loginGoogle(req: Request<any, any, GoogleDTO>, res: Response) {
-    await this.handleRequest(res, () => this.authUseCase.loginGoogle(req.body));
+    await this.handleRequest(res, () =>
+      this.authUseCase.loginGoogle(req.body, {
+        userAgent: req.headers["user-agent"],
+        ipAddress:
+          (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
+          req.socket.remoteAddress,
+      })
+    );
   }
-
+  
   async loginGoogleTokenCallback(req: Request<any, any, GoogleTokenDTO>, res: Response) {
-    await this.handleRequest(res, () => this.authUseCase.loginGoogleTokenCallback(req.body));
+    await this.handleRequest(res, () =>
+      this.authUseCase.loginGoogleTokenCallback(req.body, {
+        userAgent: req.headers["user-agent"],
+        ipAddress:
+          (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
+          req.socket.remoteAddress,
+      })
+    );
   }
 
   async loginFacebook(req: Request<any, any, FacebookTO>, res: Response) {
-    await this.handleRequest(res, () => this.authUseCase.loginFacebook(req.body));
+    await this.handleRequest(res, () =>
+      this.authUseCase.loginFacebook(req.body, {
+        userAgent: req.headers["user-agent"],
+        ipAddress:
+          (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
+          req.socket.remoteAddress,
+      })
+    );
   }
 
   async verifyEmail(req: Request<any, any, VerifyEmailDTO>, res: Response) {

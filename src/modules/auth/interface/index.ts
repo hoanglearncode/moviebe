@@ -40,7 +40,10 @@ export interface IPasswordHasher {
 }
 
 export interface ITokenService {
-  issueAuthSession(user: AuthUser): Promise<AuthSession>;
+  issueAuthSession(user: AuthUser, context?: {
+      userAgent?: string;
+      ipAddress?: string;
+    }): Promise<AuthSession>;
   refreshAuthSession(refreshToken: string): Promise<AuthSession & { userId: string }>;
   issueActionToken(payload: { userId: string; purpose: AuthActionTokenPurpose }): Promise<string>;
   verifyActionToken(
@@ -55,6 +58,7 @@ export interface IAuthNotificationService {
   sendVerifyEmail(input: { email: string; token: string }): Promise<void>;
   sendWellComeEmail(email: string): Promise<void>;
   sendResetPasswordEmail(input: { email: string; token: string }): Promise<void>;
+  sendChangePasswordEmail(email: string): Promise<void>;
 }
 
 export interface ISocialAuthService {
@@ -65,11 +69,23 @@ export interface ISocialAuthService {
 
 export interface IAuthUseCase {
   register(data: RegisterDTO): Promise<{ userId: string }>;
-  login(data: LoginDTO): Promise<AuthResponse>;
+  login(
+    data: LoginDTO,
+    context?: { userAgent?: string; ipAddress?: string }
+  ): Promise<AuthResponse>;
   refreshToken(data: RefreshDTO): Promise<AuthResponse>;
-  loginGoogle(data: GoogleDTO): Promise<AuthResponse>;
-  loginGoogleTokenCallback(data: GoogleTokenDTO): Promise<AuthResponse>;
-  loginFacebook(data: FacebookTO): Promise<AuthResponse>;
+  loginGoogle(
+    data: GoogleDTO,
+    context?: { userAgent?: string; ipAddress?: string }
+  ): Promise<AuthResponse>;
+  loginGoogleTokenCallback(
+    data: GoogleTokenDTO,
+    context?: { userAgent?: string; ipAddress?: string }
+  ): Promise<AuthResponse>;
+  loginFacebook(
+    data: FacebookTO,
+    context?: { userAgent?: string; ipAddress?: string }
+  ): Promise<AuthResponse>;
   verifyEmail(data: VerifyEmailDTO): Promise<{ message: string }>;
   resendVerification(data: ResendVerificationDTO): Promise<{ message: string }>;
   forgotPassword(data: ForgotPasswordDTO): Promise<{ message: string }>;

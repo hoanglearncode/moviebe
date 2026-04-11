@@ -126,7 +126,7 @@ export class AuthUseCase implements IAuthUseCase {
     );
   }
 
-  async login(data: LoginDTO): Promise<AuthResponse> {
+  async login(data: LoginDTO, context?: { userAgent?: string; ipAddress?: string }): Promise<AuthResponse> {
     const parsedData = LoginPayloadDTO.safeParse(data);
     if (!parsedData.success) {
       throw new ValidationError("Invalid login data", parsedData.error.issues);
@@ -164,7 +164,7 @@ export class AuthUseCase implements IAuthUseCase {
           throw new UnauthorizedError("Account is not verified", ErrorCode.ACCOUNT_NOT_VERIFIED);
         }
 
-        const session = await tokenService.issueAuthSession(user);
+        const session = await tokenService.issueAuthSession(user, context);
         await userRepository.update(user.id, {
           lastLoginAt: new Date(),
         });
@@ -322,7 +322,7 @@ export class AuthUseCase implements IAuthUseCase {
       throw new ValidationError("Invalid change password data", parsedData.error.issues);
     }
 
-    const { tokenService, userRepository, passwordHasher } = this.dependencies;
+    const { tokenService, userRepository, passwordHasher, notificationService } = this.dependencies;
 
     const { userId } = await tokenService.verifyActionToken(
       parsedData.data.token,
@@ -338,11 +338,11 @@ export class AuthUseCase implements IAuthUseCase {
     await userRepository.updatePassword(userId, newPasswordHash);
     await userRepository.update(userId, { mustChangePassword: false });
     if (!user.emailVerified) await userRepository.markVerified(userId);
-
+    await notificationService.sendChangePasswordEmail(user.email);
     return { message: "Password changed successfully" };
   }
 
-  private async loginWithSocialProfile(profile: AuthSocialProfile): Promise<AuthResponse> {
+  private async loginWithSocialProfile(profile: AuthSocialProfile, context?: { userAgent?: string; ipAddress?: string }): Promise<AuthResponse> {
     return this.dependencies.concurrentLockService.runExclusive(
       this.getRegisterLockKeys(profile.email),
       async () => {
@@ -403,7 +403,7 @@ export class AuthUseCase implements IAuthUseCase {
           }
         }
 
-        const session = await tokenService.issueAuthSession(user);
+        const session = await tokenService.issueAuthSession(user, context);
         return this.buildAuthResponse(user, session);
       },
       {

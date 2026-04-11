@@ -1,7 +1,8 @@
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { PrismaClient } from "@prisma/client";
-
+import { UAParser } from "ua-parser-js";
+import { v4 as uuidv4 } from "uuid";
 import { ENV } from "../../../share/common/value";
 import { ITokenService } from "../interface";
 import { AuthActionTokenPurpose, AuthSession, AuthUser } from "../model/model";
@@ -34,12 +35,33 @@ type SessionModel = {
       userId: string;
       refreshToken: string;
       expiresAt: Date;
+      deviceId?: string;
+      deviceName?: string;
+      deviceType?: string;
+      userAgent?: string;
+      ipAddress?: string;
+      isActive?: boolean;
     };
   }): Promise<unknown>;
-  delete(args: { where: { refreshToken: string } }): Promise<unknown>;
+
+  delete(args: {
+    where: { refreshToken: string };
+  }): Promise<unknown>;
+
   findUnique(args: {
     where: { refreshToken: string };
-  }): Promise<{ userId: string; refreshToken: string; expiresAt: Date } | null>;
+  }): Promise<{
+    userId: string;
+    refreshToken: string;
+    expiresAt: Date;
+
+    deviceId: string | null;
+    deviceName: string | null;
+    deviceType: string | null;
+    userAgent: string | null;
+    ipAddress: string | null;
+    isActive: boolean | null;
+  } | null>;
 };
 
 export class TokenService implements ITokenService {
@@ -53,7 +75,13 @@ export class TokenService implements ITokenService {
     this.emailTokenModel = getEmailTokenModel(prisma);
   }
 
-  async issueAuthSession(user: AuthUser): Promise<AuthSession> {
+  async issueAuthSession(
+    user: AuthUser,
+    context?: {
+      userAgent?: string;
+      ipAddress?: string;
+    }
+  ): Promise<AuthSession> {
     const session = this.createSessionTokens({
       sub: user.id,
       email: user.email,
@@ -61,11 +89,22 @@ export class TokenService implements ITokenService {
       status: user.status,
     });
 
+    const parser = new UAParser(context?.userAgent);
+    const ua = parser.getResult();
+
+    const deviceName = `${ua.browser.name || "Unknown"} ${ua.browser.version || ""}`;
+    const deviceType = ua.device.type || "desktop";
+
     await this.sessionModel.create({
       data: {
         userId: user.id,
         refreshToken: session.refreshToken,
         expiresAt: this.getTokenExpiry(session.refreshToken),
+        deviceId: uuidv4(),
+        deviceName,
+        deviceType,
+        userAgent: context?.userAgent,
+        ipAddress: context?.ipAddress,
       },
     });
 

@@ -57,7 +57,7 @@ export class AuthNotificationService implements IAuthNotificationService {
   async sendResetPasswordEmail(input: { email: string; token: string }): Promise<void> {
     const resetUrl = `${ENV.FRONTEND_URL}/reset-password?token=${encodeURIComponent(input.token)}`;
 
-    const template = await this.getTemplate(EmailNotificationEvent.PASSWORD_CHANGED);
+    const template = await this.getTemplate(EmailNotificationEvent.RESET_PASSWORD);
 
     const html = this.render(template.body, {
       email: input.email,
@@ -78,6 +78,26 @@ export class AuthNotificationService implements IAuthNotificationService {
     });
   }
 
+  async sendChangePasswordEmail(email: string): Promise<void> {
+
+    const template = await this.getTemplate(EmailNotificationEvent.PASSWORD_CHANGED);
+
+    const html = this.render(template.body, {
+      email: email,
+      name: email,
+    });
+
+    const subject = this.render(template.subject, {
+      email: email,
+    });
+
+    await this.dispatchEmail({
+      to: email,
+      subject,
+      html,
+      text: `Change password`,
+    });
+  }
   private async getTemplate(event: EmailNotificationEvent) {
     const template = await prisma.emailTemplate.findUnique({
       where: { event },

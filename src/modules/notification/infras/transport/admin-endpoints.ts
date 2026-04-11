@@ -9,15 +9,6 @@ import { logger } from "../../../system/log/logger";
 import { authMiddleware, requirePermission } from "../../../../share/middleware/auth";
 import { PERMISSIONS } from "../../../../share/security/permissions";
 
-/**
- * Admin Email Template Management Routes
- *
- * Dễ hiểu: Các endpoint cho Admin quản lý template email
- * - Xem tất cả templates
- * - Cập nhật template
- * - Xem email đã lên lịch
- * - Gửi email cho người dùng
- */
 
 const router = Router();
 
@@ -27,10 +18,6 @@ const emailNotificationService = new EmailNotificationService(
   emailTemplateRepo,
   scheduledEmailRepo,
 );
-
-// ────────────────────────────────────────────────────────────────────
-// PUBLIC: Get all active email templates (không cần admin)
-// ────────────────────────────────────────────────────────────────────
 
 router.get("/templates", async (req: Request, res: Response) => {
   try {
@@ -45,14 +32,6 @@ router.get("/templates", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to fetch templates" });
   }
 });
-
-// ────────────────────────────────────────────────────────────────────
-// ADMIN ROUTES ────────────────────────────────────────────────────────
-// ────────────────────────────────────────────────────────────────────
-
-// ────────────────────────────────────────────────────────────────────
-// GET: Get single template by ID (admin)
-// ────────────────────────────────────────────────────────────────────
 
 router.get(
   "/templates/:templateId",
@@ -76,10 +55,6 @@ router.get(
     res.status(500).json({ error: "Failed to fetch template" });
   }
 });
-
-// ────────────────────────────────────────────────────────────────────
-// PATCH: Update email template
-// ────────────────────────────────────────────────────────────────────
 
 router.patch(
   "/templates/:templateId",
