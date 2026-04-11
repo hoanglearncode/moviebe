@@ -18,19 +18,19 @@ export const LoginPayloadDTO = z.object({
 });
 
 export const RefreshTokenPayloadDTO = z.object({
-  refreshToken: z.string().trim().min(1, "token is required")
+  refreshToken: z.string().trim().min(1, "token is required"),
 });
 
 export const GoogleLoginPayloadDTO = z.object({
-  credential: z.string().trim().min(1, "credential is required")
+  credential: z.string().trim().min(1, "credential is required"),
 });
 
 export const GoogleLoginTokenCallbackPayloadDTO = z.object({
-  accessToken: z.string().trim().min(1, "accessToken is required")
+  accessToken: z.string().trim().min(1, "accessToken is required"),
 });
 
 export const FacebookLoginPayloadDTO = z.object({
-  accessToken: z.string().trim().min(1, "accessToken is required")
+  accessToken: z.string().trim().min(1, "accessToken is required"),
 });
 
 export const VerifyEmailPayloadDTO = z.object({
@@ -47,9 +47,7 @@ export const ForgotPasswordPayloadDTO = z.object({
 
 export const ChangePasswordPayloadDTO = z.object({
   token: z.string().trim().min(1, "token is required"),
-  newPassword: z
-    .string()
-    .min(8, "new password must have at least 8 characters"),
+  newPassword: z.string().min(8, "new password must have at least 8 characters"),
 });
 
 export type RegisterDTO = z.infer<typeof RegisterPayloadDTO>;
@@ -59,8 +57,6 @@ export type GoogleDTO = z.infer<typeof GoogleLoginPayloadDTO>;
 export type GoogleTokenDTO = z.infer<typeof GoogleLoginTokenCallbackPayloadDTO>;
 export type FacebookTO = z.infer<typeof FacebookLoginPayloadDTO>;
 export type VerifyEmailDTO = z.infer<typeof VerifyEmailPayloadDTO>;
-export type ResendVerificationDTO = z.infer<
-  typeof ResendVerificationPayloadDTO
->;
+export type ResendVerificationDTO = z.infer<typeof ResendVerificationPayloadDTO>;
 export type ForgotPasswordDTO = z.infer<typeof ForgotPasswordPayloadDTO>;
 export type ChangePasswordDTO = z.infer<typeof ChangePasswordPayloadDTO>;

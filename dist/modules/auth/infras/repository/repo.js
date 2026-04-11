@@ -14,7 +14,7 @@ const toAuthUser = (raw) => ({
     phone: raw.phone ?? null,
     bio: raw.bio ?? null,
     location: raw.location ?? null,
-    avatarColor: raw.avatarColor ?? null,
+    avatarColor: raw.avatarColor ?? undefined,
     role: raw.role,
     lastLoginAt: raw.lastLoginAt ?? null,
     emailVerified: raw.emailVerified,

@@ -1,11 +1,3 @@
-/**
- * User Module Constants
- */
-
-/**
- * Avatar color palette - must match frontend palette
- * Used for user profile customization
- */
 export const AVATAR_COLORS = [
   "from-pink-600/60 to-rose-700/60 text-pink-200",
   "from-blue-600/60 to-indigo-700/60 text-blue-200",
@@ -15,4 +7,4 @@ export const AVATAR_COLORS = [
   "from-cyan-600/60 to-sky-700/60 text-cyan-200",
 ] as const;
 
-export type AvatarColor = typeof AVATAR_COLORS[number];
+export type AvatarColor = (typeof AVATAR_COLORS)[number];

@@ -10,24 +10,31 @@ import { getCategoryModel } from "./dto";
 
 // implement ORM here (Prisma)
 
-export class PrismaCategoryRepository extends BaseRepositoryPrisma<Category, CategoryCondDTO, CategoryUpdateDTO> {
+export class PrismaCategoryRepository extends BaseRepositoryPrisma<
+  Category,
+  CategoryCondDTO,
+  CategoryUpdateDTO
+> {
   constructor(prisma: PrismaClient) {
     const model = getCategoryModel(prisma);
 
-    super(
-      new PrismaCategoryQueryRepository(model),
-      new PrismaCategoryCommandRepository(model),
-    );
+    super(new PrismaCategoryQueryRepository(model), new PrismaCategoryCommandRepository(model));
   }
 }
 
-export class PrismaCategoryQueryRepository extends BaseQueryRepositoryPrisma<Category, CategoryCondDTO> {
+export class PrismaCategoryQueryRepository extends BaseQueryRepositoryPrisma<
+  Category,
+  CategoryCondDTO
+> {
   constructor(model: ReturnType<typeof getCategoryModel>) {
     super(model);
   }
 }
 
-export class PrismaCategoryCommandRepository extends BaseCommandRepositoryPrisma<Category, CategoryUpdateDTO> {
+export class PrismaCategoryCommandRepository extends BaseCommandRepositoryPrisma<
+  Category,
+  CategoryUpdateDTO
+> {
   constructor(model: ReturnType<typeof getCategoryModel>) {
     super(model);
   }

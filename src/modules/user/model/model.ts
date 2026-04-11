@@ -1,4 +1,3 @@
-
 import { Role, UserStatus } from "@prisma/client";
 
 /**
@@ -18,7 +17,7 @@ export type UserProfile = {
   phone: string | null;
   bio: string | null;
   location: string | null;
-  avatarColor: string | null;
+  avatarColor: string | undefined;
   role: Role;
   status: UserStatus;
   emailVerified: boolean;
@@ -33,14 +32,7 @@ export type UserProfile = {
  */
 export type PublicUserProfile = Pick<
   UserProfile,
-  | "id"
-  | "username"
-  | "name"
-  | "avatar"
-  | "bio"
-  | "location"
-  | "avatarColor"
-  | "createdAt"
+  "id" | "username" | "name" | "avatar" | "bio" | "location" | "avatarColor" | "createdAt"
 >;
 
 /**

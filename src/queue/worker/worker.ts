@@ -1,5 +1,5 @@
-import { logger } from "../modules/system/log/logger";
-import { initializeQueueInfrastructure, shutdownQueueInfrastructure } from "./index";
+import { logger } from "../../modules/system/log/logger";
+import { initializeQueueInfrastructure, shutdownQueueInfrastructure } from "../index";
 
 const shutdown = async (signal: string) => {
   logger.info(`Queue worker received ${signal}`);

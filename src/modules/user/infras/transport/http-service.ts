@@ -1,18 +1,13 @@
 import { Request, Response } from "express";
-import {
-  BaseHttpService,
-  UnauthorizedError,
-} from "../../../../share/transport/http-server";
+import { BaseHttpService, UnauthorizedError } from "../../../../share/transport/http-server";
 import { IAdminUserUseCase, IUserUseCase } from "../../interface";
 import {
   ChangePasswordDTO,
   ChangeUserStatusDTO,
   CreateUserDTO,
   GetSessionsQueryDTO,
-  ListUsersQueryDTO,
   ResetUserPasswordDTO,
   UpdateProfileDTO,
-  UpdateSettingsDTO,
   UpdateUserDTO,
   ListUsersQueryPayloadSchema,
   SeedUsersDTO,
@@ -73,7 +68,7 @@ export class UserHttpService extends BaseHttpService<any, any, any, any> {
     await this.handleRequest(res, async () => {
       return this.userUseCase.revokeSession(
         this.getAuthenticatedUserId(req),
-        String(req.params.sessionId || "")
+        String(req.params.sessionId || ""),
       );
     });
   }
@@ -81,18 +76,6 @@ export class UserHttpService extends BaseHttpService<any, any, any, any> {
   async revokeAllSessions(req: Request, res: Response) {
     await this.handleRequest(res, async () => {
       return this.userUseCase.revokeAllSessions(this.getAuthenticatedUserId(req));
-    });
-  }
-
-  async getSettings(req: Request, res: Response) {
-    await this.handleRequest(res, async () => {
-      return this.userUseCase.getSettings(this.getAuthenticatedUserId(req));
-    });
-  }
-
-  async updateSettings(req: Request<any, any, UpdateSettingsDTO>, res: Response) {
-    await this.handleRequest(res, async () => {
-      return this.userUseCase.updateSettings(this.getAuthenticatedUserId(req), req.body);
     });
   }
 
@@ -104,22 +87,6 @@ export class UserHttpService extends BaseHttpService<any, any, any, any> {
     }
 
     return userId;
-  }
-
-  private parseNumberQuery(
-    value: string | string[] | undefined,
-    fallback: number
-  ): number {
-    if (Array.isArray(value)) {
-      return this.parseNumberQuery(value[0], fallback);
-    }
-
-    if (value === undefined) {
-      return fallback;
-    }
-
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : fallback;
   }
 }
 
@@ -153,7 +120,6 @@ export class AdminUserHttpService extends BaseHttpService<any, any, any, any> {
     }
   }
 
-
   async getUser(req: Request, res: Response) {
     await this.handleRequest(res, async () => {
       return this.adminUserUseCase.getDetail(String(req.params.id || ""));
@@ -161,11 +127,7 @@ export class AdminUserHttpService extends BaseHttpService<any, any, any, any> {
   }
 
   async createUser(req: Request<any, any, CreateUserDTO>, res: Response) {
-    await this.handleRequest(
-      res,
-      async () => this.adminUserUseCase.create(req.body),
-      201
-    );
+    await this.handleRequest(res, async () => this.adminUserUseCase.create(req.body), 201);
   }
 
   async updateUser(req: Request<any, any, UpdateUserDTO>, res: Response) {
@@ -180,15 +142,9 @@ export class AdminUserHttpService extends BaseHttpService<any, any, any, any> {
     });
   }
 
-  async resetUserPassword(
-    req: Request<any, any, ResetUserPasswordDTO>,
-    res: Response
-  ) {
+  async resetUserPassword(req: Request<any, any, ResetUserPasswordDTO>, res: Response) {
     await this.handleRequest(res, async () => {
-      return this.adminUserUseCase.resetUserPassword(
-        String(req.params.id || ""),
-        req.body
-      );
+      return this.adminUserUseCase.resetUserPassword(String(req.params.id || ""), req.body);
     });
   }
 
@@ -271,29 +227,5 @@ export class AdminUserHttpService extends BaseHttpService<any, any, any, any> {
     await this.handleRequest(res, async () => {
       return this.adminUserUseCase.delete(String(req.params.id || ""));
     });
-  }
-
-  private parseNumberQuery(
-    value: string | string[] | undefined,
-    fallback: number
-  ): number {
-    if (Array.isArray(value)) {
-      return this.parseNumberQuery(value[0], fallback);
-    }
-
-    if (value === undefined) {
-      return fallback;
-    }
-
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : fallback;
-  }
-
-  private parseStringQuery(value: string | string[] | undefined): string | undefined {
-    if (Array.isArray(value)) {
-      return this.parseStringQuery(value[0]);
-    }
-
-    return value === undefined ? undefined : String(value);
   }
 }

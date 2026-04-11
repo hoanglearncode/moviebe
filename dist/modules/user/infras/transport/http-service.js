@@ -48,32 +48,12 @@ class UserHttpService extends http_server_1.BaseHttpService {
             return this.userUseCase.revokeAllSessions(this.getAuthenticatedUserId(req));
         });
     }
-    async getSettings(req, res) {
-        await this.handleRequest(res, async () => {
-            return this.userUseCase.getSettings(this.getAuthenticatedUserId(req));
-        });
-    }
-    async updateSettings(req, res) {
-        await this.handleRequest(res, async () => {
-            return this.userUseCase.updateSettings(this.getAuthenticatedUserId(req), req.body);
-        });
-    }
     getAuthenticatedUserId(req) {
         const userId = req.user?.id;
         if (!userId) {
             throw new http_server_1.UnauthorizedError("Unauthorized");
         }
         return userId;
-    }
-    parseNumberQuery(value, fallback) {
-        if (Array.isArray(value)) {
-            return this.parseNumberQuery(value[0], fallback);
-        }
-        if (value === undefined) {
-            return fallback;
-        }
-        const parsed = Number(value);
-        return Number.isFinite(parsed) ? parsed : fallback;
     }
 }
 exports.UserHttpService = UserHttpService;
@@ -198,22 +178,6 @@ class AdminUserHttpService extends http_server_1.BaseHttpService {
         await this.handleRequest(res, async () => {
             return this.adminUserUseCase.delete(String(req.params.id || ""));
         });
-    }
-    parseNumberQuery(value, fallback) {
-        if (Array.isArray(value)) {
-            return this.parseNumberQuery(value[0], fallback);
-        }
-        if (value === undefined) {
-            return fallback;
-        }
-        const parsed = Number(value);
-        return Number.isFinite(parsed) ? parsed : fallback;
-    }
-    parseStringQuery(value) {
-        if (Array.isArray(value)) {
-            return this.parseStringQuery(value[0]);
-        }
-        return value === undefined ? undefined : String(value);
     }
 }
 exports.AdminUserHttpService = AdminUserHttpService;

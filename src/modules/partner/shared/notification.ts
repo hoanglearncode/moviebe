@@ -15,11 +15,13 @@ export class PartnerNotificationService {
   async sendWithdrawalPending(
     partnerId: string,
     withdrawalId: string,
-    amount: number
+    amount: number,
   ): Promise<void> {
     try {
       // TODO: Implement email notification
-      logger.info(`[NOTIFICATION] Withdrawal ${withdrawalId} initiated for partner ${partnerId}. Amount: ${amount}`);
+      logger.info(
+        `[NOTIFICATION] Withdrawal ${withdrawalId} initiated for partner ${partnerId}. Amount: ${amount}`,
+      );
       // Example: await mailService.send(partner.email, 'Withdrawal Initiated', ...)
     } catch (error) {
       logger.error(`Failed to send withdrawal pending notification: ${error}`);
@@ -36,12 +38,12 @@ export class PartnerNotificationService {
   async sendWithdrawalCompleted(
     partnerId: string,
     withdrawalId: string,
-    amount: number
+    amount: number,
   ): Promise<void> {
     try {
       // TODO: Implement email notification
       logger.info(
-        `[NOTIFICATION] Withdrawal ${withdrawalId} completed for partner ${partnerId}. Amount: ${amount}`
+        `[NOTIFICATION] Withdrawal ${withdrawalId} completed for partner ${partnerId}. Amount: ${amount}`,
       );
       // Example: await mailService.send(partner.email, 'Withdrawal Completed', ...)
     } catch (error) {
@@ -55,15 +57,11 @@ export class PartnerNotificationService {
    * @param movieId Movie ID
    * @param movieTitle Movie title
    */
-  async sendMovieApproved(
-    partnerId: string,
-    movieId: string,
-    movieTitle: string
-  ): Promise<void> {
+  async sendMovieApproved(partnerId: string, movieId: string, movieTitle: string): Promise<void> {
     try {
       // TODO: Implement email notification
       logger.info(
-        `[NOTIFICATION] Movie "${movieTitle}" (${movieId}) approved for partner ${partnerId}`
+        `[NOTIFICATION] Movie "${movieTitle}" (${movieId}) approved for partner ${partnerId}`,
       );
       // Example: await mailService.send(partner.email, 'Movie Approved', ...)
     } catch (error) {
@@ -82,12 +80,12 @@ export class PartnerNotificationService {
     partnerId: string,
     movieId: string,
     movieTitle: string,
-    reason: string
+    reason: string,
   ): Promise<void> {
     try {
       // TODO: Implement email notification
       logger.info(
-        `[NOTIFICATION] Movie "${movieTitle}" (${movieId}) rejected for partner ${partnerId}. Reason: ${reason}`
+        `[NOTIFICATION] Movie "${movieTitle}" (${movieId}) rejected for partner ${partnerId}. Reason: ${reason}`,
       );
       // Example: await mailService.send(partner.email, 'Movie Rejected', ...)
     } catch (error) {
@@ -104,12 +102,12 @@ export class PartnerNotificationService {
   async sendDailyRevenueReport(
     partnerId: string,
     dailyRevenue: number,
-    totalEarned: number
+    totalEarned: number,
   ): Promise<void> {
     try {
       // TODO: Implement email notification with daily report
       logger.info(
-        `[NOTIFICATION] Daily revenue report for partner ${partnerId}. Daily: ${dailyRevenue}, Total: ${totalEarned}`
+        `[NOTIFICATION] Daily revenue report for partner ${partnerId}. Daily: ${dailyRevenue}, Total: ${totalEarned}`,
       );
       // Example: await mailService.send(partner.email, 'Daily Revenue Report', ...)
     } catch (error) {
@@ -126,12 +124,12 @@ export class PartnerNotificationService {
   async sendShowtimeCancellationNotice(
     showtimeId: string,
     movieTitle: string,
-    cancelledAt: Date
+    cancelledAt: Date,
   ): Promise<void> {
     try {
       // TODO: Implement SMS/email notification to ticket holders
       logger.info(
-        `[NOTIFICATION] Showtime ${showtimeId} for "${movieTitle}" cancelled at ${cancelledAt}`
+        `[NOTIFICATION] Showtime ${showtimeId} for "${movieTitle}" cancelled at ${cancelledAt}`,
       );
       // Example: Find all ticket holders and notify them
     } catch (error) {
@@ -150,12 +148,12 @@ export class PartnerNotificationService {
     partnerId: string,
     showtimeId: string,
     seatCode: string,
-    reason: string
+    reason: string,
   ): Promise<void> {
     try {
       // TODO: Implement notification
       logger.info(
-        `[NOTIFICATION] Seat ${seatCode} in showtime ${showtimeId} is now unavailable. Reason: ${reason}`
+        `[NOTIFICATION] Seat ${seatCode} in showtime ${showtimeId} is now unavailable. Reason: ${reason}`,
       );
     } catch (error) {
       logger.error(`Failed to send seat unavailable notification: ${error}`);

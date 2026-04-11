@@ -1,9 +1,8 @@
 import IORedis, { RedisOptions } from "ioredis";
 import { JobsOptions } from "bullmq";
-import { ENV } from "../share/common/value";
+import { ENV } from "../../share/common/value";
 
-const parseQueueBoolean = (value?: string): boolean =>
-  value === "true";
+const parseQueueBoolean = (value?: string): boolean => value === "true";
 
 export const isQueueEnabled = parseQueueBoolean(process.env.QUEUE_ENABLED);
 export const areQueueWorkersEnabled = parseQueueBoolean(process.env.QUEUE_WORKERS_ENABLED);
@@ -30,5 +29,4 @@ export const defaultJobOptions: JobsOptions = {
   removeOnFail: ENV.QUEUE_REMOVE_ON_FAIL_COUNT,
 };
 
-export const createRedisConnection = (): IORedis =>
-  new IORedis(queueConnectionOptions);
+export const createRedisConnection = (): IORedis => new IORedis(queueConnectionOptions);

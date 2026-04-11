@@ -1,4 +1,4 @@
-import { SendMailInput } from "../share/component/mail";
+import { SendMailInput } from "../../share/component/mail";
 
 export const QueueName = {
   Email: "email",

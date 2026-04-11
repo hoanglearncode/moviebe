@@ -23,7 +23,7 @@ function toUserProfile(raw: any): UserProfile {
     phone: raw.phone ?? null,
     bio: raw.bio ?? null,
     location: raw.location ?? null,
-    avatarColor: raw.avatarColor ?? null,
+    avatarColor: raw.avatarColor ?? undefined,
     role: raw.role,
     status: raw.status,
     emailVerified: raw.emailVerified ?? false,
@@ -110,7 +110,7 @@ export class PrismaUserRepository implements IUserRepository {
   async insert(data: UserProfile): Promise<boolean> {
     await this.model.create({
       data: {
-        id: data.id,          // NOTE: caller phải tự cấp id nếu dùng insert
+        id: data.id, // NOTE: caller phải tự cấp id nếu dùng insert
         email: data.email,
         name: data.name,
         username: data.username,
@@ -182,13 +182,13 @@ export class PrismaUserRepository implements IUserRepository {
     const raw = await this.model.update({
       where: { id: userId },
       data: {
-        ...(data.name !== undefined   && { name: data.name }),
-        ...(data.phone !== undefined  && { phone: data.phone }),
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.phone !== undefined && { phone: data.phone }),
         ...(data.avatar !== undefined && { avatar: data.avatar }),
-        ...(data.bio !== undefined    && { bio: data.bio }),
+        ...(data.bio !== undefined && { bio: data.bio }),
         ...(data.location !== undefined && { location: data.location }),
         ...(data.username !== undefined && { username: data.username }),
-        ...(data.role !== undefined   && { role: data.role }),
+        ...(data.role !== undefined && { role: data.role }),
         ...(data.status !== undefined && { status: data.status }),
         ...(data.emailVerified !== undefined && { emailVerified: data.emailVerified }),
       },
@@ -261,5 +261,4 @@ export class PrismaUserRepository implements IUserRepository {
   }
 }
 
-export const createUserRepository = (prisma: PrismaClient) =>
-  new PrismaUserRepository(prisma);
+export const createUserRepository = (prisma: PrismaClient) => new PrismaUserRepository(prisma);

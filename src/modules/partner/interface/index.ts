@@ -36,7 +36,11 @@ import {
  * ==========================================
  */
 
-export interface IPartnerRepository extends IRepository<PartnerProfile, Partial<PartnerProfile>, Partial<PartnerProfile>> {
+export interface IPartnerRepository extends IRepository<
+  PartnerProfile,
+  Partial<PartnerProfile>,
+  Partial<PartnerProfile>
+> {
   findById(partnerId: string): Promise<PartnerProfile | null>;
   findByUserId(userId: string): Promise<PartnerProfile | null>;
   findByTaxCode(taxCode: string): Promise<PartnerProfile | null>;
@@ -44,14 +48,24 @@ export interface IPartnerRepository extends IRepository<PartnerProfile, Partial<
 
 export interface IMovieRepository extends IRepository<Movie, Partial<Movie>, Partial<Movie>> {
   findById(movieId: string): Promise<Movie | null>;
-  findByPartnerId(partnerId: string, query: ListMoviesQueryDTO): Promise<{ items: Movie[]; total: number }>;
+  findByPartnerId(
+    partnerId: string,
+    query: ListMoviesQueryDTO,
+  ): Promise<{ items: Movie[]; total: number }>;
   findByIdAndPartnerId(movieId: string, partnerId: string): Promise<Movie | null>;
   updateStatus(movieId: string, status: string): Promise<boolean>;
 }
 
-export interface IShowtimeRepository extends IRepository<Showtime, Partial<Showtime>, Partial<Showtime>> {
+export interface IShowtimeRepository extends IRepository<
+  Showtime,
+  Partial<Showtime>,
+  Partial<Showtime>
+> {
   findById(showtimeId: string): Promise<Showtime | null>;
-  findByPartnerId(partnerId: string, query: ListShowtimesQueryDTO): Promise<{ items: Showtime[]; total: number }>;
+  findByPartnerId(
+    partnerId: string,
+    query: ListShowtimesQueryDTO,
+  ): Promise<{ items: Showtime[]; total: number }>;
   findByIdAndPartnerId(showtimeId: string, partnerId: string): Promise<Showtime | null>;
   updateAvailableSeats(showtimeId: string, available: number): Promise<boolean>;
 }
@@ -60,7 +74,12 @@ export interface ISeatRepository extends IRepository<Seat, Partial<Seat>, Partia
   findById(seatId: string): Promise<Seat | null>;
   findByShowtimeId(showtimeId: string): Promise<Seat[]>;
   findBySeatNumbers(showtimeId: string, seatNumbers: string[]): Promise<Seat[]>;
-  updateStatus(seatId: string, status: string, lockedUntil?: Date, lockedBy?: string): Promise<boolean>;
+  updateStatus(
+    seatId: string,
+    status: string,
+    lockedUntil?: Date,
+    lockedBy?: string,
+  ): Promise<boolean>;
   updateBulkStatus(seatIds: string[], status: string): Promise<number>;
 }
 
@@ -72,25 +91,48 @@ export interface ITicketRepository extends IRepository<Ticket, Partial<Ticket>, 
   updateStatus(ticketId: string, status: string): Promise<boolean>;
 }
 
-export interface ITransactionRepository extends IRepository<Transaction, Partial<Transaction>, Partial<Transaction>> {
+export interface ITransactionRepository extends IRepository<
+  Transaction,
+  Partial<Transaction>,
+  Partial<Transaction>
+> {
   findByPartnerId(partnerId: string): Promise<Transaction[]>;
-  findRevenueByPeriod(partnerId: string, startDate: Date, endDate: Date): Promise<{ amount: number; count: number }>;
+  findRevenueByPeriod(
+    partnerId: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<{ amount: number; count: number }>;
   findByType(partnerId: string, type: string): Promise<Transaction[]>;
 }
 
-export interface IWithdrawalRepository extends IRepository<Withdrawal, Partial<Withdrawal>, Partial<Withdrawal>> {
+export interface IWithdrawalRepository extends IRepository<
+  Withdrawal,
+  Partial<Withdrawal>,
+  Partial<Withdrawal>
+> {
   findById(withdrawalId: string): Promise<Withdrawal | null>;
-  findByPartnerId(partnerId: string, query: ListWithdrawalsQueryDTO): Promise<WithdrawalListResponse>;
+  findByPartnerId(
+    partnerId: string,
+    query: ListWithdrawalsQueryDTO,
+  ): Promise<WithdrawalListResponse>;
   updateStatus(withdrawalId: string, status: string): Promise<boolean>;
 }
 
-export interface ICheckInRepository extends IRepository<CheckIn, Partial<CheckIn>, Partial<CheckIn>> {
+export interface ICheckInRepository extends IRepository<
+  CheckIn,
+  Partial<CheckIn>,
+  Partial<CheckIn>
+> {
   findByTicketId(ticketId: string): Promise<CheckIn | null>;
   findByShowtimeId(showtimeId: string): Promise<CheckIn[]>;
   countByShowtimeId(showtimeId: string): Promise<number>;
 }
 
-export interface IWalletRepository extends IRepository<PartnerWallet, Partial<PartnerWallet>, Partial<PartnerWallet>> {
+export interface IWalletRepository extends IRepository<
+  PartnerWallet,
+  Partial<PartnerWallet>,
+  Partial<PartnerWallet>
+> {
   findByPartnerId(partnerId: string): Promise<PartnerWallet | null>;
   updateBalance(partnerId: string, amount: number): Promise<boolean>;
   incrementBalance(partnerId: string, amount: number): Promise<boolean>;
@@ -105,7 +147,11 @@ export interface IWalletRepository extends IRepository<PartnerWallet, Partial<Pa
 
 export interface IPartnerNotificationService {
   sendWithdrawalPending(input: { email: string; amount: number; reference: string }): Promise<void>;
-  sendWithdrawalCompleted(input: { email: string; amount: number; reference: string }): Promise<void>;
+  sendWithdrawalCompleted(input: {
+    email: string;
+    amount: number;
+    reference: string;
+  }): Promise<void>;
   sendWithdrawalFailed(input: { email: string; amount: number; reason: string }): Promise<void>;
   sendMovieApproved(input: { email: string; movieTitle: string }): Promise<void>;
   sendMovieRejected(input: { email: string; movieTitle: string; reason: string }): Promise<void>;
@@ -132,7 +178,10 @@ export interface IPartnerProfileUseCase {
  */
 export interface IMovieManagementUseCase {
   createMovie(partnerId: string, data: CreateMovieDTO): Promise<{ movieId: string }>;
-  getMovies(partnerId: string, query: ListMoviesQueryDTO): Promise<{ items: Movie[]; total: number }>;
+  getMovies(
+    partnerId: string,
+    query: ListMoviesQueryDTO,
+  ): Promise<{ items: Movie[]; total: number }>;
   getMovieDetail(partnerId: string, movieId: string): Promise<Movie>;
   updateMovie(partnerId: string, movieId: string, data: UpdateMovieDTO): Promise<Movie>;
   deleteMovie(partnerId: string, movieId: string): Promise<{ message: string }>;
@@ -144,7 +193,10 @@ export interface IMovieManagementUseCase {
  */
 export interface IShowtimeManagementUseCase {
   createShowtime(partnerId: string, data: CreateShowtimeDTO): Promise<{ showtimeId: string }>;
-  getShowtimes(partnerId: string, query: ListShowtimesQueryDTO): Promise<{ items: Showtime[]; total: number }>;
+  getShowtimes(
+    partnerId: string,
+    query: ListShowtimesQueryDTO,
+  ): Promise<{ items: Showtime[]; total: number }>;
   getShowtimeDetail(partnerId: string, showtimeId: string): Promise<Showtime>;
   updateShowtime(partnerId: string, showtimeId: string, data: UpdateShowtimeDTO): Promise<Showtime>;
   cancelShowtime(partnerId: string, showtimeId: string): Promise<{ message: string }>;
@@ -165,7 +217,10 @@ export interface ISeatManagementUseCase {
 export interface ITicketCheckInUseCase {
   getTickets(partnerId: string, query: ListTicketsQueryDTO): Promise<TicketListResponse>;
   getTicketDetail(partnerId: string, ticketId: string): Promise<Ticket>;
-  checkInTicket(partnerId: string, data: CheckInDTO): Promise<{ message: string; ticketId: string }>;
+  checkInTicket(
+    partnerId: string,
+    data: CheckInDTO,
+  ): Promise<{ message: string; ticketId: string }>;
   getCheckInHistory(partnerId: string, showtimeId: string): Promise<CheckIn[]>;
 }
 
@@ -178,7 +233,10 @@ export interface IPartnerFinanceUseCase {
   getRevenue(partnerId: string, query: RevenueQueryDTO): Promise<any>;
   getRevenueByMovie(partnerId: string, startDate?: Date, endDate?: Date): Promise<any>;
   createWithdrawal(partnerId: string, data: CreateWithdrawalDTO): Promise<{ withdrawalId: string }>;
-  getWithdrawals(partnerId: string, query: ListWithdrawalsQueryDTO): Promise<WithdrawalListResponse>;
+  getWithdrawals(
+    partnerId: string,
+    query: ListWithdrawalsQueryDTO,
+  ): Promise<WithdrawalListResponse>;
   getWithdrawalDetail(partnerId: string, withdrawalId: string): Promise<Withdrawal>;
 }
 

@@ -7,25 +7,22 @@ const user_usecase_1 = require("./usecase/user.usecase");
 const http_service_1 = require("./infras/transport/http-service");
 const session_repo_1 = require("./infras/repository/session-repo");
 const user_repo_1 = require("./infras/repository/user-repo");
-const setting_repo_1 = require("./infras/repository/setting-repo");
 const hash_1 = require("./shared/hash");
 const notification_1 = require("./shared/notification");
 const avatar_color_service_1 = require("./shared/avatar-color.service");
 const prisma_1 = require("../../share/component/prisma");
 const auth_1 = require("../../share/middleware/auth");
+const setting_1 = require("../system/setting");
 const buildUserRouter = (useCase) => {
     const httpService = new http_service_1.UserHttpService(useCase);
     const router = (0, express_1.Router)();
-    router.use(...(0, auth_1.protect)());
-    router.get("/me", httpService.getProfile.bind(httpService));
-    router.put("/me", httpService.updateProfile.bind(httpService));
-    router.delete("/me", httpService.deleteAccount.bind(httpService));
-    router.post("/change-password", httpService.changePassword.bind(httpService));
-    router.get("/sessions", httpService.getSessions.bind(httpService));
-    router.delete("/sessions/:sessionId", httpService.revokeSession.bind(httpService));
-    router.delete("/sessions", httpService.revokeAllSessions.bind(httpService));
-    router.get("/settings", httpService.getSettings.bind(httpService));
-    router.put("/settings", httpService.updateSettings.bind(httpService));
+    router.get("/me", ...(0, auth_1.authenticate)(), httpService.getProfile.bind(httpService));
+    router.put("/me", ...(0, auth_1.protect)(), httpService.updateProfile.bind(httpService));
+    router.delete("/me", ...(0, auth_1.protect)(), httpService.deleteAccount.bind(httpService));
+    router.post("/change-password", ...(0, auth_1.protect)(), httpService.changePassword.bind(httpService));
+    router.get("/sessions", ...(0, auth_1.protect)(), httpService.getSessions.bind(httpService));
+    router.delete("/sessions/:sessionId", ...(0, auth_1.protect)(), httpService.revokeSession.bind(httpService));
+    router.delete("/sessions", ...(0, auth_1.protect)(), httpService.revokeAllSessions.bind(httpService));
     return router;
 };
 const buildAdminUserRouter = (useCase) => {
@@ -52,24 +49,27 @@ const buildAdminUserRouter = (useCase) => {
 const setupUserHexagon = (prismaClient = prisma_1.prisma) => {
     const userRepository = (0, user_repo_1.createUserRepository)(prismaClient);
     const sessionRepository = (0, session_repo_1.createSessionRepository)(prismaClient);
-    const userSettingsRepository = (0, setting_repo_1.createUserSettingRepository)(prismaClient);
     const passwordHasher = new hash_1.HashService();
     const notificationService = new notification_1.UserNotificationService();
     const avatarColorService = new avatar_color_service_1.AvatarColorService();
+    const userSettingService = (0, setting_1.createSettingUseCase)(prismaClient);
     const dependencies = {
         userRepository,
         sessionRepository,
-        userSettingsRepository,
+        userSettingsRepository: {}, // placeholder, not used when settingService is available
         passwordHasher,
         notificationService,
         avatarColorService,
         prisma: prismaClient,
+        userSettingService,
     };
     const userUseCase = new user_usecase_1.UserUseCase(dependencies);
     const adminUserUseCase = new admin_user_usecase_1.AdminUserUseCase(dependencies);
     const router = (0, express_1.Router)();
     router.use("/user", buildUserRouter(userUseCase));
     router.use("/admin", buildAdminUserRouter(adminUserUseCase));
+    const { router: settingRouter } = (0, setting_1.setupSettingHexagon)(prismaClient, userSettingService);
+    router.use("/user", settingRouter);
     return router;
 };
 exports.setupUserHexagon = setupUserHexagon;

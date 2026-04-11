@@ -6,6 +6,7 @@
 import { PrismaClient, Role, UserStatus } from "@prisma/client";
 import { SeedGenerator } from "../../../share/common/seed-generator";
 import { HashService } from "../../auth/shared/hash";
+import { defaultSettings } from "../../../share/common/seed-setting";
 
 export interface SeedProgressCallback {
   onProgress?: (created: number, total: number, percentage: number) => void;
@@ -47,7 +48,7 @@ export class SeedService {
    */
   async seedUsers(
     options: SeedOptions,
-    progressCallback?: SeedProgressCallback
+    progressCallback?: SeedProgressCallback,
   ): Promise<SeedSummary> {
     const startTime = new Date();
     const batchSize = options.batchSize || 100;
@@ -56,24 +57,17 @@ export class SeedService {
     let totalFailed = 0;
 
     const defaultRole = (options.defaultRole || "USER") as Role;
-    const defaultStatus =
-      (options.defaultStatus || "ACTIVE") as UserStatus;
+    const defaultStatus = (options.defaultStatus || "ACTIVE") as UserStatus;
 
     try {
       const totalBatches = Math.ceil(options.count / batchSize);
 
       for (let batch = 0; batch < totalBatches; batch++) {
         const startIndex = batch * batchSize;
-        const currentBatchSize = Math.min(
-          batchSize,
-          options.count - startIndex
-        );
+        const currentBatchSize = Math.min(batchSize, options.count - startIndex);
 
         try {
-          const users = SeedGenerator.generateUserBatch(
-            currentBatchSize,
-            startIndex
-          );
+          const users = SeedGenerator.generateUserBatch(currentBatchSize, startIndex);
 
           // Hash passwords trước khi insert
           const now = new Date();
@@ -104,25 +98,28 @@ export class SeedService {
           try {
             await this.prisma.user.createMany({
               data: usersWithHashedPassword,
-              skipDuplicates: true, // Bỏ qua nếu email/username bị trùng
+              skipDuplicates: true,
+            });
+
+            await this.prisma.userSetting.createMany({
+              data: usersWithHashedPassword.map((user) => ({
+                id: crypto.randomUUID(),
+                userId: user.id,
+                ...defaultSettings,
+                createdAt: now,
+                updatedAt: now,
+              })),
+              skipDuplicates: true,
             });
 
             totalCreated += currentBatchSize;
 
             // Gọi callback progress
-            const progress = Math.round(
-              ((batch + 1) / totalBatches) * 100
-            );
-            progressCallback?.onProgress?.(
-              totalCreated,
-              options.count,
-              progress
-            );
+            const progress = Math.round(((batch + 1) / totalBatches) * 100);
+            progressCallback?.onProgress?.(totalCreated, options.count, progress);
           } catch (batchError) {
             const errorMsg = `Batch ${batch + 1} failed: ${
-              batchError instanceof Error
-                ? batchError.message
-                : String(batchError)
+              batchError instanceof Error ? batchError.message : String(batchError)
             }`;
             errors.push(errorMsg);
             totalFailed += currentBatchSize;
@@ -177,8 +174,7 @@ export class SeedService {
         progressCallback?.onError?.(errorMsg);
       }
     } catch (error) {
-      const errorMsg =
-        error instanceof Error ? error.message : String(error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
       errors.push(errorMsg);
       progressCallback?.onError?.(errorMsg);
     }

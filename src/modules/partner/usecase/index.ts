@@ -1,5 +1,9 @@
 import { v7 } from "uuid";
-import { ValidationError, NotFoundError, UnauthorizedError } from "../../../share/transport/http-server";
+import {
+  ValidationError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../../../share/transport/http-server";
 import { ErrorCode } from "../../../share/model/error-code";
 import { logger } from "../../system/logger";
 import {
@@ -88,7 +92,7 @@ export class PartnerProfileUseCase implements IPartnerProfileUseCase {
 
     await this.dependencies.partnerRepository.update(partnerId, parsed.data);
     logger.info(`[Partner] Updated profile for partner ${partnerId}`);
-    
+
     // Return updated partner object
     return {
       ...partner,
@@ -206,7 +210,7 @@ export class MovieManagementUseCase implements IMovieManagementUseCase {
 
     await this.dependencies.movieRepository.update(movieId, updateData);
     logger.info(`[Movie] Updated movie ${movieId}`);
-    
+
     // Return updated movie
     return {
       ...movie,
@@ -257,14 +261,20 @@ export class MovieManagementUseCase implements IMovieManagementUseCase {
 export class ShowtimeManagementUseCase implements IShowtimeManagementUseCase {
   constructor(private readonly dependencies: PartnerHexagonDependencies) {}
 
-  async createShowtime(partnerId: string, data: CreateShowtimeDTO): Promise<{ showtimeId: string }> {
+  async createShowtime(
+    partnerId: string,
+    data: CreateShowtimeDTO,
+  ): Promise<{ showtimeId: string }> {
     const parsed = CreateShowtimePayloadDTO.safeParse(data);
     if (!parsed.success) {
       throw new ValidationError("Invalid showtime data", parsed.error.issues);
     }
 
     // Verify movie belongs to partner
-    const movie = await this.dependencies.movieRepository.findByIdAndPartnerId(parsed.data.movieId, partnerId);
+    const movie = await this.dependencies.movieRepository.findByIdAndPartnerId(
+      parsed.data.movieId,
+      partnerId,
+    );
     if (!movie) {
       throw new NotFoundError("Movie not found");
     }
@@ -313,7 +323,10 @@ export class ShowtimeManagementUseCase implements IShowtimeManagementUseCase {
   }
 
   async getShowtimeDetail(partnerId: string, showtimeId: string): Promise<Showtime> {
-    const showtime = await this.dependencies.showtimeRepository.findByIdAndPartnerId(showtimeId, partnerId);
+    const showtime = await this.dependencies.showtimeRepository.findByIdAndPartnerId(
+      showtimeId,
+      partnerId,
+    );
     if (!showtime) {
       throw new NotFoundError("Showtime not found");
     }
@@ -321,13 +334,20 @@ export class ShowtimeManagementUseCase implements IShowtimeManagementUseCase {
     return showtime;
   }
 
-  async updateShowtime(partnerId: string, showtimeId: string, data: UpdateShowtimeDTO): Promise<Showtime> {
+  async updateShowtime(
+    partnerId: string,
+    showtimeId: string,
+    data: UpdateShowtimeDTO,
+  ): Promise<Showtime> {
     const parsed = UpdateShowtimePayloadDTO.safeParse(data);
     if (!parsed.success) {
       throw new ValidationError("Invalid update data", parsed.error.issues);
     }
 
-    const showtime = await this.dependencies.showtimeRepository.findByIdAndPartnerId(showtimeId, partnerId);
+    const showtime = await this.dependencies.showtimeRepository.findByIdAndPartnerId(
+      showtimeId,
+      partnerId,
+    );
     if (!showtime) {
       throw new NotFoundError("Showtime not found");
     }
@@ -341,7 +361,10 @@ export class ShowtimeManagementUseCase implements IShowtimeManagementUseCase {
   }
 
   async cancelShowtime(partnerId: string, showtimeId: string): Promise<{ message: string }> {
-    const showtime = await this.dependencies.showtimeRepository.findByIdAndPartnerId(showtimeId, partnerId);
+    const showtime = await this.dependencies.showtimeRepository.findByIdAndPartnerId(
+      showtimeId,
+      partnerId,
+    );
     if (!showtime) {
       throw new NotFoundError("Showtime not found");
     }
@@ -403,7 +426,10 @@ export class SeatManagementUseCase implements ISeatManagementUseCase {
 
   async getSeats(partnerId: string, showtimeId: string): Promise<Seat[]> {
     // Verify ownership
-    const showtime = await this.dependencies.showtimeRepository.findByIdAndPartnerId(showtimeId, partnerId);
+    const showtime = await this.dependencies.showtimeRepository.findByIdAndPartnerId(
+      showtimeId,
+      partnerId,
+    );
     if (!showtime) {
       throw new NotFoundError("Showtime not found");
     }
@@ -422,7 +448,10 @@ export class SeatManagementUseCase implements ISeatManagementUseCase {
       throw new NotFoundError("Seat not found");
     }
 
-    const showtime = await this.dependencies.showtimeRepository.findByIdAndPartnerId(seat.showtimeId, partnerId);
+    const showtime = await this.dependencies.showtimeRepository.findByIdAndPartnerId(
+      seat.showtimeId,
+      partnerId,
+    );
     if (!showtime) {
       throw new UnauthorizedError("You don't have permission to modify this seat");
     }
@@ -432,7 +461,10 @@ export class SeatManagementUseCase implements ISeatManagementUseCase {
   }
 
   async getSeatMap(partnerId: string, showtimeId: string): Promise<any> {
-    const showtime = await this.dependencies.showtimeRepository.findByIdAndPartnerId(showtimeId, partnerId);
+    const showtime = await this.dependencies.showtimeRepository.findByIdAndPartnerId(
+      showtimeId,
+      partnerId,
+    );
     if (!showtime) {
       throw new NotFoundError("Showtime not found");
     }
@@ -492,7 +524,10 @@ export class TicketCheckInUseCase implements ITicketCheckInUseCase {
     return ticket;
   }
 
-  async checkInTicket(partnerId: string, data: CheckInDTO): Promise<{ message: string; ticketId: string }> {
+  async checkInTicket(
+    partnerId: string,
+    data: CheckInDTO,
+  ): Promise<{ message: string; ticketId: string }> {
     const parsed = CheckInPayloadDTO.safeParse(data);
     if (!parsed.success) {
       throw new ValidationError("Invalid check-in data", parsed.error.issues);
@@ -543,7 +578,10 @@ export class TicketCheckInUseCase implements ITicketCheckInUseCase {
   }
 
   async getCheckInHistory(partnerId: string, showtimeId: string): Promise<CheckIn[]> {
-    const showtime = await this.dependencies.showtimeRepository.findByIdAndPartnerId(showtimeId, partnerId);
+    const showtime = await this.dependencies.showtimeRepository.findByIdAndPartnerId(
+      showtimeId,
+      partnerId,
+    );
     if (!showtime) {
       throw new NotFoundError("Showtime not found");
     }
@@ -592,7 +630,7 @@ export class PartnerFinanceUseCase implements IPartnerFinanceUseCase {
     const revenue = await this.dependencies.transactionRepository.findRevenueByPeriod(
       partnerId,
       new Date(query.startDate),
-      new Date(query.endDate)
+      new Date(query.endDate),
     );
 
     return {
@@ -607,7 +645,10 @@ export class PartnerFinanceUseCase implements IPartnerFinanceUseCase {
     return [];
   }
 
-  async createWithdrawal(partnerId: string, data: CreateWithdrawalDTO): Promise<{ withdrawalId: string }> {
+  async createWithdrawal(
+    partnerId: string,
+    data: CreateWithdrawalDTO,
+  ): Promise<{ withdrawalId: string }> {
     const parsed = CreateWithdrawalPayloadDTO.safeParse(data);
     if (!parsed.success) {
       throw new ValidationError("Invalid withdrawal data", parsed.error.issues);
@@ -669,11 +710,14 @@ export class PartnerDashboardUseCase implements IPartnerDashboardUseCase {
 
   async getDashboardStats(partnerId: string): Promise<any> {
     const wallet = await this.dependencies.walletRepository.findByPartnerId(partnerId);
-    const pendingWithdrawals = await this.dependencies.withdrawalRepository.findByPartnerId(partnerId, {
-      page: 1,
-      limit: 100,
-      status: "PENDING",
-    });
+    const pendingWithdrawals = await this.dependencies.withdrawalRepository.findByPartnerId(
+      partnerId,
+      {
+        page: 1,
+        limit: 100,
+        status: "PENDING",
+      },
+    );
 
     return {
       walletBalance: wallet?.balance || 0,

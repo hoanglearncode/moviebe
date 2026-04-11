@@ -8,7 +8,7 @@ export class AppError extends Error {
     message: string,
     public readonly code: ErrorCode,
     public readonly status: number,
-    public readonly details?: any
+    public readonly details?: any,
   ) {
     super(message);
     this.name = "AppError";
@@ -40,7 +40,7 @@ export class ConflictError extends AppError {
   constructor(
     message: string = "Conflict",
     code: ErrorCode = ErrorCode.CONCURRENT_TASK_LOCKED,
-    details?: any
+    details?: any,
   ) {
     super(message, code, 409, details);
     this.name = "ConflictError";
@@ -62,7 +62,7 @@ export abstract class BaseHttpService<Entity, CreateDTO, UpdateDTO, Cond> {
   protected async handleRequest<T>(
     res: Response,
     operation: () => Promise<T>,
-    successStatus: number = 200
+    successStatus: number = 200,
   ): Promise<void> {
     try {
       const result = await operation();
@@ -148,7 +148,7 @@ export function successResponse<T>(
   res: Response,
   data: T,
   message: string = "Success",
-  statusCode: number = 200
+  statusCode: number = 200,
 ): void {
   res.status(statusCode).json({
     success: true,
@@ -165,7 +165,7 @@ export function errorResponse(
   statusCode: number = 500,
   message: string = "Internal server error",
   code: string = ErrorCode.INTERNAL.toString(),
-  details?: any
+  details?: any,
 ): void {
   res.status(statusCode).json({
     success: false,

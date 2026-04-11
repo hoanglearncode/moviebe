@@ -11,6 +11,9 @@ class AuthUseCase {
     constructor(dependencies) {
         this.dependencies = dependencies;
     }
+    isSessionAllowedStatus(status) {
+        return status === client_1.UserStatus.ACTIVE || status === client_1.UserStatus.BANNED;
+    }
     async register(data) {
         const parsedData = dto_1.RegisterPayloadDTO.safeParse(data);
         if (!parsedData.success) {
@@ -52,6 +55,16 @@ class AuthUseCase {
                 updatedAt: new Date(),
             };
             await userRepository.insert(user);
+            // 🔄 Apply default settings for new user
+            if (this.dependencies.userSettingService) {
+                try {
+                    await this.dependencies.userSettingService.default(newUserId);
+                }
+                catch (error) {
+                    // Log error but don't block registration
+                    console.error(`Failed to create default settings for user ${newUserId}:`, error);
+                }
+            }
             const verifyToken = await tokenService.issueActionToken({
                 userId: newUserId,
                 purpose: "verify-email",
@@ -77,7 +90,10 @@ class AuthUseCase {
             if (!user) {
                 throw new http_server_1.UnauthorizedError("Invalid credentials", error_code_1.ErrorCode.INVALID_CREDENTIALS);
             }
-            if (user.status !== client_1.UserStatus.ACTIVE) {
+            if (user.status === client_1.UserStatus.INACTIVE) {
+                throw new http_server_1.UnauthorizedError("Invalid credentials", error_code_1.ErrorCode.INVALID_CREDENTIALS);
+            }
+            if (!this.isSessionAllowedStatus(user.status)) {
                 throw new http_server_1.UnauthorizedError("Account is unavailable", error_code_1.ErrorCode.ACCOUNT_INACTIVE);
             }
             const isPasswordMatched = await passwordHasher.compare(parsedData.data.password, user.password || "");
@@ -108,7 +124,7 @@ class AuthUseCase {
         if (!user) {
             throw new http_server_1.NotFoundError("User");
         }
-        if (user.status !== client_1.UserStatus.ACTIVE) {
+        if (!this.isSessionAllowedStatus(user.status)) {
             throw new http_server_1.UnauthorizedError("Account is unavailable", error_code_1.ErrorCode.ACCOUNT_INACTIVE);
         }
         return this.buildAuthResponse(user, session);
@@ -243,7 +259,7 @@ class AuthUseCase {
                 await userRepository.insert(user);
             }
             else {
-                if (user.status !== client_1.UserStatus.ACTIVE) {
+                if (!this.isSessionAllowedStatus(user.status)) {
                     throw new http_server_1.UnauthorizedError("Account is unavailable", error_code_1.ErrorCode.ACCOUNT_INACTIVE);
                 }
                 await userRepository.update(user.id, {
@@ -290,6 +306,7 @@ class AuthUseCase {
                 email: user.email,
                 username: user.username,
                 role: user.role,
+                status: user.status,
                 avatar: user.avatar,
                 avatarColor: user.avatarColor,
                 name: user.name,

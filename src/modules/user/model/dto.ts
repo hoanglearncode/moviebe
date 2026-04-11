@@ -4,7 +4,11 @@ import { z } from "zod";
 
 export const UpdateProfilePayloadSchema = z.object({
   name: z.string().trim().min(1).max(255).optional(),
-  phone: z.string().trim().regex(/^\+?[0-9\s\-()]{9,}$/, "invalid phone number format").optional(),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[0-9\s\-()]{9,}$/, "invalid phone number format")
+    .optional(),
   avatar: z.string().trim().url("avatar must be a valid URL").optional(),
   bio: z.string().trim().max(500).optional(),
   location: z.string().trim().max(255).optional(),
@@ -21,11 +25,11 @@ export const ChangePasswordPayloadSchema = z
     newPassword: z.string().min(8, "new password must be at least 8 characters"),
     confirmPassword: z.string().min(8, "confirm password is required"),
   })
-  .refine(d => d.newPassword === d.confirmPassword, {
+  .refine((d) => d.newPassword === d.confirmPassword, {
     message: "passwords do not match",
     path: ["confirmPassword"],
   })
-  .refine(d => d.currentPassword !== d.newPassword, {
+  .refine((d) => d.currentPassword !== d.newPassword, {
     message: "new password must be different from current password",
     path: ["newPassword"],
   });
@@ -80,6 +84,7 @@ export const CreateUserPayloadSchema = z.object({
   password: z.string().min(8, "password must be at least 8 characters"),
   avatar: z.string().trim().nullable().optional(),
   emailVerified: z.boolean().default(false).optional(),
+  sendEmailWellCome: z.boolean().default(true).optional(),
   phone: z.string().trim().optional(),
   location: z.string().trim().optional(),
   role: z.enum(["USER", "ADMIN", "PARTNER"]).optional(),
@@ -153,16 +158,14 @@ export const SeedUsersPayloadDTO = SeedUsersPayloadSchema;
 
 // ── LEGACY EXPORTS ─────────────────────────────────────────────────────────────
 
-export type GetSettingsDTO = any;
-
 export const UserCreate = CreateUserPayloadSchema;
 export const UserUpdate = UpdateUserPayloadSchema;
-export const UserCond   = ListUsersQueryPayloadSchema;
-export const UserBan    = z.object({
+export const UserCond = ListUsersQueryPayloadSchema;
+export const UserBan = z.object({
   userId: z.string().uuid("userId must be a valid UUID"),
 });
 
 export type UserCreateDTO = z.infer<typeof UserCreate>;
 export type UserUpdateDTO = z.infer<typeof UserUpdate>;
-export type UserCondDTO   = z.infer<typeof UserCond>;
-export type UserBanDTO    = z.infer<typeof UserBan>;
+export type UserCondDTO = z.infer<typeof UserCond>;
+export type UserBanDTO = z.infer<typeof UserBan>;

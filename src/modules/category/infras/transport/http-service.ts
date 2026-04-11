@@ -1,10 +1,20 @@
 import { ICategoryUseCase } from "../../../../modules/category/interface";
-import { CategoryCondDTO, CategoryCondDTOSchema, CategoryCreateDTO, CategoryUpdateDTO } from "../../../../modules/category/model/dto";
+import {
+  CategoryCondDTO,
+  CategoryCondDTOSchema,
+  CategoryCreateDTO,
+  CategoryUpdateDTO,
+} from "../../../../modules/category/model/dto";
 import { Category } from "../../../../modules/category/model/model";
 import { BaseHttpService } from "../../../../share/transport/http-server";
 import { Request, Response } from "express";
 
-export class CategoryHttpService extends BaseHttpService<Category, CategoryCreateDTO, CategoryUpdateDTO, CategoryCondDTO> {
+export class CategoryHttpService extends BaseHttpService<
+  Category,
+  CategoryCreateDTO,
+  CategoryUpdateDTO,
+  CategoryCondDTO
+> {
   constructor(useCase: ICategoryUseCase) {
     super(useCase);
   }
@@ -15,7 +25,7 @@ export class CategoryHttpService extends BaseHttpService<Category, CategoryCreat
         page: 1,
         limit: 200,
       };
-  
+
       const cond = CategoryCondDTOSchema.parse(req.query);
 
       const result = await this.useCase.list(req.query, paging);

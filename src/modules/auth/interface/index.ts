@@ -1,5 +1,6 @@
 import { IRepository } from "../../../share/interface";
 import { IConcurrentLockService } from "../../../share/component/concurrent-lock";
+import { IUserSetting } from "../../../modules/system/setting/interface";
 import {
   ChangePasswordDTO,
   FacebookTO,
@@ -21,7 +22,11 @@ import {
   AuthUser,
 } from "../model/model";
 
-export interface IAuthUserRepository extends IRepository<AuthUser, Partial<AuthUser>, Partial<AuthUser>> {
+export interface IAuthUserRepository extends IRepository<
+  AuthUser,
+  Partial<AuthUser>,
+  Partial<AuthUser>
+> {
   findByEmail(email: string): Promise<AuthUser | null>;
   findByUsername(username: string): Promise<AuthUser | null>;
   findByEmailOrUsername(identifier: string): Promise<AuthUser | null>;
@@ -37,21 +42,19 @@ export interface IPasswordHasher {
 export interface ITokenService {
   issueAuthSession(user: AuthUser): Promise<AuthSession>;
   refreshAuthSession(refreshToken: string): Promise<AuthSession & { userId: string }>;
-  issueActionToken(payload: {
-    userId: string;
-    purpose: AuthActionTokenPurpose;
-  }): Promise<string>;
-  verifyActionToken(token: string, purpose: AuthActionTokenPurpose): Promise<{
+  issueActionToken(payload: { userId: string; purpose: AuthActionTokenPurpose }): Promise<string>;
+  verifyActionToken(
+    token: string,
+    purpose: AuthActionTokenPurpose,
+  ): Promise<{
     userId: string;
   }>;
 }
 
 export interface IAuthNotificationService {
   sendVerifyEmail(input: { email: string; token: string }): Promise<void>;
-  sendResetPasswordEmail(input: {
-    email: string;
-    token: string;
-  }): Promise<void>;
+  sendWellComeEmail(email: string): Promise<void>;
+  sendResetPasswordEmail(input: { email: string; token: string }): Promise<void>;
 }
 
 export interface ISocialAuthService {
@@ -86,4 +89,5 @@ export interface AuthHexagonDependencies {
   socialAuthService: ISocialAuthService;
   concurrentLockService: IConcurrentLockService;
   avatarColorService: IAvatarColorService;
+  userSettingService?: IUserSetting;
 }

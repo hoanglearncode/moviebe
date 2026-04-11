@@ -87,7 +87,10 @@ export class MovieRepository implements IMovieRepository {
     return null;
   }
 
-  async findByPartnerId(partnerId: string, query: ListMoviesQueryDTO): Promise<{ data: Movie[]; total: number }> {
+  async findByPartnerId(
+    partnerId: string,
+    query: ListMoviesQueryDTO,
+  ): Promise<{ data: Movie[]; total: number }> {
     // TODO: Implement once Movie model is defined in Prisma
     return { data: [], total: 0 };
   }
@@ -132,7 +135,10 @@ export class ShowtimeRepository implements IShowtimeRepository {
     return null;
   }
 
-  async findByPartnerId(partnerId: string, query: ListShowtimesQueryDTO): Promise<{ data: Showtime[]; total: number }> {
+  async findByPartnerId(
+    partnerId: string,
+    query: ListShowtimesQueryDTO,
+  ): Promise<{ data: Showtime[]; total: number }> {
     // TODO: Implement once Showtime model is defined in Prisma
     return { data: [], total: 0 };
   }
@@ -217,7 +223,10 @@ export class TicketRepository implements ITicketRepository {
     return null;
   }
 
-  async findByPartnerId(partnerId: string, query: ListTicketsQueryDTO): Promise<{ data: Ticket[]; total: number }> {
+  async findByPartnerId(
+    partnerId: string,
+    query: ListTicketsQueryDTO,
+  ): Promise<{ data: Ticket[]; total: number }> {
     // TODO: Implement once Ticket model is defined in Prisma
     return { data: [], total: 0 };
   }
@@ -302,7 +311,10 @@ export class WithdrawalRepository implements IWithdrawalRepository {
     return null;
   }
 
-  async findByPartnerId(partnerId: string, query: ListWithdrawalsQueryDTO): Promise<{ data: Withdrawal[]; total: number }> {
+  async findByPartnerId(
+    partnerId: string,
+    query: ListWithdrawalsQueryDTO,
+  ): Promise<{ data: Withdrawal[]; total: number }> {
     // TODO: Implement once Withdrawal model is defined in Prisma
     return { data: [], total: 0 };
   }

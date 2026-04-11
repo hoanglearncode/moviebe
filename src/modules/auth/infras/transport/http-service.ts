@@ -38,13 +38,8 @@ export class AuthHttpService extends BaseHttpService<any, RegisterDTO, any, any>
     await this.handleRequest(res, () => this.authUseCase.loginGoogle(req.body));
   }
 
-  async loginGoogleTokenCallback(
-    req: Request<any, any, GoogleTokenDTO>,
-    res: Response
-  ) {
-    await this.handleRequest(res, () =>
-      this.authUseCase.loginGoogleTokenCallback(req.body)
-    );
+  async loginGoogleTokenCallback(req: Request<any, any, GoogleTokenDTO>, res: Response) {
+    await this.handleRequest(res, () => this.authUseCase.loginGoogleTokenCallback(req.body));
   }
 
   async loginFacebook(req: Request<any, any, FacebookTO>, res: Response) {
@@ -55,24 +50,15 @@ export class AuthHttpService extends BaseHttpService<any, RegisterDTO, any, any>
     await this.handleRequest(res, () => this.authUseCase.verifyEmail(req.body));
   }
 
-  async resendVerification(
-    req: Request<any, any, ResendVerificationDTO>,
-    res: Response
-  ) {
+  async resendVerification(req: Request<any, any, ResendVerificationDTO>, res: Response) {
     await this.handleRequest(res, () => this.authUseCase.resendVerification(req.body));
   }
 
-  async forgotPassword(
-    req: Request<any, any, ForgotPasswordDTO>,
-    res: Response
-  ) {
+  async forgotPassword(req: Request<any, any, ForgotPasswordDTO>, res: Response) {
     await this.handleRequest(res, () => this.authUseCase.forgotPassword(req.body));
   }
 
-  async changePassword(
-    req: Request<any, any, ChangePasswordDTO>,
-    res: Response
-  ) {
+  async changePassword(req: Request<any, any, ChangePasswordDTO>, res: Response) {
     await this.handleRequest(res, () => this.authUseCase.changePassword(req.body));
   }
 }

@@ -19,11 +19,13 @@ export class PusherService {
   static async trigger<E extends PusherEvent>(
     channel: PusherChannel,
     event: E,
-    data: PusherEventMap[E]
+    data: PusherEventMap[E],
   ): Promise<void> {
     try {
       if (!pusher) {
-        console.warn(`[Pusher] Skipping "${event}" on "${channel}" because realtime is not configured.`);
+        console.warn(
+          `[Pusher] Skipping "${event}" on "${channel}" because realtime is not configured.`,
+        );
         return;
       }
 
@@ -37,7 +39,7 @@ export class PusherService {
   static async triggerBatch<E extends PusherEvent>(
     channels: PusherChannel[],
     event: E,
-    data: PusherEventMap[E]
+    data: PusherEventMap[E],
   ): Promise<void> {
     try {
       if (!pusher) {
@@ -45,9 +47,7 @@ export class PusherService {
         return;
       }
 
-      await pusher.triggerBatch(
-        channels.map((channel) => ({ channel, name: event, data }))
-      );
+      await pusher.triggerBatch(channels.map((channel) => ({ channel, name: event, data })));
     } catch (error) {
       console.error(`[Pusher] Batch trigger failed:`, error);
       throw error;

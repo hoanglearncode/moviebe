@@ -3,9 +3,9 @@ import { setupAuthHexagon } from "./modules/auth";
 import { setupUserHexagon } from "./modules/user";
 
 import { createCategoryRepository } from "./modules/category/infras/repository/repo";
-import { prisma } from './share/component/prisma';
-import { config } from 'dotenv';
-import express from 'express';
+import { prisma } from "./share/component/prisma";
+import { config } from "dotenv";
+import express from "express";
 import cors from "cors";
 import { ENV } from "./share/common/value";
 import { HashService } from "./modules/auth/shared/hash";
@@ -14,42 +14,43 @@ import { logger } from "./modules/system/log/logger";
 import { requestLogger } from "./modules/system/log/request-logger";
 import { initializeQueueInfrastructure, shutdownQueueInfrastructure } from "./queue";
 
-import { createUploadRouter } from './share/transport/upload.router';
+import { createUploadRouter } from "./share/transport/upload.router";
+import { defaultSettings } from "./share/common/seed-setting";
+import { seedEmailTemplates } from "./modules/notification/seed";
+import adminEmailRouter from "./modules/notification/admin-endpoints";
 
 config();
-  
+
 (async () => {
   await prisma.$connect();
   logger.info("Database connected successfully");
   await initializeQueueInfrastructure();
 
+  await seedEmailTemplates(prisma);
+
   await ensureAdminUser();
-  
+
   const app = express();
   const port = process.env.PORT || 3000;
 
   app.use(express.json());
   app.use(requestLogger);
-  
+
   app.use(
     cors({
-      origin: [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:3002",
-      ],
+      origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
       credentials: true,
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
       allowedHeaders: ["Content-Type", "Authorization"],
     }),
   );
 
+  app.use("/v1", setupCategoryHexagon(createCategoryRepository(prisma)));
+  app.use("/v1", setupAuthHexagon(prisma));
+  app.use("/v1", setupUserHexagon(prisma));
 
-  app.use('/v1', setupCategoryHexagon(createCategoryRepository(prisma)));
-  app.use('/v1', setupAuthHexagon(prisma));
-  app.use('/v1', setupUserHexagon(prisma));
-
-  app.use('/v1', createUploadRouter());
+  app.use("/v1", createUploadRouter());
+  app.use("/v1/admin/email", adminEmailRouter);
   // app.use('/v1', setupProductHexagon(sequelize));
 
   app.listen(port, () => {
@@ -92,7 +93,7 @@ async function ensureAdminUser() {
   const hashService = new HashService();
   const passwordHash = await hashService.hash(password);
 
-  await prisma.user.create({
+  const data = await prisma.user.create({
     data: {
       email,
       password: passwordHash,
@@ -102,6 +103,13 @@ async function ensureAdminUser() {
       status: UserStatus.ACTIVE,
       emailVerified: true,
       provider: "local",
+    },
+  });
+
+  await prisma.userSetting.create({
+    data: {
+      userId: data.id,
+      ...defaultSettings,
     },
   });
 

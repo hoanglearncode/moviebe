@@ -5,13 +5,14 @@ import { UserUseCase } from "./usecase/user.usecase";
 import { UserHttpService, AdminUserHttpService } from "./infras/transport/http-service";
 import { createSessionRepository } from "./infras/repository/session-repo";
 import { createUserRepository } from "./infras/repository/user-repo";
-import { createUserSettingRepository } from "./infras/repository/setting-repo";
 import { HashService } from "./shared/hash";
 import { UserNotificationService } from "./shared/notification";
-import { AvatarColorService } from "./shared/avatar-color.service";
+import { AvatarColorService } from "./shared/avatar-color";
 import { IUserUseCase, IAdminUserUseCase } from "./interface";
 import { prisma } from "../../share/component/prisma";
+import { mailService } from "../../share/component/mail";
 import { adminMiddleware, authenticate, protect } from "../../share/middleware/auth";
+import { setupSettingHexagon, createSettingUseCase } from "../system/setting";
 
 const buildUserRouter = (useCase: IUserUseCase) => {
   const httpService = new UserHttpService(useCase);
@@ -24,8 +25,6 @@ const buildUserRouter = (useCase: IUserUseCase) => {
   router.get("/sessions", ...protect(), httpService.getSessions.bind(httpService));
   router.delete("/sessions/:sessionId", ...protect(), httpService.revokeSession.bind(httpService));
   router.delete("/sessions", ...protect(), httpService.revokeAllSessions.bind(httpService));
-  router.get("/settings", ...protect(), httpService.getSettings.bind(httpService));
-  router.put("/settings", ...protect(), httpService.updateSettings.bind(httpService));
 
   return router;
 };
@@ -59,19 +58,20 @@ const buildAdminUserRouter = (useCase: IAdminUserUseCase) => {
 export const setupUserHexagon = (prismaClient: PrismaClient = prisma) => {
   const userRepository = createUserRepository(prismaClient);
   const sessionRepository = createSessionRepository(prismaClient);
-  const userSettingsRepository = createUserSettingRepository(prismaClient);
   const passwordHasher = new HashService();
-  const notificationService = new UserNotificationService();
+  const notificationService = new UserNotificationService(prismaClient, mailService);
   const avatarColorService = new AvatarColorService();
+  const userSettingService = createSettingUseCase(prismaClient);
 
   const dependencies = {
     userRepository,
     sessionRepository,
-    userSettingsRepository,
+    userSettingsRepository: {} as any, 
     passwordHasher,
     notificationService,
     avatarColorService,
     prisma: prismaClient,
+    userSettingService,
   };
 
   const userUseCase = new UserUseCase(dependencies);
@@ -80,6 +80,9 @@ export const setupUserHexagon = (prismaClient: PrismaClient = prisma) => {
   const router = Router();
   router.use("/user", buildUserRouter(userUseCase));
   router.use("/admin", buildAdminUserRouter(adminUserUseCase));
+
+  const { router: settingRouter } = setupSettingHexagon(prismaClient, userSettingService);
+  router.use("/user", settingRouter);
 
   return router;
 };

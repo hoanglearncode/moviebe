@@ -15,7 +15,7 @@ const toAuthUser = (raw: Prisma.UserGetPayload<Record<string, never>>): AuthUser
   phone: raw.phone ?? null,
   bio: raw.bio ?? null,
   location: raw.location ?? null,
-  avatarColor: raw.avatarColor ?? null,
+  avatarColor: raw.avatarColor ?? undefined,
   role: raw.role,
   lastLoginAt: raw.lastLoginAt ?? null,
   emailVerified: raw.emailVerified,
@@ -62,7 +62,8 @@ const toUpdateInput = (data: Partial<AuthUser>): Prisma.UserUncheckedUpdateInput
   if (data.role !== undefined) updateData.role = data.role;
   if (data.lastLoginAt !== undefined) updateData.lastLoginAt = data.lastLoginAt;
   if (data.emailVerified !== undefined) updateData.emailVerified = data.emailVerified;
-  if (data.mustChangePassword !== undefined) updateData.mustChangePassword = data.mustChangePassword;
+  if (data.mustChangePassword !== undefined)
+    updateData.mustChangePassword = data.mustChangePassword;
   if (data.status !== undefined) updateData.status = data.status;
   if (data.createdAt !== undefined) updateData.createdAt = data.createdAt;
   if (data.updatedAt !== undefined) updateData.updatedAt = data.updatedAt;
@@ -122,7 +123,7 @@ export class PrismaAuthUserRepository implements IAuthUserRepository {
     } else {
       await this.model.update({
         where: { id },
-        data: { status: UserStatus.INACTIVE, updatedAt: new Date() }
+        data: { status: UserStatus.INACTIVE, updatedAt: new Date() },
       });
     }
     return true;
@@ -141,11 +142,8 @@ export class PrismaAuthUserRepository implements IAuthUserRepository {
   async findByEmailOrUsername(identifier: string): Promise<AuthUser | null> {
     const raw = await this.model.findFirst({
       where: {
-        OR: [
-          { email: identifier },
-          { username: identifier }
-        ]
-      }
+        OR: [{ email: identifier }, { username: identifier }],
+      },
     });
 
     return raw ? toAuthUser(raw) : null;
@@ -154,7 +152,7 @@ export class PrismaAuthUserRepository implements IAuthUserRepository {
   async markVerified(userId: string): Promise<boolean> {
     await this.model.update({
       where: { id: userId },
-      data: { emailVerified: true, updatedAt: new Date() }
+      data: { emailVerified: true, updatedAt: new Date() },
     });
     return true;
   }
@@ -162,7 +160,7 @@ export class PrismaAuthUserRepository implements IAuthUserRepository {
   async updatePassword(userId: string, passwordHash: string): Promise<boolean> {
     await this.model.update({
       where: { id: userId },
-      data: { password: passwordHash, updatedAt: new Date() }
+      data: { password: passwordHash, updatedAt: new Date() },
     });
     return true;
   }

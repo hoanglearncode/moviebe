@@ -27,7 +27,11 @@ export class SocialAuthService implements ISocialAuthService {
 
   async verifyGoogleCredential(credential: string): Promise<AuthSocialProfile> {
     if (!ENV.GOOGLE_CLIENT_ID) {
-      throw new ValidationError("GOOGLE_CLIENT_ID is not configured", undefined, ErrorCode.VALIDATION);
+      throw new ValidationError(
+        "GOOGLE_CLIENT_ID is not configured",
+        undefined,
+        ErrorCode.VALIDATION,
+      );
     }
 
     const ticket = await this.googleClient.verifyIdToken({
@@ -37,7 +41,10 @@ export class SocialAuthService implements ISocialAuthService {
 
     const payload = ticket.getPayload();
     if (!payload?.email) {
-      throw new UnauthorizedError("Google account does not provide email", ErrorCode.SOCIAL_GOOGLE_NO_EMAIL);
+      throw new UnauthorizedError(
+        "Google account does not provide email",
+        ErrorCode.SOCIAL_GOOGLE_NO_EMAIL,
+      );
     }
 
     return {
@@ -62,7 +69,10 @@ export class SocialAuthService implements ISocialAuthService {
 
     const profile = (await response.json()) as GoogleUserInfoResponse;
     if (!profile.email) {
-      throw new UnauthorizedError("Google account does not provide email", ErrorCode.SOCIAL_GOOGLE_NO_EMAIL);
+      throw new UnauthorizedError(
+        "Google account does not provide email",
+        ErrorCode.SOCIAL_GOOGLE_NO_EMAIL,
+      );
     }
 
     return {
@@ -86,7 +96,10 @@ export class SocialAuthService implements ISocialAuthService {
 
     const profile = (await response.json()) as FacebookUserInfoResponse;
     if (!profile.email) {
-      throw new UnauthorizedError("Facebook account does not provide email", ErrorCode.SOCIAL_FACEBOOK_NO_EMAIL);
+      throw new UnauthorizedError(
+        "Facebook account does not provide email",
+        ErrorCode.SOCIAL_FACEBOOK_NO_EMAIL,
+      );
     }
 
     return {

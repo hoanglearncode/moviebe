@@ -1,14 +1,17 @@
 import { PagingDTO } from "../../../share/model/paging";
 import { IAdminUserUseCase, AdminUserHexagonDependencies } from "../interface";
+import { IUserSetting } from "../../../modules/system/setting/interface";
 import {
-  ChangeUserStatusDTO, CreateUserDTO, ListUsersQueryDTO,
-  ResetUserPasswordDTO, UpdateUserDTO, SeedUsersDTO,
+  ChangeUserStatusDTO,
+  CreateUserDTO,
+  ListUsersQueryDTO,
+  ResetUserPasswordDTO,
+  UpdateUserDTO,
+  SeedUsersDTO,
 } from "../model/dto";
-import {
-  ErrEmailAlreadyExists, ErrUserNotFound, ErrUsernameAlreadyExists,
-} from "../model/errors";
+import { ErrEmailAlreadyExists, ErrUserNotFound, ErrUsernameAlreadyExists } from "../model/errors";
 import { OwnUserProfile, UserListResponse } from "../model/model";
-import { SeedService, SeedSummary } from "../shared/seed.service";
+import { SeedService, SeedSummary } from "../shared/seed";
 
 export class AdminUserUseCase implements IAdminUserUseCase {
   private readonly userRepo: AdminUserHexagonDependencies["userRepository"];
@@ -18,44 +21,29 @@ export class AdminUserUseCase implements IAdminUserUseCase {
   private readonly notifier: AdminUserHexagonDependencies["notificationService"];
   private readonly avatarColorService: AdminUserHexagonDependencies["avatarColorService"];
   private readonly prisma: AdminUserHexagonDependencies["prisma"];
+  private readonly userSettingService?: IUserSetting;
 
   constructor(deps: AdminUserHexagonDependencies) {
-    this.userRepo    = deps.userRepository;
+    this.userRepo = deps.userRepository;
     this.sessionRepo = deps.sessionRepository;
     this.settingsRepo = deps.userSettingsRepository;
-    this.hasher      = deps.passwordHasher;
-    this.notifier    = deps.notificationService;
+    this.hasher = deps.passwordHasher;
+    this.notifier = deps.notificationService;
     this.avatarColorService = deps.avatarColorService;
-    this.prisma      = deps.prisma;
+    this.prisma = deps.prisma;
+    this.userSettingService = deps.userSettingService;
   }
 
-  // ── IUseCase.list — match đúng signature (UserCondDTO, PagingDTO) => OwnUserProfile[] ──
-
-  /**
-   * list — IUseCase yêu cầu signature này:
-   *   list(cond: UserCondDTO, paging: PagingDTO): Promise<OwnUserProfile[]>
-   *
-   * NOTE: UserCondDTO đã có page/limit bên trong (từ ListUsersQueryPayloadSchema).
-   * paging được truyền vào từ base interface nhưng ta ưu tiên dùng cond.page/limit
-   * vì chúng đã qua validation của Zod.
-   */
   async list(cond: ListUsersQueryDTO, paging: PagingDTO): Promise<OwnUserProfile[]> {
-    // Merge paging vào cond nếu cond không có page/limit
     const mergedCond = {
       ...cond,
       page: cond.page ?? paging.page ?? 1,
       limit: cond.limit ?? paging.limit ?? 20,
     };
-
-    // NOTE: dùng listUsers (domain-specific) thay vì list (generic base)
     const result = await this.userRepo.listUsers(mergedCond);
     return result.items;
   }
 
-  /**
-   * listWithMeta — version đầy đủ cho admin dashboard (pagination metadata)
-   * Không phải từ IUseCase, là method thêm vào
-   */
   async listWithMeta(cond: ListUsersQueryDTO): Promise<UserListResponse> {
     const result = await this.userRepo.listUsers(cond);
     return {
@@ -67,14 +55,7 @@ export class AdminUserUseCase implements IAdminUserUseCase {
     };
   }
 
-  // ── create ──
 
-  /**
-   * create — trả string (id của user mới tạo)
-   * NOTE: IUseCase.create trả Promise<string> (id)
-   * Nhưng IRepository.insert trả Promise<boolean>
-   * → ta dùng updateProfile sau insert để lấy id, hoặc tạo trực tiếp
-   */
   async create(data: CreateUserDTO): Promise<string> {
     // 1. Check unique constraints
     const byEmail = await this.userRepo.findByEmail(data.email);
@@ -93,9 +74,9 @@ export class AdminUserUseCase implements IAdminUserUseCase {
 
     // 4. Tạo id mới — dùng crypto.randomUUID() hoặc nanoid
     const id = crypto.randomUUID();
-
-    // 5. insert dùng full entity (theo base interface)
     const now = new Date();
+
+    // 6. Insert user
     await this.userRepo.insert({
       id,
       email: data.email,
@@ -117,13 +98,19 @@ export class AdminUserUseCase implements IAdminUserUseCase {
       updatedAt: now,
     });
 
-    // 6. Default settings (fire-and-forget)
-    this.settingsRepo.upsertByUserId(id, {}).catch(console.error);
+    if (this.userSettingService) {
+      this.userSettingService
+        .default(id)
+        .catch((error) =>
+          console.error(`⚠️ Failed to create default settings for user ${id}:`, error),
+        );
+    }
 
-    // 7. Welcome email (fire-and-forget)
-    this.notifier
-      .sendWelcomeEmail({ email: data.email, name: data.name ?? data.email })
-      .catch(console.error);
+    if(data.sendEmailWellCome) {
+      this.notifier
+        .sendWelcomeEmail({ email: data.email, name: data.name ?? data.email })
+        .catch(console.error);
+    }
 
     return id;
   }
@@ -145,13 +132,13 @@ export class AdminUserUseCase implements IAdminUserUseCase {
     }
 
     return this.userRepo.update(id, {
-      ...(data.email    && { email: data.email }),
-      ...(data.name     && { name: data.name }),
+      ...(data.email && { email: data.email }),
+      ...(data.name && { name: data.name }),
       ...(data.username && { username: data.username }),
-      ...(data.phone    && { phone: data.phone }),
-      ...(data.avatar   && { avatar: data.avatar }),
-      ...(data.bio      && { bio: data.bio }),
-      ...(data.role     && { role: data.role }),
+      ...(data.phone && { phone: data.phone }),
+      ...(data.avatar && { avatar: data.avatar }),
+      ...(data.bio && { bio: data.bio }),
+      ...(data.role && { role: data.role }),
     });
   }
 
@@ -214,7 +201,10 @@ export class AdminUserUseCase implements IAdminUserUseCase {
     return { message: `User status updated to ${data.status}` };
   }
 
-  async resetUserPassword(userId: string, data: ResetUserPasswordDTO): Promise<{ temporaryPassword: string }> {
+  async resetUserPassword(
+    userId: string,
+    data: ResetUserPasswordDTO,
+  ): Promise<{ temporaryPassword: string }> {
     const user = await this.userRepo.findById(userId);
     if (!user) throw ErrUserNotFound;
 
@@ -255,10 +245,7 @@ export class AdminUserUseCase implements IAdminUserUseCase {
    * Dùng cho testing, load testing, hoặc khởi tạo dữ liệu
    */
   async seedUsers(data: SeedUsersDTO): Promise<SeedSummary> {
-    const seedService = new SeedService(
-      this.prisma,
-      this.hasher
-    );
+    const seedService = new SeedService(this.prisma, this.hasher);
 
     return seedService.seedUsers(
       {
@@ -278,9 +265,11 @@ export class AdminUserUseCase implements IAdminUserUseCase {
           console.error(`Seed error: ${error}`);
         },
         onComplete: (summary) => {
-          console.log(`Seed completed: ${summary.totalCreated} users created in ${summary.duration}ms`);
+          console.log(
+            `Seed completed: ${summary.totalCreated} users created in ${summary.duration}ms`,
+          );
         },
-      }
+      },
     );
   }
 
@@ -289,10 +278,7 @@ export class AdminUserUseCase implements IAdminUserUseCase {
    * Xóa tất cả users tạo từ seed (dùng cho cleanup)
    */
   async clearSeedUsers(): Promise<{ deletedCount: number }> {
-    const seedService = new SeedService(
-      this.prisma,
-      this.hasher
-    );
+    const seedService = new SeedService(this.prisma, this.hasher);
 
     return seedService.clearSeedUsers();
   }
@@ -305,17 +291,11 @@ export class AdminUserUseCase implements IAdminUserUseCase {
     roles: Record<string, number>;
     statuses: Record<string, number>;
   }> {
-    const seedService = new SeedService(
-      this.prisma,
-      this.hasher
-    );
+    const seedService = new SeedService(this.prisma, this.hasher);
 
     return seedService.getSeedStatistics();
   }
 
-  /**
-   * Get user statistics - count users by status
-   */
   async getStats(): Promise<{
     total: number;
     active: number;
@@ -323,13 +303,7 @@ export class AdminUserUseCase implements IAdminUserUseCase {
     banned: number;
     pending: number;
   }> {
-    const [
-      total,
-      active,
-      inactive,
-      banned,
-      pending,
-    ] = await Promise.all([
+    const [total, active, inactive, banned, pending] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.user.count({ where: { status: "ACTIVE", emailVerified: true } }),
       this.prisma.user.count({ where: { status: "INACTIVE" } }),
@@ -348,8 +322,8 @@ export class AdminUserUseCase implements IAdminUserUseCase {
 
   private generateTempPassword(): string {
     const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-    return Array.from({ length: 12 }, () =>
-      chars[Math.floor(Math.random() * chars.length)]
-    ).join("");
+    return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join(
+      "",
+    );
   }
 }

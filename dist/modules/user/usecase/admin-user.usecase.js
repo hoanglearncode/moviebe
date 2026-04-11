@@ -12,6 +12,7 @@ class AdminUserUseCase {
         this.notifier = deps.notificationService;
         this.avatarColorService = deps.avatarColorService;
         this.prisma = deps.prisma;
+        this.userSettingService = deps.userSettingService;
     }
     // ── IUseCase.list — match đúng signature (UserCondDTO, PagingDTO) => OwnUserProfile[] ──
     /**
@@ -70,8 +71,8 @@ class AdminUserUseCase {
         const avatarColor = this.avatarColorService.generateAvatarColor(data.email);
         // 4. Tạo id mới — dùng crypto.randomUUID() hoặc nanoid
         const id = crypto.randomUUID();
-        // 5. insert dùng full entity (theo base interface)
         const now = new Date();
+        // 6. Insert user
         await this.userRepo.insert({
             id,
             email: data.email,
@@ -92,9 +93,12 @@ class AdminUserUseCase {
             createdAt: now,
             updatedAt: now,
         });
-        // 6. Default settings (fire-and-forget)
-        this.settingsRepo.upsertByUserId(id, {}).catch(console.error);
-        // 7. Welcome email (fire-and-forget)
+        if (this.userSettingService) {
+            this.userSettingService
+                .default(id)
+                .catch((error) => console.error(`⚠️ Failed to create default settings for user ${id}:`, error));
+        }
+        // 8. Welcome email (fire-and-forget)
         this.notifier
             .sendWelcomeEmail({ email: data.email, name: data.name ?? data.email })
             .catch(console.error);

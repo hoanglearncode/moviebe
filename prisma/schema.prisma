@@ -108,6 +108,25 @@ enum ReviewStatus {
   REMOVED
 }
 
+enum EmailNotificationEvent {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+  WELCOME_NEW_ACCOUNT
+  WELCOME_SOCIAL_LOGIN
+  ACCOUNT_UPDATED_BY_ADMIN
+  PASSWORD_CHANGED
+  ACCOUNT_DELETED
+  LOGIN_WARNING
+  PROMO_CAMPAIGN
+}
+
+enum EmailNotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  SCHEDULED
+}
+
 model User {
   id                 String                   @id @default(cuid())
   email              String                   @unique
@@ -146,24 +165,19 @@ model User {
 }
 
 model UserSetting {
-  id                  String   @id @default(cuid())
-  userId              String   @unique
-  notifications       Boolean  @default(true)
-  marketingEmails     Boolean  @default(false)
-  pushNotifications   Boolean  @default(true)
-  smsNotifications    Boolean  @default(false)
-  autoplay            Boolean  @default(true)
-  autoQuality         Boolean  @default(true)
-  alwaysSubtitle      Boolean  @default(false)
-  autoPreviews        Boolean  @default(true)
-  publicWatchlist     Boolean  @default(false)
-  shareHistory        Boolean  @default(false)
-  personalizedRecs    Boolean  @default(true)
-  referralCode        String?
-  referrals           Int      @default(0)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @default(now()) @updatedAt
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  notifications    Boolean  @default(true)
+  marketingEmails  Boolean  @default(false)
+  pushNotifications Boolean @default(true)
+  smsNotifications Boolean  @default(false)
+  shareHistory     Boolean  @default(false)
+  personalizedRecs Boolean  @default(true)
+  referralCode     String?
+  referrals        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Session {
@@ -510,5 +524,43 @@ model Review {
   @@index([movieId])
   @@index([userId])
   @@index([status])
+  @@index([createdAt])
+}
+
+// ─── Email Notification Templates & Scheduling ───────────────────────────────
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  event       EmailNotificationEvent @unique
+  subject     String
+  body        String   @db.Text
+  description String?
+  variables   String[] @default([]) // e.g., ["{{name}}", "{{email}}", "{{link}}"]
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@index([event])
+  @@index([isActive])
+}
+
+model ScheduledEmailNotification {
+  id           String                    @id @default(cuid())
+  userId       String?
+  email        String
+  templateId   String
+  subject      String
+  body         String                    @db.Text
+  variables    Json? // Dinamically replace variables: { "name": "John", "link": "..." }
+  status       EmailNotificationStatus   @default(PENDING)
+  sentAt       DateTime?
+  failedReason String?
+  scheduledFor DateTime?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @default(now()) @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([scheduledFor])
   @@index([createdAt])
 }

@@ -180,9 +180,13 @@ export function setupPartnerHexagon(prisma: PrismaClient): Router {
   // =========================================
   router.post("/showtimes", (req, res) => showtimeHttpService.createShowtime(req, res));
   router.get("/showtimes", (req, res) => showtimeHttpService.getShowtimes(req, res));
-  router.get("/showtimes/:showtimeId", (req, res) => showtimeHttpService.getShowtimeDetail(req, res));
+  router.get("/showtimes/:showtimeId", (req, res) =>
+    showtimeHttpService.getShowtimeDetail(req, res),
+  );
   router.put("/showtimes/:showtimeId", (req, res) => showtimeHttpService.updateShowtime(req, res));
-  router.delete("/showtimes/:showtimeId", (req, res) => showtimeHttpService.cancelShowtime(req, res));
+  router.delete("/showtimes/:showtimeId", (req, res) =>
+    showtimeHttpService.cancelShowtime(req, res),
+  );
 
   // =========================================
   // Seat Management Routes
@@ -197,7 +201,9 @@ export function setupPartnerHexagon(prisma: PrismaClient): Router {
   router.get("/tickets", (req, res) => ticketHttpService.getTickets(req, res));
   router.get("/tickets/:ticketId", (req, res) => ticketHttpService.getTicketDetail(req, res));
   router.post("/tickets/check-in", (req, res) => ticketHttpService.checkIn(req, res));
-  router.get("/showtimes/:showtimeId/check-ins", (req, res) => ticketHttpService.getCheckInHistory(req, res));
+  router.get("/showtimes/:showtimeId/check-ins", (req, res) =>
+    ticketHttpService.getCheckInHistory(req, res),
+  );
 
   // =========================================
   // Finance Routes
@@ -207,7 +213,9 @@ export function setupPartnerHexagon(prisma: PrismaClient): Router {
   router.get("/revenue", (req, res) => financeHttpService.getRevenue(req, res));
   router.post("/withdrawals", (req, res) => financeHttpService.createWithdrawal(req, res));
   router.get("/withdrawals", (req, res) => financeHttpService.getWithdrawals(req, res));
-  router.get("/withdrawals/:withdrawalId", (req, res) => financeHttpService.getWithdrawalDetail(req, res));
+  router.get("/withdrawals/:withdrawalId", (req, res) =>
+    financeHttpService.getWithdrawalDetail(req, res),
+  );
 
   // =========================================
   // Dashboard Routes

@@ -12,7 +12,10 @@ export const RegisterPartnerPayloadDTO = z.object({
   city: z.string().trim().min(1, "City is required"),
   country: z.string().trim().min(1, "Country is required").default("Vietnam"),
   postalCode: z.string().trim().optional(),
-  phone: z.string().trim().regex(/^\+?[0-9\s\-()]{9,}$/, "Invalid phone"),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[0-9\s\-()]{9,}$/, "Invalid phone"),
   website: z.string().trim().url("Invalid URL").optional(),
   logo: z.string().trim().url("Invalid logo URL").optional(),
   taxCode: z.string().trim().min(1, "Tax code is required"),
@@ -27,7 +30,11 @@ export const UpdatePartnerPayloadDTO = z.object({
   cinemaName: z.string().trim().min(1).max(255).optional(),
   address: z.string().trim().min(5).optional(),
   city: z.string().trim().min(1).optional(),
-  phone: z.string().trim().regex(/^\+?[0-9\s\-()]{9,}$/).optional(),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[0-9\s\-()]{9,}$/)
+    .optional(),
   website: z.string().trim().url().optional(),
   logo: z.string().trim().url().optional(),
   bankAccountName: z.string().trim().min(1).optional(),

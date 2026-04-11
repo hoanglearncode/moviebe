@@ -1,8 +1,13 @@
 import { Job, Worker } from "bullmq";
-import { logger } from "../modules/system/log/logger";
-import { mailService } from "../share/component/mail";
-import { areQueueWorkersEnabled, createRedisConnection, isQueueEnabled, queuePrefix } from "./config";
-import { EmailJobData, EmailJobName, QueueName } from "./types";
+import { logger } from "../../modules/system/log/logger";
+import { mailService } from "../../share/component/mail";
+import {
+  areQueueWorkersEnabled,
+  createRedisConnection,
+  isQueueEnabled,
+  queuePrefix,
+} from "../config/config";
+import { EmailJobData, EmailJobName, QueueName } from "../modules/types";
 
 let emailWorker: Worker<EmailJobData, void, EmailJobName> | null = null;
 
@@ -35,15 +40,11 @@ export const startEmailWorker = (): Worker<EmailJobData, void, EmailJobName> | n
     return emailWorker;
   }
 
-  emailWorker = new Worker<EmailJobData, void, EmailJobName>(
-    QueueName.Email,
-    processEmailJob,
-    {
-      connection: createRedisConnection(),
-      prefix: queuePrefix,
-      concurrency: 5,
-    }
-  );
+  emailWorker = new Worker<EmailJobData, void, EmailJobName>(QueueName.Email, processEmailJob, {
+    connection: createRedisConnection(),
+    prefix: queuePrefix,
+    concurrency: 5,
+  });
 
   emailWorker.on("ready", () => {
     logger.info("Email worker is ready");

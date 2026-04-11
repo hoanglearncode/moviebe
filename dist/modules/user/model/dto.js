@@ -114,6 +114,7 @@ exports.SeedUsersPayloadSchema = zod_1.z.object({
     defaultStatus: zod_1.z.enum(["ACTIVE", "INACTIVE", "BANNED", "PENDING"]).optional().default("ACTIVE"),
 });
 exports.SeedUsersPayloadDTO = exports.SeedUsersPayloadSchema;
+// ── LEGACY EXPORTS ─────────────────────────────────────────────────────────────
 exports.UserCreate = exports.CreateUserPayloadSchema;
 exports.UserUpdate = exports.UpdateUserPayloadSchema;
 exports.UserCond = exports.ListUsersQueryPayloadSchema;

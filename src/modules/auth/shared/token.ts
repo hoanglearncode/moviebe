@@ -99,7 +99,7 @@ export class TokenService implements ITokenService {
       sub: String(payload.sub),
       email: String(payload.email),
       scope: (payload as any).scope ?? "USER",
-      status: (payload as any).status ?? "ACTIVE"
+      status: (payload as any).status ?? "ACTIVE",
     });
 
     await this.sessionModel.delete({ where: { refreshToken } });
@@ -137,7 +137,7 @@ export class TokenService implements ITokenService {
 
   async verifyActionToken(
     token: string,
-    purpose: AuthActionTokenPurpose
+    purpose: AuthActionTokenPurpose,
   ): Promise<{ userId: string }> {
     const model = this.getActionTokenModel(purpose);
     const record = await model.findUnique({
@@ -158,16 +158,19 @@ export class TokenService implements ITokenService {
   }
 
   private getActionTokenModel(purpose: AuthActionTokenPurpose) {
-    return purpose === "reset-password"
-      ? this.passwordTokenModel
-      : this.emailTokenModel;
+    return purpose === "reset-password" ? this.passwordTokenModel : this.emailTokenModel;
   }
 
   private hashActionToken(token: string): string {
     return crypto.createHash("sha256").update(token).digest("hex");
   }
 
-  private createSessionTokens(payload: { sub: string; email: string; scope: string; status: string | undefined }): AuthSession {
+  private createSessionTokens(payload: {
+    sub: string;
+    email: string;
+    scope: string;
+    status: string | undefined;
+  }): AuthSession {
     const normalizedPayload = {
       sub: payload.sub,
       email: payload.email,

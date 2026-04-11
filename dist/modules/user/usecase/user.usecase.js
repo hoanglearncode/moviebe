@@ -6,7 +6,6 @@ class UserUseCase {
     constructor(deps) {
         this.userRepo = deps.userRepository;
         this.sessionRepo = deps.sessionRepository;
-        this.settingsRepo = deps.userSettingsRepository;
         this.hasher = deps.passwordHasher;
         this.notifier = deps.notificationService;
     }
@@ -72,13 +71,6 @@ class UserUseCase {
     async revokeAllSessions(userId) {
         const count = await this.sessionRepo.revokeAllSessionsByUserId(userId);
         return { message: `Revoked ${count} session(s)` };
-    }
-    async getSettings(userId) {
-        // Lazy init: tạo default nếu chưa có
-        return this.settingsRepo.upsertByUserId(userId, {});
-    }
-    async updateSettings(userId, data) {
-        return this.settingsRepo.upsertByUserId(userId, data);
     }
     toOwnProfile(user) {
         return {

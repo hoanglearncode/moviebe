@@ -47,10 +47,7 @@ const decodeAccessToken = (token: string): JwtAuthPayload => {
   return payload as JwtAuthPayload;
 };
 
-const assignUserFromPayload = (
-  req: AuthenticatedRequest,
-  payload: JwtAuthPayload
-): void => {
+const assignUserFromPayload = (req: AuthenticatedRequest, payload: JwtAuthPayload): void => {
   if (!payload.sub || !payload.email) {
     throw new Error("Invalid token payload");
   }
@@ -95,7 +92,7 @@ const handleAuthFailure = (
   res: Response,
   message: string,
   statusCode: number = 401,
-  code: ErrorCode = ErrorCode.UNAUTHORIZED
+  code: ErrorCode = ErrorCode.UNAUTHORIZED,
 ): void => {
   errorResponse(res, statusCode, message, code.toString());
 };
@@ -106,7 +103,7 @@ const handleAuthFailure = (
 export const authMiddleware = (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   (async () => {
     try {
@@ -144,7 +141,7 @@ export const authMiddleware = (
 export const optionalAuthMiddleware = (
   req: AuthenticatedRequest,
   _res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   try {
     const token = extractBearerToken(req);
@@ -176,7 +173,7 @@ export const requireRole = (...roles: string[]): RequestHandler => {
         res,
         `Access denied. Required roles: ${roles.join(", ")}`,
         403,
-        ErrorCode.UNAUTHORIZED
+        ErrorCode.UNAUTHORIZED,
       );
     }
 
@@ -187,19 +184,14 @@ export const requireRole = (...roles: string[]): RequestHandler => {
 export const requireActiveUser: RequestHandler = (
   req: AuthenticatedRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void => {
   if (!req.user) {
     return handleAuthFailure(res, "Unauthorized");
   }
 
   if (req.user.status && req.user.status !== UserStatus.ACTIVE) {
-    return handleAuthFailure(
-      res,
-      "Account is unavailable",
-      403,
-      ErrorCode.ACCOUNT_INACTIVE
-    );
+    return handleAuthFailure(res, "Account is unavailable", 403, ErrorCode.ACCOUNT_INACTIVE);
   }
 
   next();

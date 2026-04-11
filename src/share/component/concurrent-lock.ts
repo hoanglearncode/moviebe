@@ -11,7 +11,7 @@ export interface IConcurrentLockService {
   runExclusive<T>(
     keys: string | string[],
     task: () => Promise<T>,
-    options?: ConcurrentLockOptions
+    options?: ConcurrentLockOptions,
   ): Promise<T>;
   isLocked(key: string): boolean;
 }
@@ -27,7 +27,7 @@ export class InMemoryConcurrentLockService implements IConcurrentLockService {
   async runExclusive<T>(
     keys: string | string[],
     task: () => Promise<T>,
-    options: ConcurrentLockOptions = {}
+    options: ConcurrentLockOptions = {},
   ): Promise<T> {
     const normalizedKeys = this.normalizeKeys(keys);
     const ttlMs = options.ttlMs ?? 5000;
@@ -42,7 +42,7 @@ export class InMemoryConcurrentLockService implements IConcurrentLockService {
           {
             keys: normalizedKeys,
             ...(options.conflictDetails ?? {}),
-          }
+          },
         );
       }
 

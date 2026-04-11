@@ -1,6 +1,6 @@
 import { Queue } from "bullmq";
 import { createRedisConnection, defaultJobOptions, isQueueEnabled, queuePrefix } from "./config";
-import { EmailJobData, EmailJobName, QueueName } from "./types";
+import { EmailJobData, EmailJobName, QueueName } from "../modules/types";
 
 let emailQueue: Queue<EmailJobData, void, EmailJobName> | null = null;
 
@@ -21,7 +21,7 @@ export const enqueueEmailJob = async (
   options?: {
     jobId?: string;
     delay?: number;
-  }
+  },
 ): Promise<void> => {
   if (!isQueueEnabled) {
     throw new Error("Queue system is disabled. Set QUEUE_ENABLED=true to enqueue jobs.");

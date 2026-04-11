@@ -18,6 +18,7 @@ const logger_1 = require("./modules/system/log/logger");
 const request_logger_1 = require("./modules/system/log/request-logger");
 const queue_1 = require("./queue");
 const upload_router_1 = require("./share/transport/upload.router");
+const seed_setting_1 = require("./share/common/seed-setting");
 (0, dotenv_1.config)();
 (async () => {
     await prisma_1.prisma.$connect();
@@ -74,7 +75,7 @@ async function ensureAdminUser() {
     }
     const hashService = new hash_1.HashService();
     const passwordHash = await hashService.hash(password);
-    await prisma_1.prisma.user.create({
+    const data = await prisma_1.prisma.user.create({
         data: {
             email,
             password: passwordHash,
@@ -86,5 +87,9 @@ async function ensureAdminUser() {
             provider: "local",
         },
     });
+    await prisma_1.prisma.userSetting.create({ data: {
+            userId: data.id,
+            ...seed_setting_1.defaultSettings
+        } });
     logger_1.logger.info("Admin user created", { email });
 }

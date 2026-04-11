@@ -15,7 +15,7 @@ export type AuthUser = {
   location: string | null;
   role: Role;
   lastLoginAt: Date | null;
-  avatarColor: string | null;
+  avatarColor: string | undefined;
   emailVerified: boolean;
   mustChangePassword: boolean;
   status: UserStatus;

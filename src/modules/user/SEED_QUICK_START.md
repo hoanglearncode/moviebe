@@ -43,33 +43,36 @@ curl -X DELETE http://localhost:3000/v1/admin/users/seed \
 
 ## 📋 Tham Số Cấu Hình
 
-| Tham số | Mặc định | Min | Max | Mô tả |
-|---------|---------|-----|-----|-------|
-| `count` | *(bắt buộc)* | 1 | 100,000 | Số users cần tạo |
-| `batchSize` | 100 | 10 | 1,000 | Kích thước batch |
-| `includePhone` | true | - | - | Có số điện thoại |
-| `includeBio` | true | - | - | Có bio |
-| `includeLocation` | true | - | - | Có vị trí |
-| `defaultRole` | "USER" | - | - | USER/ADMIN/PARTNER |
-| `defaultStatus` | "ACTIVE" | - | - | ACTIVE/INACTIVE/BANNED/PENDING |
+| Tham số           | Mặc định     | Min | Max     | Mô tả                          |
+| ----------------- | ------------ | --- | ------- | ------------------------------ |
+| `count`           | _(bắt buộc)_ | 1   | 100,000 | Số users cần tạo               |
+| `batchSize`       | 100          | 10  | 1,000   | Kích thước batch               |
+| `includePhone`    | true         | -   | -       | Có số điện thoại               |
+| `includeBio`      | true         | -   | -       | Có bio                         |
+| `includeLocation` | true         | -   | -       | Có vị trí                      |
+| `defaultRole`     | "USER"       | -   | -       | USER/ADMIN/PARTNER             |
+| `defaultStatus`   | "ACTIVE"     | -   | -       | ACTIVE/INACTIVE/BANNED/PENDING |
 
 ---
 
 ## ⚡ Cấu Hình Được Khuyến Nghị
 
 ### Để Testing
+
 ```json
-{"count": 1000, "batchSize": 100}
+{ "count": 1000, "batchSize": 100 }
 ```
 
-### Để Load Testing  
+### Để Load Testing
+
 ```json
-{"count": 10000, "batchSize": 200}
+{ "count": 10000, "batchSize": 200 }
 ```
 
 ### Để Performance Testing
+
 ```json
-{"count": 50000, "batchSize": 500}
+{ "count": 50000, "batchSize": 500 }
 ```
 
 ---
@@ -77,6 +80,7 @@ curl -X DELETE http://localhost:3000/v1/admin/users/seed \
 ## 📝 JSON Examples
 
 ### Minimal (Nhanh)
+
 ```json
 {
   "count": 1000
@@ -84,6 +88,7 @@ curl -X DELETE http://localhost:3000/v1/admin/users/seed \
 ```
 
 ### Full (Realistic)
+
 ```json
 {
   "count": 5000,
@@ -97,6 +102,7 @@ curl -X DELETE http://localhost:3000/v1/admin/users/seed \
 ```
 
 ### PARTNER Test
+
 ```json
 {
   "count": 500,
@@ -110,6 +116,7 @@ curl -X DELETE http://localhost:3000/v1/admin/users/seed \
 ## 🎯 Kết Quả Trả Về
 
 ### Success (201)
+
 ```json
 {
   "message": "Successfully seeded 10000 users",
@@ -123,12 +130,13 @@ curl -X DELETE http://localhost:3000/v1/admin/users/seed \
 ```
 
 ### Stats Response
+
 ```json
 {
   "data": {
     "totalSeedUsers": 10000,
-    "roles": {"USER": 9950, "ADMIN": 30, "PARTNER": 20},
-    "statuses": {"ACTIVE": 10000}
+    "roles": { "USER": 9950, "ADMIN": 30, "PARTNER": 20 },
+    "statuses": { "ACTIVE": 10000 }
   }
 }
 ```
@@ -137,12 +145,12 @@ curl -X DELETE http://localhost:3000/v1/admin/users/seed \
 
 ## 🔧 Troubleshooting
 
-| Lỗi | Giải pháp |
-|-----|----------|
-| Quá chậm | ↑ batchSize, ↓ bio/location |
+| Lỗi           | Giải pháp                    |
+| ------------- | ---------------------------- |
+| Quá chậm      | ↑ batchSize, ↓ bio/location  |
 | Out of Memory | ↓ batchSize, ↓ count/request |
-| Timeout | ↓ count/request |
-| Email exists | DELETE seed trước, thử lại |
+| Timeout       | ↓ count/request              |
+| Email exists  | DELETE seed trước, thử lại   |
 
 ---
 

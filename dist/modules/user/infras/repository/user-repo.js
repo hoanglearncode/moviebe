@@ -19,7 +19,7 @@ function toUserProfile(raw) {
         phone: raw.phone ?? null,
         bio: raw.bio ?? null,
         location: raw.location ?? null,
-        avatarColor: raw.avatarColor ?? null,
+        avatarColor: raw.avatarColor ?? undefined,
         role: raw.role,
         status: raw.status,
         emailVerified: raw.emailVerified ?? false,
@@ -222,8 +222,12 @@ class PrismaUserRepository {
             where.username = username;
         if (role)
             where.role = role;
-        if (status)
+        if (status) {
             where.status = status;
+        }
+        else {
+            where.status = { not: "INACTIVE" };
+        }
         return where;
     }
 }
