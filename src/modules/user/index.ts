@@ -59,7 +59,7 @@ export const setupUserHexagon = (prismaClient: PrismaClient = prisma) => {
   const userRepository = createUserRepository(prismaClient);
   const sessionRepository = createSessionRepository(prismaClient);
   const passwordHasher = new HashService();
-  const notificationService = new UserNotificationService(prismaClient, mailService);
+  const notificationService = new UserNotificationService(mailService);
   const avatarColorService = new AvatarColorService();
   const userSettingService = createSettingUseCase(prismaClient);
 

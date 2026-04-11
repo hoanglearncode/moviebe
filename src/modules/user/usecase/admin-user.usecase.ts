@@ -55,7 +55,6 @@ export class AdminUserUseCase implements IAdminUserUseCase {
     };
   }
 
-
   async create(data: CreateUserDTO): Promise<string> {
     // 1. Check unique constraints
     const byEmail = await this.userRepo.findByEmail(data.email);
@@ -115,8 +114,6 @@ export class AdminUserUseCase implements IAdminUserUseCase {
     return id;
   }
 
-  // ── update ──
-
   async update(id: string, data: UpdateUserDTO): Promise<boolean> {
     const user = await this.userRepo.findById(id);
     if (!user) throw ErrUserNotFound;
@@ -142,29 +139,15 @@ export class AdminUserUseCase implements IAdminUserUseCase {
     });
   }
 
-  // ── delete ──
-
-  /**
-   * delete — IUseCase.delete(id): Promise<boolean> (không có isHard)
-   * → ta dùng soft delete (isHard=false) làm mặc định vì an toàn hơn
-   */
   async delete(id: string): Promise<boolean> {
     const user = await this.userRepo.findById(id);
     if (!user) throw ErrUserNotFound;
-
     await this.sessionRepo.revokeAllSessionsByUserId(id);
-
-    this.notifier
-      .sendAccountDeletedNotification({ email: user.email, name: user.name ?? user.email })
-      .catch(console.error);
-
-    // soft delete — đổi status INACTIVE, không xoá DB
+    this.notifier.sendAccountDeletedNotification({ email: user.email, name: user.name ?? user.email }).catch(console.error);
     return this.userRepo.delete(id, false);
   }
 
-  // ── getDetail ──
-
-  async getDetail(id: string): Promise<OwnUserProfile | null> {
+  async getDetail(id: string): Promise<OwnUserProfile | null> { // pending
     const user = await this.userRepo.findById(id);
     if (!user) return null;
 
@@ -186,7 +169,6 @@ export class AdminUserUseCase implements IAdminUserUseCase {
     };
   }
 
-  // ── Admin-specific actions ──
 
   async changeUserStatus(userId: string, data: ChangeUserStatusDTO): Promise<{ message: string }> {
     const user = await this.userRepo.findById(userId);
@@ -201,7 +183,7 @@ export class AdminUserUseCase implements IAdminUserUseCase {
     return { message: `User status updated to ${data.status}` };
   }
 
-  async resetUserPassword(
+  async resetUserPassword( // pending
     userId: string,
     data: ResetUserPasswordDTO,
   ): Promise<{ temporaryPassword: string }> {
@@ -240,10 +222,6 @@ export class AdminUserUseCase implements IAdminUserUseCase {
     return { message: `Revoked ${count} session(s)` };
   }
 
-  /**
-   * Seed users - Bulk create random users
-   * Dùng cho testing, load testing, hoặc khởi tạo dữ liệu
-   */
   async seedUsers(data: SeedUsersDTO): Promise<SeedSummary> {
     const seedService = new SeedService(this.prisma, this.hasher);
 
@@ -273,19 +251,12 @@ export class AdminUserUseCase implements IAdminUserUseCase {
     );
   }
 
-  /**
-   * Clear all seed users
-   * Xóa tất cả users tạo từ seed (dùng cho cleanup)
-   */
   async clearSeedUsers(): Promise<{ deletedCount: number }> {
     const seedService = new SeedService(this.prisma, this.hasher);
 
     return seedService.clearSeedUsers();
   }
 
-  /**
-   * Get seed statistics
-   */
   async getSeedStatistics(): Promise<{
     totalSeedUsers: number;
     roles: Record<string, number>;
