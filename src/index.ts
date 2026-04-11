@@ -16,8 +16,8 @@ import { initializeQueueInfrastructure, shutdownQueueInfrastructure } from "./qu
 
 import { createUploadRouter } from "./share/transport/upload.router";
 import { defaultSettings } from "./share/common/seed-setting";
-import { seedEmailTemplates } from "./modules/notification/seed";
-import adminEmailRouter from "./modules/notification/admin-endpoints";
+import { seedEmailTemplates } from "./modules/notification/shared/seed";
+import adminEmailRouter from "./modules/notification/infras/transport/admin-endpoints";
 
 config();
 

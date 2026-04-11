@@ -20,7 +20,7 @@ class AuthUseCase {
             throw new http_server_1.ValidationError("Invalid registration data", parsedData.error.issues);
         }
         return this.dependencies.concurrentLockService.runExclusive(this.getRegisterLockKeys(parsedData.data.email, parsedData.data.username), async () => {
-            const { userRepository, passwordHasher, tokenService, notificationService, avatarColorService } = this.dependencies;
+            const { userRepository, passwordHasher, tokenService, notificationService, avatarColorService, } = this.dependencies;
             const existingEmail = await userRepository.findByEmail(parsedData.data.email);
             if (existingEmail) {
                 throw new http_server_1.ValidationError("Email already exists", undefined, error_code_1.ErrorCode.EMAIL_EXISTS);
@@ -55,13 +55,11 @@ class AuthUseCase {
                 updatedAt: new Date(),
             };
             await userRepository.insert(user);
-            // 🔄 Apply default settings for new user
             if (this.dependencies.userSettingService) {
                 try {
                     await this.dependencies.userSettingService.default(newUserId);
                 }
                 catch (error) {
-                    // Log error but don't block registration
                     console.error(`Failed to create default settings for user ${newUserId}:`, error);
                 }
             }
@@ -154,6 +152,7 @@ class AuthUseCase {
         return this.loginWithSocialProfile(profile);
     }
     async verifyEmail(data) {
+        const { notificationService, } = this.dependencies;
         const parsedData = dto_1.VerifyEmailPayloadDTO.safeParse(data);
         if (!parsedData.success) {
             throw new http_server_1.ValidationError("Invalid verification data", parsedData.error.issues);
@@ -165,6 +164,7 @@ class AuthUseCase {
             throw new http_server_1.NotFoundError("User");
         }
         await userRepository.markVerified(userId);
+        await notificationService.sendWellComeEmail(user.email);
         return { message: "Email verified successfully" };
     }
     async resendVerification(data) {
@@ -231,7 +231,7 @@ class AuthUseCase {
     }
     async loginWithSocialProfile(profile) {
         return this.dependencies.concurrentLockService.runExclusive(this.getRegisterLockKeys(profile.email), async () => {
-            const { userRepository, tokenService, avatarColorService } = this.dependencies;
+            const { userRepository, tokenService, avatarColorService, notificationService } = this.dependencies;
             let user = await userRepository.findByEmail(profile.email);
             if (!user) {
                 const newUserId = (0, uuid_1.v7)();
@@ -257,6 +257,15 @@ class AuthUseCase {
                     updatedAt: new Date(),
                 };
                 await userRepository.insert(user);
+                if (this.dependencies.userSettingService) {
+                    try {
+                        await this.dependencies.userSettingService.default(newUserId);
+                    }
+                    catch (error) {
+                        console.error(`Failed to create default settings for user ${newUserId}:`, error);
+                    }
+                }
+                await notificationService.sendWellComeEmail(user.email);
             }
             else {
                 if (!this.isSessionAllowedStatus(user.status)) {
@@ -293,9 +302,7 @@ class AuthUseCase {
     }
     normalizeLockValue(value) {
         const normalizedValue = value.trim();
-        return normalizedValue.includes("@")
-            ? normalizedValue.toLowerCase()
-            : normalizedValue;
+        return normalizedValue.includes("@") ? normalizedValue.toLowerCase() : normalizedValue;
     }
     buildAuthResponse(user, session) {
         return {
@@ -311,7 +318,7 @@ class AuthUseCase {
                 avatarColor: user.avatarColor,
                 name: user.name,
                 emailVerified: user.emailVerified,
-                mustChangePassword: user.mustChangePassword
+                mustChangePassword: user.mustChangePassword,
             },
         };
     }

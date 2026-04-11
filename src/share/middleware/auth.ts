@@ -1,23 +1,35 @@
 import { NextFunction, Request, RequestHandler, Response } from "express";
 import jwt from "jsonwebtoken";
-import { UserStatus } from "@prisma/client";
+import { Role, UserStatus } from "@prisma/client";
 import { ENV } from "../common/value";
 import { ErrorCode } from "../model/error-code";
 import { prisma } from "../component/prisma";
 import { errorResponse } from "../transport/http-server";
 import { logger } from "../../modules/system/log/logger";
+import { AuthorizationUseCase } from "../../modules/user/usecase/authorization.usecase";
+import { PermissionCode } from "../security/permissions";
+
+const authorizationUseCase = new AuthorizationUseCase();
 
 /**
- * Extended Express Request with user data
+ * Extended Express Request with authenticated user context
  */
-export interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    role: string;
-    status?: string;
-  };
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        email?: string;
+        role: string;
+        status?: string;
+        permissionsOverride?: PermissionCode[];
+        permissions?: string[];
+      };
+    }
+  }
 }
+
+export type AuthenticatedRequest = Request;
 
 type JwtAuthPayload = jwt.JwtPayload & {
   sub?: string;
@@ -57,6 +69,11 @@ const assignUserFromPayload = (req: AuthenticatedRequest, payload: JwtAuthPayloa
     email: String(payload.email),
     role: String(payload.scope ?? "USER"),
     status: String(payload.status ?? UserStatus.ACTIVE),
+    permissionsOverride: [],
+    permissions: authorizationUseCase.resolvePermissions({
+      role: String(payload.scope ?? Role.USER),
+      permissionsOverride: [],
+    }),
   };
 };
 
@@ -71,8 +88,9 @@ const syncUserFromDatabase = async (req: AuthenticatedRequest): Promise<boolean>
       email: true,
       role: true,
       status: true,
-    },
-  });
+      permissionsOverride: true,
+    } as any,
+  } as any);
 
   if (!dbUser) {
     return false;
@@ -83,6 +101,11 @@ const syncUserFromDatabase = async (req: AuthenticatedRequest): Promise<boolean>
     email: dbUser.email,
     role: dbUser.role,
     status: dbUser.status,
+    permissionsOverride: authorizationUseCase.normalizePermissionsOverride(dbUser.permissionsOverride),
+    permissions: authorizationUseCase.resolvePermissions({
+      role: dbUser.role,
+      permissionsOverride: dbUser.permissionsOverride,
+    }),
   };
 
   return true;
@@ -178,6 +201,65 @@ export const requireRole = (...roles: string[]): RequestHandler => {
     }
 
     next();
+  };
+};
+
+export const requirePermission = (...permissions: PermissionCode[]): RequestHandler => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      return handleAuthFailure(res, "Unauthorized");
+    }
+
+    if (!authorizationUseCase.hasAllPermissions(req.user, permissions)) {
+      return handleAuthFailure(
+        res,
+        `Access denied. Required permissions: ${permissions.join(", ")}`,
+        403,
+        ErrorCode.UNAUTHORIZED,
+      );
+    }
+
+    next();
+  };
+};
+
+export const requireAnyPermission = (...permissions: PermissionCode[]): RequestHandler => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      return handleAuthFailure(res, "Unauthorized");
+    }
+
+    if (!authorizationUseCase.hasAnyPermission(req.user, permissions)) {
+      return handleAuthFailure(
+        res,
+        `Access denied. Required any permission: ${permissions.join(", ")}`,
+        403,
+        ErrorCode.UNAUTHORIZED,
+      );
+    }
+
+    next();
+  };
+};
+
+export const requireSelfOrPermission = (
+  resolveOwnerId: (req: AuthenticatedRequest) => string | undefined | null,
+  permission: PermissionCode,
+): RequestHandler => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      return handleAuthFailure(res, "Unauthorized");
+    }
+
+    const ownerId = resolveOwnerId(req);
+    if (
+      authorizationUseCase.canAccessOwnResource(req.user.id, ownerId) ||
+      authorizationUseCase.hasPermission(req.user, permission)
+    ) {
+      return next();
+    }
+
+    return handleAuthFailure(res, "Access denied", 403, ErrorCode.UNAUTHORIZED);
   };
 };
 

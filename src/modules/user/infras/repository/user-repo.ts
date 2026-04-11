@@ -4,6 +4,9 @@ import { IUserRepository } from "../../interface";
 import { ListUsersQueryDTO } from "../../model/dto";
 import { OwnUserProfile, UserProfile } from "../../model/model";
 import { getUserModel } from "./dto";
+import { AuthorizationUseCase } from "../../usecase/authorization.usecase";
+
+const authorizationUseCase = new AuthorizationUseCase();
 
 function toUserProfile(raw: any): UserProfile {
   return {
@@ -19,6 +22,7 @@ function toUserProfile(raw: any): UserProfile {
     location: raw.location ?? null,
     avatarColor: raw.avatarColor ?? undefined,
     role: raw.role,
+    permissionsOverride: authorizationUseCase.normalizePermissionsOverride(raw.permissionsOverride),
     status: raw.status,
     emailVerified: raw.emailVerified ?? false,
     mustChangePassword: raw.mustChangePassword ?? false,
@@ -42,6 +46,7 @@ function toOwnUserProfile(user: UserProfile): OwnUserProfile {
     phone: user.phone,
     emailVerified: user.emailVerified,
     role: user.role,
+    permissionsOverride: user.permissionsOverride,
     lastLoginAt: user.lastLoginAt,
     createdAt: user.createdAt,
   };
@@ -88,11 +93,12 @@ export class PrismaUserRepository implements IUserRepository {
         emailVerified: data.emailVerified,
         mustChangePassword: data.mustChangePassword,
         avatarColor: data.avatarColor,
+        permissionsOverride: data.permissionsOverride,
         phone: data.phone,
         bio: data.bio,
         location: data.location,
         avatar: data.avatar,
-      },
+      } as any,
     });
     return true;
   }
@@ -159,9 +165,12 @@ export class PrismaUserRepository implements IUserRepository {
         ...(data.location !== undefined && { location: data.location }),
         ...(data.username !== undefined && { username: data.username }),
         ...(data.role !== undefined && { role: data.role }),
+        ...(data.permissionsOverride !== undefined && {
+          permissionsOverride: data.permissionsOverride,
+        }),
         ...(data.status !== undefined && { status: data.status }),
         ...(data.emailVerified !== undefined && { emailVerified: data.emailVerified }),
-      },
+      } as any,
     });
     return toUserProfile(raw);
   }

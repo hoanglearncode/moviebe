@@ -1,8 +1,8 @@
 import { EmailNotificationEvent, EmailTemplate } from "@prisma/client";
-import { enqueueEmailJob } from "../../queue/config/email.queue";
-import { logger } from "../system/log/logger";
-import { EmailNotificationEventType, EmailNotificationPayload } from "./types";
-import { IEmailTemplateRepository, IScheduledEmailRepository } from "./repository";
+import { enqueueEmailJob } from "../../../queue/config/email.queue";
+import { logger } from "../../system/log/logger";
+import { EmailNotificationEventType, EmailNotificationPayload } from "../model/types";
+import { IEmailTemplateRepository, IScheduledEmailRepository } from "../infras/repository/repository";
 
 /**
  * Email Notification Service

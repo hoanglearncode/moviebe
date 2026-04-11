@@ -21,16 +21,16 @@ exports.LoginPayloadDTO = zod_1.default.object({
     password: zod_1.default.string().min(8, "password must have at least 8 characters"),
 });
 exports.RefreshTokenPayloadDTO = zod_1.default.object({
-    refreshToken: zod_1.default.string().trim().min(1, "token is required")
+    refreshToken: zod_1.default.string().trim().min(1, "token is required"),
 });
 exports.GoogleLoginPayloadDTO = zod_1.default.object({
-    credential: zod_1.default.string().trim().min(1, "credential is required")
+    credential: zod_1.default.string().trim().min(1, "credential is required"),
 });
 exports.GoogleLoginTokenCallbackPayloadDTO = zod_1.default.object({
-    accessToken: zod_1.default.string().trim().min(1, "accessToken is required")
+    accessToken: zod_1.default.string().trim().min(1, "accessToken is required"),
 });
 exports.FacebookLoginPayloadDTO = zod_1.default.object({
-    accessToken: zod_1.default.string().trim().min(1, "accessToken is required")
+    accessToken: zod_1.default.string().trim().min(1, "accessToken is required"),
 });
 exports.VerifyEmailPayloadDTO = zod_1.default.object({
     token: zod_1.default.string().trim().min(1, "token is required"),
@@ -43,7 +43,5 @@ exports.ForgotPasswordPayloadDTO = zod_1.default.object({
 });
 exports.ChangePasswordPayloadDTO = zod_1.default.object({
     token: zod_1.default.string().trim().min(1, "token is required"),
-    newPassword: zod_1.default
-        .string()
-        .min(8, "new password must have at least 8 characters"),
+    newPassword: zod_1.default.string().min(8, "new password must have at least 8 characters"),
 });

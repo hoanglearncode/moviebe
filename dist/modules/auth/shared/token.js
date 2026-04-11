@@ -54,7 +54,7 @@ class TokenService {
             sub: String(payload.sub),
             email: String(payload.email),
             scope: payload.scope ?? "USER",
-            status: payload.status ?? "ACTIVE"
+            status: payload.status ?? "ACTIVE",
         });
         await this.sessionModel.delete({ where: { refreshToken } });
         await this.sessionModel.create({
@@ -96,9 +96,7 @@ class TokenService {
         return { userId: record.userId };
     }
     getActionTokenModel(purpose) {
-        return purpose === "reset-password"
-            ? this.passwordTokenModel
-            : this.emailTokenModel;
+        return purpose === "reset-password" ? this.passwordTokenModel : this.emailTokenModel;
     }
     hashActionToken(token) {
         return crypto_1.default.createHash("sha256").update(token).digest("hex");

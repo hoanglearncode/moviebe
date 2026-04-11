@@ -140,6 +140,7 @@ model User {
   avatarColor        String?
   provider           String                   @default("local")
   role               Role                     @default(USER)
+  permissionsOverride Json?                   @map("permissions_override")
   status             UserStatus               @default(ACTIVE)
   emailVerified      Boolean                  @default(false)
   mustChangePassword Boolean                  @default(false)

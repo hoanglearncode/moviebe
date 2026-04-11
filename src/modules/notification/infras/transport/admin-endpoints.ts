@@ -1,20 +1,13 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response } from "express";
 import {
   EmailTemplateRepository,
   ScheduledEmailRepository,
   EmailNotificationService,
-} from "./index";
-import { prisma } from "../../share/component/prisma";
-import { logger } from "../system/log/logger";
-
-// Extend Express Request to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: { id: string; role: string };
-    }
-  }
-}
+} from "../../index";
+import { prisma } from "../../../../share/component/prisma";
+import { logger } from "../../../system/log/logger";
+import { authMiddleware, requirePermission } from "../../../../share/middleware/auth";
+import { PERMISSIONS } from "../../../../share/security/permissions";
 
 /**
  * Admin Email Template Management Routes
@@ -27,14 +20,6 @@ declare global {
  */
 
 const router = Router();
-
-// Middleware: Check if user is admin
-const isAdmin = (req: Request, res: Response, next: NextFunction) => {
-  if (req.user?.role !== "ADMIN") {
-    return res.status(403).json({ error: "Unauthorized: Admin only" });
-  }
-  next();
-};
 
 const emailTemplateRepo = new EmailTemplateRepository(prisma);
 const scheduledEmailRepo = new ScheduledEmailRepository(prisma);
@@ -69,7 +54,11 @@ router.get("/templates", async (req: Request, res: Response) => {
 // GET: Get single template by ID (admin)
 // ────────────────────────────────────────────────────────────────────
 
-router.get("/templates/:templateId", isAdmin, async (req: Request, res: Response) => {
+router.get(
+  "/templates/:templateId",
+  authMiddleware,
+  requirePermission(PERMISSIONS.MANAGE_EMAIL_TEMPLATES),
+  async (req: Request, res: Response) => {
   try {
     const { templateId } = req.params as { templateId: string };
     const template = await emailTemplateRepo.getTemplateById(templateId);
@@ -92,7 +81,11 @@ router.get("/templates/:templateId", isAdmin, async (req: Request, res: Response
 // PATCH: Update email template
 // ────────────────────────────────────────────────────────────────────
 
-router.patch("/templates/:templateId", isAdmin, async (req: Request, res: Response) => {
+router.patch(
+  "/templates/:templateId",
+  authMiddleware,
+  requirePermission(PERMISSIONS.MANAGE_EMAIL_TEMPLATES),
+  async (req: Request, res: Response) => {
   try {
     const { templateId } = req.params as { templateId: string };
     const { subject, body, isActive, description } = req.body;
@@ -121,7 +114,11 @@ router.patch("/templates/:templateId", isAdmin, async (req: Request, res: Respon
 // GET: List scheduled emails for a user
 // ────────────────────────────────────────────────────────────────────
 
-router.get("/users/:userId/scheduled-emails", isAdmin, async (req: Request, res: Response) => {
+router.get(
+  "/users/:userId/scheduled-emails",
+  authMiddleware,
+  requirePermission(PERMISSIONS.VIEW_SCHEDULED_EMAILS),
+  async (req: Request, res: Response) => {
   try {
     const { userId } = req.params as { userId: string };
     const emails = await scheduledEmailRepo.getScheduledEmails(userId);
@@ -141,7 +138,11 @@ router.get("/users/:userId/scheduled-emails", isAdmin, async (req: Request, res:
 // POST: Schedule email for specific user
 // ────────────────────────────────────────────────────────────────────
 
-router.post("/users/:userId/schedule-email", async (req: Request, res: Response) => {
+router.post(
+  "/users/:userId/schedule-email",
+  authMiddleware,
+  requirePermission(PERMISSIONS.SCHEDULE_USER_EMAILS),
+  async (req: Request, res: Response) => {
   try {
     const { userId } = req.params as { userId: string };
     const { email, subject, body, scheduledFor } = req.body;
@@ -176,7 +177,11 @@ router.post("/users/:userId/schedule-email", async (req: Request, res: Response)
 // POST: Send welcome email to user (manual trigger)
 // ────────────────────────────────────────────────────────────────────
 
-router.post("/send-welcome/:userId", isAdmin, async (req: Request, res: Response) => {
+router.post(
+  "/send-welcome/:userId",
+  authMiddleware,
+  requirePermission(PERMISSIONS.SEND_SYSTEM_EMAILS),
+  async (req: Request, res: Response) => {
   try {
     const { userId } = req.params as { userId: string };
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -206,7 +211,11 @@ router.post("/send-welcome/:userId", isAdmin, async (req: Request, res: Response
 // POST: Send promotional email to multiple users
 // ────────────────────────────────────────────────────────────────────
 
-router.post("/send-promo-campaign", isAdmin, async (req: Request, res: Response) => {
+router.post(
+  "/send-promo-campaign",
+  authMiddleware,
+  requirePermission(PERMISSIONS.SEND_SYSTEM_EMAILS),
+  async (req: Request, res: Response) => {
   try {
     const { userIds, subject, body, promotionDetail } = req.body;
 

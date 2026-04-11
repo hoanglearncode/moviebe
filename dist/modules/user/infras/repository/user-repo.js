@@ -2,11 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createUserRepository = exports.PrismaUserRepository = void 0;
 const dto_1 = require("./dto");
-// ──────────────────────────────────────────────
-// MAPPERS
-// ──────────────────────────────────────────────
-// NOTE: Mapper tách riêng để dễ test và tái sử dụng
-// Prisma trả về kiểu nội bộ của nó → ta map sang domain type
+const authorization_usecase_1 = require("../../usecase/authorization.usecase");
+const authorizationUseCase = new authorization_usecase_1.AuthorizationUseCase();
 function toUserProfile(raw) {
     return {
         id: raw.id,
@@ -21,6 +18,7 @@ function toUserProfile(raw) {
         location: raw.location ?? null,
         avatarColor: raw.avatarColor ?? undefined,
         role: raw.role,
+        permissionsOverride: authorizationUseCase.normalizePermissionsOverride(raw.permissionsOverride),
         status: raw.status,
         emailVerified: raw.emailVerified ?? false,
         mustChangePassword: raw.mustChangePassword ?? false,
@@ -29,7 +27,6 @@ function toUserProfile(raw) {
         updatedAt: raw.updatedAt,
     };
 }
-// NOTE: OwnUserProfile = subset an toàn để trả về API (không có password)
 function toOwnUserProfile(user) {
     return {
         id: user.id,
@@ -44,38 +41,22 @@ function toOwnUserProfile(user) {
         phone: user.phone,
         emailVerified: user.emailVerified,
         role: user.role,
+        permissionsOverride: user.permissionsOverride,
         lastLoginAt: user.lastLoginAt,
         createdAt: user.createdAt,
     };
 }
-// ──────────────────────────────────────────────
-// REPOSITORY
-// ──────────────────────────────────────────────
 class PrismaUserRepository {
     constructor(prisma) {
         this.model = (0, dto_1.getUserModel)(prisma);
     }
-    // ── IQueryRepository methods (required by base interface) ──
-    /**
-     * get — tìm theo ID (alias của findById, dùng bởi base interface)
-     */
     async get(id) {
         return this.findById(id);
     }
-    /**
-     * findByCond — tìm 1 user theo điều kiện đơn giản
-     * NOTE: Base interface trả về single entity (không phải array)
-     * Dùng cho các query đơn như: { email: "x@x.com" }
-     */
     async findByCond(cond) {
         const raw = await this.model.findFirst({ where: cond });
         return raw ? toUserProfile(raw) : null;
     }
-    /**
-     * list — generic list với Partial<UserProfile> filter
-     * NOTE: Method này match đúng signature của IRepository base
-     * Dùng bởi các generic caller, không có keyword search
-     */
     async list(cond, paging) {
         const skip = ((paging.page ?? 1) - 1) * (paging.limit ?? 20);
         const rows = await this.model.findMany({
@@ -86,16 +67,10 @@ class PrismaUserRepository {
         });
         return rows.map(toUserProfile);
     }
-    // ── ICommandRepository methods (required by base interface) ──
-    /**
-     * insert — nhận full UserProfile entity, trả boolean
-     * NOTE: Base interface định nghĩa insert(data: Entity): Promise<boolean>
-     * Khác với create() trả string id — đây là quyết định thiết kế của share layer
-     */
     async insert(data) {
         await this.model.create({
             data: {
-                id: data.id, // NOTE: caller phải tự cấp id nếu dùng insert
+                id: data.id,
                 email: data.email,
                 name: data.name,
                 username: data.username,
@@ -106,6 +81,7 @@ class PrismaUserRepository {
                 emailVerified: data.emailVerified,
                 mustChangePassword: data.mustChangePassword,
                 avatarColor: data.avatarColor,
+                permissionsOverride: data.permissionsOverride,
                 phone: data.phone,
                 bio: data.bio,
                 location: data.location,
@@ -114,9 +90,6 @@ class PrismaUserRepository {
         });
         return true;
     }
-    /**
-     * update — update theo id, data là Partial<UserProfile>
-     */
     async update(id, data) {
         await this.model.update({
             where: { id },
@@ -124,27 +97,30 @@ class PrismaUserRepository {
         });
         return true;
     }
-    /**
-     * delete — base interface có isHard flag
-     * isHard=true  → xoá khỏi DB vĩnh viễn
-     * isHard=false → soft delete (set status=INACTIVE hoặc deletedAt)
-     *
-     * NOTE: Schema của bạn có thể không có deletedAt.
-     * Nếu không có, soft delete = set status INACTIVE.
-     */
     async delete(id, isHard) {
         if (isHard) {
             await this.model.delete({ where: { id } });
         }
         else {
+            const user = await this.model.findUnique({
+                where: { id },
+                select: { email: true, username: true },
+            });
+            if (!user)
+                return false;
+            const timestamp = Date.now();
+            const newEmail = `${user.email.split("@")[0]}+inactive_${timestamp}@deleted.local`;
             await this.model.update({
                 where: { id },
-                data: { status: "INACTIVE" },
+                data: {
+                    status: "INACTIVE",
+                    email: newEmail,
+                    username: `${user.username}__inactive_${timestamp}`,
+                },
             });
         }
         return true;
     }
-    // ── Domain-specific methods ──
     async findById(userId) {
         const raw = await this.model.findUnique({ where: { id: userId } });
         return raw ? toUserProfile(raw) : null;
@@ -168,6 +144,9 @@ class PrismaUserRepository {
                 ...(data.location !== undefined && { location: data.location }),
                 ...(data.username !== undefined && { username: data.username }),
                 ...(data.role !== undefined && { role: data.role }),
+                ...(data.permissionsOverride !== undefined && {
+                    permissionsOverride: data.permissionsOverride,
+                }),
                 ...(data.status !== undefined && { status: data.status }),
                 ...(data.emailVerified !== undefined && { emailVerified: data.emailVerified }),
             },
@@ -188,10 +167,6 @@ class PrismaUserRepository {
     async countUsers() {
         return this.model.count();
     }
-    /**
-     * listUsers — admin filter đầy đủ với keyword, sort, paging
-     * NOTE: Tách khỏi base list() vì cần ListUsersQueryDTO phức tạp hơn
-     */
     async listUsers(cond) {
         const where = this.buildAdminWhere(cond);
         const orderBy = { [cond.sortBy]: cond.sortOrder };
@@ -205,7 +180,6 @@ class PrismaUserRepository {
             total,
         };
     }
-    // ── Private helpers ──
     buildAdminWhere(cond) {
         const { keyword, email, username, role, status } = cond;
         const where = {};

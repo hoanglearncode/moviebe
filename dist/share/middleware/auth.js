@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.protect = exports.authenticate = exports.partnerMiddleware = exports.adminMiddleware = exports.requireActiveUser = exports.requireRole = exports.optionalAuthMiddleware = exports.authMiddleware = void 0;
+exports.protect = exports.authenticate = exports.partnerMiddleware = exports.adminMiddleware = exports.requireActiveUser = exports.requireSelfOrPermission = exports.requireAnyPermission = exports.requirePermission = exports.requireRole = exports.optionalAuthMiddleware = exports.authMiddleware = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const client_1 = require("@prisma/client");
 const value_1 = require("../common/value");
@@ -11,6 +11,8 @@ const error_code_1 = require("../model/error-code");
 const prisma_1 = require("../component/prisma");
 const http_server_1 = require("../transport/http-server");
 const logger_1 = require("../../modules/system/log/logger");
+const authorization_usecase_1 = require("../../modules/user/usecase/authorization.usecase");
+const authorizationUseCase = new authorization_usecase_1.AuthorizationUseCase();
 const extractBearerToken = (req) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -36,6 +38,11 @@ const assignUserFromPayload = (req, payload) => {
         email: String(payload.email),
         role: String(payload.scope ?? "USER"),
         status: String(payload.status ?? client_1.UserStatus.ACTIVE),
+        permissionsOverride: [],
+        permissions: authorizationUseCase.resolvePermissions({
+            role: String(payload.scope ?? client_1.Role.USER),
+            permissionsOverride: [],
+        }),
     };
 };
 const syncUserFromDatabase = async (req) => {
@@ -48,6 +55,7 @@ const syncUserFromDatabase = async (req) => {
             email: true,
             role: true,
             status: true,
+            permissionsOverride: true,
         },
     });
     if (!dbUser) {
@@ -58,6 +66,11 @@ const syncUserFromDatabase = async (req) => {
         email: dbUser.email,
         role: dbUser.role,
         status: dbUser.status,
+        permissionsOverride: authorizationUseCase.normalizePermissionsOverride(dbUser.permissionsOverride),
+        permissions: authorizationUseCase.resolvePermissions({
+            role: dbUser.role,
+            permissionsOverride: dbUser.permissionsOverride,
+        }),
     };
     return true;
 };
@@ -131,6 +144,44 @@ const requireRole = (...roles) => {
     };
 };
 exports.requireRole = requireRole;
+const requirePermission = (...permissions) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            return handleAuthFailure(res, "Unauthorized");
+        }
+        if (!authorizationUseCase.hasAllPermissions(req.user, permissions)) {
+            return handleAuthFailure(res, `Access denied. Required permissions: ${permissions.join(", ")}`, 403, error_code_1.ErrorCode.UNAUTHORIZED);
+        }
+        next();
+    };
+};
+exports.requirePermission = requirePermission;
+const requireAnyPermission = (...permissions) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            return handleAuthFailure(res, "Unauthorized");
+        }
+        if (!authorizationUseCase.hasAnyPermission(req.user, permissions)) {
+            return handleAuthFailure(res, `Access denied. Required any permission: ${permissions.join(", ")}`, 403, error_code_1.ErrorCode.UNAUTHORIZED);
+        }
+        next();
+    };
+};
+exports.requireAnyPermission = requireAnyPermission;
+const requireSelfOrPermission = (resolveOwnerId, permission) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            return handleAuthFailure(res, "Unauthorized");
+        }
+        const ownerId = resolveOwnerId(req);
+        if (authorizationUseCase.canAccessOwnResource(req.user.id, ownerId) ||
+            authorizationUseCase.hasPermission(req.user, permission)) {
+            return next();
+        }
+        return handleAuthFailure(res, "Access denied", 403, error_code_1.ErrorCode.UNAUTHORIZED);
+    };
+};
+exports.requireSelfOrPermission = requireSelfOrPermission;
 const requireActiveUser = (req, res, next) => {
     if (!req.user) {
         return handleAuthFailure(res, "Unauthorized");

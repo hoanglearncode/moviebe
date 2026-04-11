@@ -91,6 +91,7 @@ export class AdminUserUseCase implements IAdminUserUseCase {
       location: data.location || null,
       avatarColor,
       emailVerified: data.emailVerified || false,
+      permissionsOverride: data.permissionsOverride,
       mustChangePassword: true,
       lastLoginAt: null,
       createdAt: now,
@@ -136,6 +137,9 @@ export class AdminUserUseCase implements IAdminUserUseCase {
       ...(data.avatar && { avatar: data.avatar }),
       ...(data.bio && { bio: data.bio }),
       ...(data.role && { role: data.role }),
+      ...(data.permissionsOverride !== undefined && {
+        permissionsOverride: data.permissionsOverride,
+      }),
     });
   }
 

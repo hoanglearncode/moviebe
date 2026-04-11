@@ -16,9 +16,9 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.shutdownQueueInfrastructure = exports.initializeQueueInfrastructure = void 0;
 const logger_1 = require("../modules/system/log/logger");
-const config_1 = require("./config");
-const email_queue_1 = require("./email.queue");
-const email_worker_1 = require("./email.worker");
+const config_1 = require("./config/config");
+const email_queue_1 = require("./config/email.queue");
+const email_worker_1 = require("./worker/email.worker");
 const initializeQueueInfrastructure = async () => {
     if (!config_1.isQueueEnabled) {
         logger_1.logger.warn("Queue infrastructure is disabled");
@@ -36,7 +36,7 @@ const shutdownQueueInfrastructure = async () => {
     logger_1.logger.info("Queue infrastructure shut down");
 };
 exports.shutdownQueueInfrastructure = shutdownQueueInfrastructure;
-__exportStar(require("./config"), exports);
-__exportStar(require("./types"), exports);
-__exportStar(require("./email.queue"), exports);
-__exportStar(require("./email.worker"), exports);
+__exportStar(require("./config/config"), exports);
+__exportStar(require("./modules/types"), exports);
+__exportStar(require("./config/email.queue"), exports);
+__exportStar(require("./worker/email.worker"), exports);

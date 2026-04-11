@@ -1,4 +1,5 @@
 import { Role, UserStatus } from "@prisma/client";
+import { PermissionCode } from "../../../share/security/permissions";
 
 /**
  * ==========================================
@@ -19,6 +20,7 @@ export type UserProfile = {
   location: string | null;
   avatarColor: string | undefined;
   role: Role;
+  permissionsOverride?: PermissionCode[];
   status: UserStatus;
   emailVerified: boolean;
   mustChangePassword: boolean;
@@ -43,6 +45,7 @@ export type OwnUserProfile = PublicUserProfile & {
   phone: string | null;
   emailVerified: boolean;
   role: Role;
+  permissionsOverride?: PermissionCode[];
   lastLoginAt: Date | null;
   status: UserStatus;
 };

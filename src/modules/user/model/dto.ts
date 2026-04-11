@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isPermissionCode } from "../../../share/security/permissions";
 
 // ── UPDATE PROFILE ─────────────────────────────────────────────────────────────
 
@@ -89,6 +90,12 @@ export const CreateUserPayloadSchema = z.object({
   location: z.string().trim().optional(),
   role: z.enum(["USER", "ADMIN", "PARTNER"]).optional(),
   status: z.enum(["ACTIVE", "INACTIVE", "BANNED", "PENDING"]).optional(),
+  permissionsOverride: z
+    .array(z.string().trim().min(1))
+    .optional()
+    .refine((permissions) => !permissions || permissions.every(isPermissionCode), {
+      message: "invalid permission code",
+    }),
 });
 
 export type CreateUserDTO = z.infer<typeof CreateUserPayloadSchema>;
@@ -102,6 +109,12 @@ export const UpdateUserPayloadSchema = z.object({
   avatar: z.string().trim().url("avatar must be a valid URL").optional(),
   bio: z.string().trim().max(500).optional(),
   role: z.enum(["USER", "ADMIN", "PARTNER"]).optional(),
+  permissionsOverride: z
+    .array(z.string().trim().min(1))
+    .optional()
+    .refine((permissions) => !permissions || permissions.every(isPermissionCode), {
+      message: "invalid permission code",
+    }),
 });
 
 export type UpdateUserDTO = z.infer<typeof UpdateUserPayloadSchema>;

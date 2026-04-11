@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminUserUseCase = void 0;
 const errors_1 = require("../model/errors");
-const seed_service_1 = require("../shared/seed.service");
+const seed_1 = require("../shared/seed");
 class AdminUserUseCase {
     constructor(deps) {
         this.userRepo = deps.userRepository;
@@ -14,30 +14,15 @@ class AdminUserUseCase {
         this.prisma = deps.prisma;
         this.userSettingService = deps.userSettingService;
     }
-    // ── IUseCase.list — match đúng signature (UserCondDTO, PagingDTO) => OwnUserProfile[] ──
-    /**
-     * list — IUseCase yêu cầu signature này:
-     *   list(cond: UserCondDTO, paging: PagingDTO): Promise<OwnUserProfile[]>
-     *
-     * NOTE: UserCondDTO đã có page/limit bên trong (từ ListUsersQueryPayloadSchema).
-     * paging được truyền vào từ base interface nhưng ta ưu tiên dùng cond.page/limit
-     * vì chúng đã qua validation của Zod.
-     */
     async list(cond, paging) {
-        // Merge paging vào cond nếu cond không có page/limit
         const mergedCond = {
             ...cond,
             page: cond.page ?? paging.page ?? 1,
             limit: cond.limit ?? paging.limit ?? 20,
         };
-        // NOTE: dùng listUsers (domain-specific) thay vì list (generic base)
         const result = await this.userRepo.listUsers(mergedCond);
         return result.items;
     }
-    /**
-     * listWithMeta — version đầy đủ cho admin dashboard (pagination metadata)
-     * Không phải từ IUseCase, là method thêm vào
-     */
     async listWithMeta(cond) {
         const result = await this.userRepo.listUsers(cond);
         return {
@@ -48,13 +33,6 @@ class AdminUserUseCase {
             totalPages: Math.ceil(result.total / cond.limit),
         };
     }
-    // ── create ──
-    /**
-     * create — trả string (id của user mới tạo)
-     * NOTE: IUseCase.create trả Promise<string> (id)
-     * Nhưng IRepository.insert trả Promise<boolean>
-     * → ta dùng updateProfile sau insert để lấy id, hoặc tạo trực tiếp
-     */
     async create(data) {
         // 1. Check unique constraints
         const byEmail = await this.userRepo.findByEmail(data.email);
@@ -88,6 +66,7 @@ class AdminUserUseCase {
             location: data.location || null,
             avatarColor,
             emailVerified: data.emailVerified || false,
+            permissionsOverride: data.permissionsOverride,
             mustChangePassword: true,
             lastLoginAt: null,
             createdAt: now,
@@ -98,13 +77,13 @@ class AdminUserUseCase {
                 .default(id)
                 .catch((error) => console.error(`⚠️ Failed to create default settings for user ${id}:`, error));
         }
-        // 8. Welcome email (fire-and-forget)
-        this.notifier
-            .sendWelcomeEmail({ email: data.email, name: data.name ?? data.email })
-            .catch(console.error);
+        if (data.sendEmailWellCome) {
+            this.notifier
+                .sendWelcomeEmail({ email: data.email, name: data.name ?? data.email })
+                .catch(console.error);
+        }
         return id;
     }
-    // ── update ──
     async update(id, data) {
         const user = await this.userRepo.findById(id);
         if (!user)
@@ -127,25 +106,19 @@ class AdminUserUseCase {
             ...(data.avatar && { avatar: data.avatar }),
             ...(data.bio && { bio: data.bio }),
             ...(data.role && { role: data.role }),
+            ...(data.permissionsOverride !== undefined && {
+                permissionsOverride: data.permissionsOverride,
+            }),
         });
     }
-    // ── delete ──
-    /**
-     * delete — IUseCase.delete(id): Promise<boolean> (không có isHard)
-     * → ta dùng soft delete (isHard=false) làm mặc định vì an toàn hơn
-     */
     async delete(id) {
         const user = await this.userRepo.findById(id);
         if (!user)
             throw errors_1.ErrUserNotFound;
         await this.sessionRepo.revokeAllSessionsByUserId(id);
-        this.notifier
-            .sendAccountDeletedNotification({ email: user.email, name: user.name ?? user.email })
-            .catch(console.error);
-        // soft delete — đổi status INACTIVE, không xoá DB
+        this.notifier.sendAccountDeletedNotification({ email: user.email, name: user.name ?? user.email }).catch(console.error);
         return this.userRepo.delete(id, false);
     }
-    // ── getDetail ──
     async getDetail(id) {
         const user = await this.userRepo.findById(id);
         if (!user)
@@ -167,7 +140,6 @@ class AdminUserUseCase {
             createdAt: user.createdAt,
         };
     }
-    // ── Admin-specific actions ──
     async changeUserStatus(userId, data) {
         const user = await this.userRepo.findById(userId);
         if (!user)
@@ -178,7 +150,8 @@ class AdminUserUseCase {
         }
         return { message: `User status updated to ${data.status}` };
     }
-    async resetUserPassword(userId, data) {
+    async resetUserPassword(// pending
+    userId, data) {
         const user = await this.userRepo.findById(userId);
         if (!user)
             throw errors_1.ErrUserNotFound;
@@ -208,12 +181,8 @@ class AdminUserUseCase {
         const count = await this.sessionRepo.revokeAllSessionsByUserId(userId);
         return { message: `Revoked ${count} session(s)` };
     }
-    /**
-     * Seed users - Bulk create random users
-     * Dùng cho testing, load testing, hoặc khởi tạo dữ liệu
-     */
     async seedUsers(data) {
-        const seedService = new seed_service_1.SeedService(this.prisma, this.hasher);
+        const seedService = new seed_1.SeedService(this.prisma, this.hasher);
         return seedService.seedUsers({
             count: data.count,
             batchSize: data.batchSize || 100,
@@ -234,26 +203,16 @@ class AdminUserUseCase {
             },
         });
     }
-    /**
-     * Clear all seed users
-     * Xóa tất cả users tạo từ seed (dùng cho cleanup)
-     */
     async clearSeedUsers() {
-        const seedService = new seed_service_1.SeedService(this.prisma, this.hasher);
+        const seedService = new seed_1.SeedService(this.prisma, this.hasher);
         return seedService.clearSeedUsers();
     }
-    /**
-     * Get seed statistics
-     */
     async getSeedStatistics() {
-        const seedService = new seed_service_1.SeedService(this.prisma, this.hasher);
+        const seedService = new seed_1.SeedService(this.prisma, this.hasher);
         return seedService.getSeedStatistics();
     }
-    /**
-     * Get user statistics - count users by status
-     */
     async getStats() {
-        const [total, active, inactive, banned, pending,] = await Promise.all([
+        const [total, active, inactive, banned, pending] = await Promise.all([
             this.prisma.user.count(),
             this.prisma.user.count({ where: { status: "ACTIVE", emailVerified: true } }),
             this.prisma.user.count({ where: { status: "INACTIVE" } }),

@@ -16,7 +16,7 @@ class CategoryUseCase {
             // TODO: process error
             const issues = error.issues;
             for (const issue of issues) {
-                if (issue.path[0] === 'name') {
+                if (issue.path[0] === "name") {
                     throw errors_1.ErrCategoryNameTooShort;
                 }
             }

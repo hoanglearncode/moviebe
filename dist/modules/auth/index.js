@@ -9,7 +9,7 @@ const hash_1 = require("./shared/hash");
 const token_1 = require("./shared/token");
 const notification_1 = require("./shared/notification");
 const social_auth_1 = require("./shared/social-auth");
-const avatar_color_service_1 = require("../user/shared/avatar-color.service");
+const avatar_color_1 = require("../user/shared/avatar-color");
 const prisma_1 = require("../../share/component/prisma");
 const concurrent_lock_1 = require("../../share/component/concurrent-lock");
 const setting_1 = require("../system/setting");
@@ -34,7 +34,7 @@ const setupAuthHexagon = (prismaClient = prisma_1.prisma) => {
     const tokenService = new token_1.TokenService(prismaClient);
     const notificationService = new notification_1.AuthNotificationService();
     const socialAuthService = new social_auth_1.SocialAuthService();
-    const avatarColorService = new avatar_color_service_1.AvatarColorService();
+    const avatarColorService = new avatar_color_1.AvatarColorService();
     const userSettingService = (0, setting_1.createSettingUseCase)(prismaClient);
     const dependencies = {
         userRepository,

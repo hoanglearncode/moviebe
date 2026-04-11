@@ -123,7 +123,7 @@ class PrismaAuthUserRepository {
         else {
             await this.model.update({
                 where: { id },
-                data: { status: client_1.UserStatus.INACTIVE, updatedAt: new Date() }
+                data: { status: client_1.UserStatus.INACTIVE, updatedAt: new Date() },
             });
         }
         return true;
@@ -139,25 +139,22 @@ class PrismaAuthUserRepository {
     async findByEmailOrUsername(identifier) {
         const raw = await this.model.findFirst({
             where: {
-                OR: [
-                    { email: identifier },
-                    { username: identifier }
-                ]
-            }
+                OR: [{ email: identifier }, { username: identifier }],
+            },
         });
         return raw ? toAuthUser(raw) : null;
     }
     async markVerified(userId) {
         await this.model.update({
             where: { id: userId },
-            data: { emailVerified: true, updatedAt: new Date() }
+            data: { emailVerified: true, updatedAt: new Date() },
         });
         return true;
     }
     async updatePassword(userId, passwordHash) {
         await this.model.update({
             where: { id: userId },
-            data: { password: passwordHash, updatedAt: new Date() }
+            data: { password: passwordHash, updatedAt: new Date() },
         });
         return true;
     }

@@ -16,7 +16,10 @@ exports.RegisterPartnerPayloadDTO = zod_1.default.object({
     city: zod_1.default.string().trim().min(1, "City is required"),
     country: zod_1.default.string().trim().min(1, "Country is required").default("Vietnam"),
     postalCode: zod_1.default.string().trim().optional(),
-    phone: zod_1.default.string().trim().regex(/^\+?[0-9\s\-()]{9,}$/, "Invalid phone"),
+    phone: zod_1.default
+        .string()
+        .trim()
+        .regex(/^\+?[0-9\s\-()]{9,}$/, "Invalid phone"),
     website: zod_1.default.string().trim().url("Invalid URL").optional(),
     logo: zod_1.default.string().trim().url("Invalid logo URL").optional(),
     taxCode: zod_1.default.string().trim().min(1, "Tax code is required"),
@@ -30,7 +33,11 @@ exports.UpdatePartnerPayloadDTO = zod_1.default.object({
     cinemaName: zod_1.default.string().trim().min(1).max(255).optional(),
     address: zod_1.default.string().trim().min(5).optional(),
     city: zod_1.default.string().trim().min(1).optional(),
-    phone: zod_1.default.string().trim().regex(/^\+?[0-9\s\-()]{9,}$/).optional(),
+    phone: zod_1.default
+        .string()
+        .trim()
+        .regex(/^\+?[0-9\s\-()]{9,}$/)
+        .optional(),
     website: zod_1.default.string().trim().url().optional(),
     logo: zod_1.default.string().trim().url().optional(),
     bankAccountName: zod_1.default.string().trim().min(1).optional(),

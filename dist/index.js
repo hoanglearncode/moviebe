@@ -19,30 +19,30 @@ const request_logger_1 = require("./modules/system/log/request-logger");
 const queue_1 = require("./queue");
 const upload_router_1 = require("./share/transport/upload.router");
 const seed_setting_1 = require("./share/common/seed-setting");
+const seed_1 = require("./modules/notification/shared/seed");
+const admin_endpoints_1 = __importDefault(require("./modules/notification/infras/transport/admin-endpoints"));
 (0, dotenv_1.config)();
 (async () => {
     await prisma_1.prisma.$connect();
     logger_1.logger.info("Database connected successfully");
     await (0, queue_1.initializeQueueInfrastructure)();
+    await (0, seed_1.seedEmailTemplates)(prisma_1.prisma);
     await ensureAdminUser();
     const app = (0, express_1.default)();
     const port = process.env.PORT || 3000;
     app.use(express_1.default.json());
     app.use(request_logger_1.requestLogger);
     app.use((0, cors_1.default)({
-        origin: [
-            "http://localhost:3000",
-            "http://localhost:3001",
-            "http://localhost:3002",
-        ],
+        origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
         credentials: true,
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
         allowedHeaders: ["Content-Type", "Authorization"],
     }));
-    app.use('/v1', (0, category_1.setupCategoryHexagon)((0, repo_1.createCategoryRepository)(prisma_1.prisma)));
-    app.use('/v1', (0, auth_1.setupAuthHexagon)(prisma_1.prisma));
-    app.use('/v1', (0, user_1.setupUserHexagon)(prisma_1.prisma));
-    app.use('/v1', (0, upload_router_1.createUploadRouter)());
+    app.use("/v1", (0, category_1.setupCategoryHexagon)((0, repo_1.createCategoryRepository)(prisma_1.prisma)));
+    app.use("/v1", (0, auth_1.setupAuthHexagon)(prisma_1.prisma));
+    app.use("/v1", (0, user_1.setupUserHexagon)(prisma_1.prisma));
+    app.use("/v1", (0, upload_router_1.createUploadRouter)());
+    app.use("/v1/admin/email", admin_endpoints_1.default);
     // app.use('/v1', setupProductHexagon(sequelize));
     app.listen(port, () => {
         logger_1.logger.info(`Server is running on http://localhost:${port}`);
@@ -87,9 +87,11 @@ async function ensureAdminUser() {
             provider: "local",
         },
     });
-    await prisma_1.prisma.userSetting.create({ data: {
+    await prisma_1.prisma.userSetting.create({
+        data: {
             userId: data.id,
-            ...seed_setting_1.defaultSettings
-        } });
+            ...seed_setting_1.defaultSettings,
+        },
+    });
     logger_1.logger.info("Admin user created", { email });
 }
