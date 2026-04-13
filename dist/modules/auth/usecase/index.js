@@ -77,7 +77,7 @@ class AuthUseCase {
             conflictMessage: "A registration request for this account is already being processed",
         });
     }
-    async login(data) {
+    async login(data, context) {
         const parsedData = dto_1.LoginPayloadDTO.safeParse(data);
         if (!parsedData.success) {
             throw new http_server_1.ValidationError("Invalid login data", parsedData.error.issues);
@@ -101,7 +101,9 @@ class AuthUseCase {
             if (!user.emailVerified) {
                 throw new http_server_1.UnauthorizedError("Account is not verified", error_code_1.ErrorCode.ACCOUNT_NOT_VERIFIED);
             }
-            const session = await tokenService.issueAuthSession(user);
+            const session = await tokenService.issueAuthSession(user, context, {
+                remember: parsedData.data.remember,
+            });
             await userRepository.update(user.id, {
                 lastLoginAt: new Date(),
             });
@@ -127,29 +129,29 @@ class AuthUseCase {
         }
         return this.buildAuthResponse(user, session);
     }
-    async loginGoogle(data) {
+    async loginGoogle(data, context) {
         const parsedData = dto_1.GoogleLoginPayloadDTO.safeParse(data);
         if (!parsedData.success) {
             throw new http_server_1.ValidationError("Invalid Google login data", parsedData.error.issues);
         }
         const profile = await this.dependencies.socialAuthService.verifyGoogleCredential(parsedData.data.credential);
-        return this.loginWithSocialProfile(profile);
+        return this.loginWithSocialProfile(profile, context);
     }
-    async loginGoogleTokenCallback(data) {
+    async loginGoogleTokenCallback(data, context) {
         const parsedData = dto_1.GoogleLoginTokenCallbackPayloadDTO.safeParse(data);
         if (!parsedData.success) {
             throw new http_server_1.ValidationError("Invalid Google token callback data", parsedData.error.issues);
         }
         const profile = await this.dependencies.socialAuthService.getGoogleProfile(parsedData.data.accessToken);
-        return this.loginWithSocialProfile(profile);
+        return this.loginWithSocialProfile(profile, context);
     }
-    async loginFacebook(data) {
+    async loginFacebook(data, context) {
         const parsedData = dto_1.FacebookLoginPayloadDTO.safeParse(data);
         if (!parsedData.success) {
             throw new http_server_1.ValidationError("Invalid Facebook login data", parsedData.error.issues);
         }
         const profile = await this.dependencies.socialAuthService.getFacebookProfile(parsedData.data.accessToken);
-        return this.loginWithSocialProfile(profile);
+        return this.loginWithSocialProfile(profile, context);
     }
     async verifyEmail(data) {
         const { notificationService, } = this.dependencies;
@@ -174,11 +176,8 @@ class AuthUseCase {
         }
         const { userRepository, tokenService, notificationService } = this.dependencies;
         const user = await userRepository.findByEmail(parsedData.data.email);
-        if (!user) {
-            throw new http_server_1.NotFoundError("User");
-        }
-        if (user.emailVerified) {
-            throw new http_server_1.ValidationError("Email is already verified");
+        if (!user || user.emailVerified) {
+            return { message: "If the email requires verification, a new email has been sent" };
         }
         const verifyToken = await tokenService.issueActionToken({
             userId: user.id,
@@ -188,7 +187,7 @@ class AuthUseCase {
             email: user.email,
             token: verifyToken,
         });
-        return { message: "Verification email sent" };
+        return { message: "If the email requires verification, a new email has been sent" };
     }
     async forgotPassword(data) {
         const parsedData = dto_1.ForgotPasswordPayloadDTO.safeParse(data);
@@ -216,7 +215,7 @@ class AuthUseCase {
         if (!parsedData.success) {
             throw new http_server_1.ValidationError("Invalid change password data", parsedData.error.issues);
         }
-        const { tokenService, userRepository, passwordHasher } = this.dependencies;
+        const { tokenService, userRepository, passwordHasher, notificationService } = this.dependencies;
         const { userId } = await tokenService.verifyActionToken(parsedData.data.token, "reset-password");
         const user = await userRepository.get(userId);
         if (!user) {
@@ -227,9 +226,10 @@ class AuthUseCase {
         await userRepository.update(userId, { mustChangePassword: false });
         if (!user.emailVerified)
             await userRepository.markVerified(userId);
+        await notificationService.sendChangePasswordEmail(user.email);
         return { message: "Password changed successfully" };
     }
-    async loginWithSocialProfile(profile) {
+    async loginWithSocialProfile(profile, context) {
         return this.dependencies.concurrentLockService.runExclusive(this.getRegisterLockKeys(profile.email), async () => {
             const { userRepository, tokenService, avatarColorService, notificationService } = this.dependencies;
             let user = await userRepository.findByEmail(profile.email);
@@ -283,7 +283,7 @@ class AuthUseCase {
                     throw new http_server_1.NotFoundError("User");
                 }
             }
-            const session = await tokenService.issueAuthSession(user);
+            const session = await tokenService.issueAuthSession(user, context);
             return this.buildAuthResponse(user, session);
         }, {
             ttlMs: value_1.ENV.AUTH_CONCURRENT_LOCK_TTL_MS,

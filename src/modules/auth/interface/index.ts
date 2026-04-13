@@ -43,7 +43,7 @@ export interface ITokenService {
   issueAuthSession(user: AuthUser, context?: {
       userAgent?: string;
       ipAddress?: string;
-    }): Promise<AuthSession>;
+    }, options?: { remember?: boolean }): Promise<AuthSession>;
   refreshAuthSession(refreshToken: string): Promise<AuthSession & { userId: string }>;
   issueActionToken(payload: { userId: string; purpose: AuthActionTokenPurpose }): Promise<string>;
   verifyActionToken(

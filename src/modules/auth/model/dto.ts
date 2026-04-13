@@ -9,12 +9,21 @@ export const RegisterPayloadDTO = z.object({
     .min(3, "username too short")
     .max(50, "username max 50 characters")
     .optional(),
-  name: z.string().trim().min(1, "name is required").optional(),
+  name: z
+    .preprocess(
+      (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+      z.string().trim().min(1, "name cannot be blank").optional(),
+    ),
 });
 
 export const LoginPayloadDTO = z.object({
-  emailOrUsername: z.string().trim().min(1, "email or username is required"),
+  emailOrUsername: z
+    .string()
+    .trim()
+    .min(1, "email or username is required")
+    .transform((value) => (value.includes("@") ? value.toLowerCase() : value)),
   password: z.string().min(8, "password must have at least 8 characters"),
+  remember: z.boolean().optional().default(false),
 });
 
 export const RefreshTokenPayloadDTO = z.object({

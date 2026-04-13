@@ -4,7 +4,7 @@ exports.AdminUserUseCase = void 0;
 const errors_1 = require("../model/errors");
 const seed_1 = require("../shared/seed");
 class AdminUserUseCase {
-    constructor(deps) {
+    constructor(deps, authNotifications, authTokenService) {
         this.userRepo = deps.userRepository;
         this.sessionRepo = deps.sessionRepository;
         this.settingsRepo = deps.userSettingsRepository;
@@ -13,6 +13,8 @@ class AdminUserUseCase {
         this.avatarColorService = deps.avatarColorService;
         this.prisma = deps.prisma;
         this.userSettingService = deps.userSettingService;
+        this.authNotifications = authNotifications;
+        this.tokenService = authTokenService;
     }
     async list(cond, paging) {
         const mergedCond = {
@@ -77,10 +79,20 @@ class AdminUserUseCase {
                 .default(id)
                 .catch((error) => console.error(`⚠️ Failed to create default settings for user ${id}:`, error));
         }
-        if (data.sendEmailWellCome) {
+        if (data.sendEmailWellCome && data.emailVerified) {
             this.notifier
                 .sendWelcomeEmail({ email: data.email, name: data.name ?? data.email })
                 .catch(console.error);
+        }
+        if (!data.emailVerified) {
+            const verifyToken = await this.tokenService.issueActionToken({
+                userId: id,
+                purpose: "verify-email",
+            });
+            await this.authNotifications.sendVerifyEmail({
+                email: data.email,
+                token: verifyToken,
+            });
         }
         return id;
     }

@@ -51,7 +51,6 @@ config();
 
   app.use("/v1", createUploadRouter());
   app.use("/v1/admin/email", adminEmailRouter);
-  // app.use('/v1', setupProductHexagon(sequelize));
 
   app.listen(port, () => {
     logger.info(`Server is running on http://localhost:${port}`);

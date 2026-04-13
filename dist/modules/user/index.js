@@ -15,6 +15,8 @@ const mail_1 = require("../../share/component/mail");
 const auth_1 = require("../../share/middleware/auth");
 const setting_1 = require("../system/setting");
 const permissions_1 = require("../../share/security/permissions");
+const notification_2 = require("../auth/shared/notification");
+const token_1 = require("../auth/shared/token");
 const buildUserRouter = (useCase) => {
     const httpService = new http_service_1.UserHttpService(useCase);
     const router = (0, express_1.Router)();
@@ -53,8 +55,10 @@ const setupUserHexagon = (prismaClient = prisma_1.prisma) => {
     const sessionRepository = (0, session_repo_1.createSessionRepository)(prismaClient);
     const passwordHasher = new hash_1.HashService();
     const notificationService = new notification_1.UserNotificationService(mail_1.mailService);
+    const authNotificationService = new notification_2.AuthNotificationService();
     const avatarColorService = new avatar_color_1.AvatarColorService();
     const userSettingService = (0, setting_1.createSettingUseCase)(prismaClient);
+    const tokenService = new token_1.TokenService(prismaClient);
     const dependencies = {
         userRepository,
         sessionRepository,
@@ -66,7 +70,7 @@ const setupUserHexagon = (prismaClient = prisma_1.prisma) => {
         userSettingService,
     };
     const userUseCase = new user_usecase_1.UserUseCase(dependencies);
-    const adminUserUseCase = new admin_user_usecase_1.AdminUserUseCase(dependencies);
+    const adminUserUseCase = new admin_user_usecase_1.AdminUserUseCase(dependencies, authNotificationService, tokenService);
     const router = (0, express_1.Router)();
     router.use("/user", buildUserRouter(userUseCase));
     router.use("/admin", buildAdminUserRouter(adminUserUseCase));

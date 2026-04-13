@@ -113,20 +113,34 @@ exports.authMiddleware = authMiddleware;
  * Optional Auth Middleware - Doesn't fail if no token
  */
 const optionalAuthMiddleware = (req, _res, next) => {
-    try {
-        const token = extractBearerToken(req);
-        if (token) {
+    (async () => {
+        try {
+            const token = extractBearerToken(req);
+            if (!token) {
+                return next();
+            }
             const payload = decodeAccessToken(token);
             assignUserFromPayload(req, payload);
+            const synced = await syncUserFromDatabase(req);
+            if (!synced) {
+                req.user = undefined;
+            }
+            next();
         }
-        next();
-    }
-    catch (error) {
-        logger_1.logger.warn("[Optional Auth Middleware] Token verification failed, continuing without auth", {
+        catch (error) {
+            logger_1.logger.warn("[Optional Auth Middleware] Token verification failed, continuing without auth", {
+                message: error.message,
+            });
+            req.user = undefined;
+            next();
+        }
+    })().catch((error) => {
+        logger_1.logger.warn("[Optional Auth Middleware] Unexpected error, continuing without auth", {
             message: error.message,
         });
+        req.user = undefined;
         next();
-    }
+    });
 };
 exports.optionalAuthMiddleware = optionalAuthMiddleware;
 /**

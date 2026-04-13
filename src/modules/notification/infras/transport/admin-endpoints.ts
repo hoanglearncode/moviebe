@@ -6,7 +6,11 @@ import {
 } from "../../index";
 import { prisma } from "../../../../share/component/prisma";
 import { logger } from "../../../system/log/logger";
-import { authMiddleware, requirePermission } from "../../../../share/middleware/auth";
+import {
+  authMiddleware,
+  requireActiveUser,
+  requirePermission,
+} from "../../../../share/middleware/auth";
 import { PERMISSIONS } from "../../../../share/security/permissions";
 
 
@@ -36,6 +40,7 @@ router.get("/templates", async (req: Request, res: Response) => {
 router.get(
   "/templates/:templateId",
   authMiddleware,
+  requireActiveUser,
   requirePermission(PERMISSIONS.MANAGE_EMAIL_TEMPLATES),
   async (req: Request, res: Response) => {
   try {
@@ -59,6 +64,7 @@ router.get(
 router.patch(
   "/templates/:templateId",
   authMiddleware,
+  requireActiveUser,
   requirePermission(PERMISSIONS.MANAGE_EMAIL_TEMPLATES),
   async (req: Request, res: Response) => {
   try {
@@ -92,6 +98,7 @@ router.patch(
 router.get(
   "/users/:userId/scheduled-emails",
   authMiddleware,
+  requireActiveUser,
   requirePermission(PERMISSIONS.VIEW_SCHEDULED_EMAILS),
   async (req: Request, res: Response) => {
   try {
@@ -116,6 +123,7 @@ router.get(
 router.post(
   "/users/:userId/schedule-email",
   authMiddleware,
+  requireActiveUser,
   requirePermission(PERMISSIONS.SCHEDULE_USER_EMAILS),
   async (req: Request, res: Response) => {
   try {
@@ -155,6 +163,7 @@ router.post(
 router.post(
   "/send-welcome/:userId",
   authMiddleware,
+  requireActiveUser,
   requirePermission(PERMISSIONS.SEND_SYSTEM_EMAILS),
   async (req: Request, res: Response) => {
   try {
@@ -189,6 +198,7 @@ router.post(
 router.post(
   "/send-promo-campaign",
   authMiddleware,
+  requireActiveUser,
   requirePermission(PERMISSIONS.SEND_SYSTEM_EMAILS),
   async (req: Request, res: Response) => {
   try {

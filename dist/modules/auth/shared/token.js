@@ -6,6 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TokenService = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const crypto_1 = __importDefault(require("crypto"));
+const ua_parser_js_1 = require("ua-parser-js");
+const uuid_1 = require("uuid");
 const value_1 = require("../../../share/common/value");
 const http_server_1 = require("../../../share/transport/http-server");
 const error_code_1 = require("../../../share/model/error-code");
@@ -16,18 +18,28 @@ class TokenService {
         this.passwordTokenModel = (0, dto_1.getPasswordTokenModel)(prisma);
         this.emailTokenModel = (0, dto_1.getEmailTokenModel)(prisma);
     }
-    async issueAuthSession(user) {
+    async issueAuthSession(user, context, options) {
         const session = this.createSessionTokens({
             sub: user.id,
             email: user.email,
             scope: user.role ?? "USER",
             status: user.status,
+            remember: options?.remember,
         });
+        const parser = new ua_parser_js_1.UAParser(context?.userAgent);
+        const ua = parser.getResult();
+        const deviceName = `${ua.browser.name || "Unknown"} ${ua.browser.version || ""}`;
+        const deviceType = ua.device.type || "desktop";
         await this.sessionModel.create({
             data: {
                 userId: user.id,
                 refreshToken: session.refreshToken,
                 expiresAt: this.getTokenExpiry(session.refreshToken),
+                deviceId: (0, uuid_1.v4)(),
+                deviceName,
+                deviceType,
+                userAgent: context?.userAgent,
+                ipAddress: context?.ipAddress,
             },
         });
         return session;
@@ -62,6 +74,12 @@ class TokenService {
                 userId: session.userId,
                 refreshToken: nextSession.refreshToken,
                 expiresAt: this.getTokenExpiry(nextSession.refreshToken),
+                deviceId: session.deviceId ?? undefined,
+                deviceName: session.deviceName ?? undefined,
+                deviceType: session.deviceType ?? undefined,
+                userAgent: session.userAgent ?? undefined,
+                ipAddress: session.ipAddress ?? undefined,
+                isActive: session.isActive ?? undefined,
             },
         });
         return {
@@ -113,7 +131,9 @@ class TokenService {
             algorithm: "HS512",
         });
         const refreshToken = jsonwebtoken_1.default.sign(normalizedPayload, value_1.ENV.JWT_REFRESH_SECRET, {
-            expiresIn: value_1.ENV.JWT_REFRESH_EXPIRES,
+            expiresIn: (payload.remember
+                ? TokenService.REMEMBER_REFRESH_EXPIRES
+                : value_1.ENV.JWT_REFRESH_EXPIRES),
             algorithm: "HS512",
         });
         return { accessToken, refreshToken };
@@ -127,3 +147,4 @@ class TokenService {
     }
 }
 exports.TokenService = TokenService;
+TokenService.REMEMBER_REFRESH_EXPIRES = "30d";

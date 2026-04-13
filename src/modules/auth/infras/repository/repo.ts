@@ -140,9 +140,11 @@ export class PrismaAuthUserRepository implements IAuthUserRepository {
   }
 
   async findByEmailOrUsername(identifier: string): Promise<AuthUser | null> {
+    const normalizedIdentifier = identifier.includes("@") ? identifier.toLowerCase() : identifier;
+
     const raw = await this.model.findFirst({
       where: {
-        OR: [{ email: identifier }, { username: identifier }],
+        OR: [{ email: normalizedIdentifier }, { username: identifier }],
       },
     });
 

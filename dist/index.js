@@ -43,7 +43,6 @@ const admin_endpoints_1 = __importDefault(require("./modules/notification/infras
     app.use("/v1", (0, user_1.setupUserHexagon)(prisma_1.prisma));
     app.use("/v1", (0, upload_router_1.createUploadRouter)());
     app.use("/v1/admin/email", admin_endpoints_1.default);
-    // app.use('/v1', setupProductHexagon(sequelize));
     app.listen(port, () => {
         logger_1.logger.info(`Server is running on http://localhost:${port}`);
     });

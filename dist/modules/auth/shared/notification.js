@@ -48,7 +48,7 @@ class AuthNotificationService {
     }
     async sendResetPasswordEmail(input) {
         const resetUrl = `${value_1.ENV.FRONTEND_URL}/reset-password?token=${encodeURIComponent(input.token)}`;
-        const template = await this.getTemplate(client_1.EmailNotificationEvent.PASSWORD_CHANGED);
+        const template = await this.getTemplate(client_1.EmailNotificationEvent.RESET_PASSWORD);
         const html = this.render(template.body, {
             email: input.email,
             name: input.email,
@@ -63,6 +63,22 @@ class AuthNotificationService {
             subject,
             html,
             text: `Reset password: ${resetUrl}`,
+        });
+    }
+    async sendChangePasswordEmail(email) {
+        const template = await this.getTemplate(client_1.EmailNotificationEvent.PASSWORD_CHANGED);
+        const html = this.render(template.body, {
+            email: email,
+            name: email,
+        });
+        const subject = this.render(template.subject, {
+            email: email,
+        });
+        await this.dispatchEmail({
+            to: email,
+            subject,
+            html,
+            text: `Change password`,
         });
     }
     async getTemplate(event) {

@@ -164,7 +164,9 @@ export class AuthUseCase implements IAuthUseCase {
           throw new UnauthorizedError("Account is not verified", ErrorCode.ACCOUNT_NOT_VERIFIED);
         }
 
-        const session = await tokenService.issueAuthSession(user, context);
+        const session = await tokenService.issueAuthSession(user, context, {
+          remember: parsedData.data.remember,
+        });
         await userRepository.update(user.id, {
           lastLoginAt: new Date(),
         });
@@ -198,7 +200,10 @@ export class AuthUseCase implements IAuthUseCase {
     return this.buildAuthResponse(user, session);
   }
 
-  async loginGoogle(data: GoogleDTO): Promise<AuthResponse> {
+  async loginGoogle(
+    data: GoogleDTO,
+    context?: { userAgent?: string; ipAddress?: string },
+  ): Promise<AuthResponse> {
     const parsedData = GoogleLoginPayloadDTO.safeParse(data);
     if (!parsedData.success) {
       throw new ValidationError("Invalid Google login data", parsedData.error.issues);
@@ -208,10 +213,13 @@ export class AuthUseCase implements IAuthUseCase {
       parsedData.data.credential,
     );
 
-    return this.loginWithSocialProfile(profile);
+    return this.loginWithSocialProfile(profile, context);
   }
 
-  async loginGoogleTokenCallback(data: GoogleTokenDTO): Promise<AuthResponse> {
+  async loginGoogleTokenCallback(
+    data: GoogleTokenDTO,
+    context?: { userAgent?: string; ipAddress?: string },
+  ): Promise<AuthResponse> {
     const parsedData = GoogleLoginTokenCallbackPayloadDTO.safeParse(data);
     if (!parsedData.success) {
       throw new ValidationError("Invalid Google token callback data", parsedData.error.issues);
@@ -221,10 +229,13 @@ export class AuthUseCase implements IAuthUseCase {
       parsedData.data.accessToken,
     );
 
-    return this.loginWithSocialProfile(profile);
+    return this.loginWithSocialProfile(profile, context);
   }
 
-  async loginFacebook(data: FacebookTO): Promise<AuthResponse> {
+  async loginFacebook(
+    data: FacebookTO,
+    context?: { userAgent?: string; ipAddress?: string },
+  ): Promise<AuthResponse> {
     const parsedData = FacebookLoginPayloadDTO.safeParse(data);
     if (!parsedData.success) {
       throw new ValidationError("Invalid Facebook login data", parsedData.error.issues);
@@ -234,7 +245,7 @@ export class AuthUseCase implements IAuthUseCase {
       parsedData.data.accessToken,
     );
 
-    return this.loginWithSocialProfile(profile);
+    return this.loginWithSocialProfile(profile, context);
   }
 
   async verifyEmail(data: VerifyEmailDTO): Promise<{ message: string }> {
@@ -268,12 +279,8 @@ export class AuthUseCase implements IAuthUseCase {
     const { userRepository, tokenService, notificationService } = this.dependencies;
 
     const user = await userRepository.findByEmail(parsedData.data.email);
-    if (!user) {
-      throw new NotFoundError("User");
-    }
-
-    if (user.emailVerified) {
-      throw new ValidationError("Email is already verified");
+    if (!user || user.emailVerified) {
+      return { message: "If the email requires verification, a new email has been sent" };
     }
 
     const verifyToken = await tokenService.issueActionToken({
@@ -286,7 +293,7 @@ export class AuthUseCase implements IAuthUseCase {
       token: verifyToken,
     });
 
-    return { message: "Verification email sent" };
+    return { message: "If the email requires verification, a new email has been sent" };
   }
 
   async forgotPassword(data: ForgotPasswordDTO): Promise<{ message: string }> {

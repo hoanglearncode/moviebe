@@ -65,6 +65,7 @@ type SessionModel = {
 };
 
 export class TokenService implements ITokenService {
+  private static readonly REMEMBER_REFRESH_EXPIRES = "30d";
   private readonly sessionModel: SessionModel;
   private readonly passwordTokenModel: ActionTokenModel;
   private readonly emailTokenModel: ActionTokenModel;
@@ -80,13 +81,15 @@ export class TokenService implements ITokenService {
     context?: {
       userAgent?: string;
       ipAddress?: string;
-    }
+    },
+    options?: { remember?: boolean },
   ): Promise<AuthSession> {
     const session = this.createSessionTokens({
       sub: user.id,
       email: user.email,
       scope: user.role ?? "USER",
       status: user.status,
+      remember: options?.remember,
     });
 
     const parser = new UAParser(context?.userAgent);
@@ -147,6 +150,12 @@ export class TokenService implements ITokenService {
         userId: session.userId,
         refreshToken: nextSession.refreshToken,
         expiresAt: this.getTokenExpiry(nextSession.refreshToken),
+        deviceId: session.deviceId ?? undefined,
+        deviceName: session.deviceName ?? undefined,
+        deviceType: session.deviceType ?? undefined,
+        userAgent: session.userAgent ?? undefined,
+        ipAddress: session.ipAddress ?? undefined,
+        isActive: session.isActive ?? undefined,
       },
     });
 
@@ -209,6 +218,7 @@ export class TokenService implements ITokenService {
     email: string;
     scope: string;
     status: string | undefined;
+    remember?: boolean;
   }): AuthSession {
     const normalizedPayload = {
       sub: payload.sub,
@@ -223,7 +233,9 @@ export class TokenService implements ITokenService {
     });
 
     const refreshToken = jwt.sign(normalizedPayload, ENV.JWT_REFRESH_SECRET, {
-      expiresIn: ENV.JWT_REFRESH_EXPIRES as jwt.SignOptions["expiresIn"],
+      expiresIn: (payload.remember
+        ? TokenService.REMEMBER_REFRESH_EXPIRES
+        : ENV.JWT_REFRESH_EXPIRES) as jwt.SignOptions["expiresIn"],
       algorithm: "HS512",
     });
 

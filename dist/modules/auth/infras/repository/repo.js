@@ -137,9 +137,10 @@ class PrismaAuthUserRepository {
         return raw ? toAuthUser(raw) : null;
     }
     async findByEmailOrUsername(identifier) {
+        const normalizedIdentifier = identifier.includes("@") ? identifier.toLowerCase() : identifier;
         const raw = await this.model.findFirst({
             where: {
-                OR: [{ email: identifier }, { username: identifier }],
+                OR: [{ email: normalizedIdentifier }, { username: identifier }],
             },
         });
         return raw ? toAuthUser(raw) : null;
