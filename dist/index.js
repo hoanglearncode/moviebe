@@ -6,6 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const category_1 = require("./modules/category");
 const auth_1 = require("./modules/auth");
 const user_1 = require("./modules/user");
+const partner_1 = require("./modules/partner");
+const movie_1 = require("./modules/movie");
+const booking_1 = require("./modules/booking");
+const payment_1 = require("./modules/payment");
+const ticket_1 = require("./modules/ticket");
 const repo_1 = require("./modules/category/infras/repository/repo");
 const prisma_1 = require("./share/component/prisma");
 const dotenv_1 = require("dotenv");
@@ -21,6 +26,7 @@ const upload_router_1 = require("./share/transport/upload.router");
 const seed_setting_1 = require("./share/common/seed-setting");
 const seed_1 = require("./modules/notification/shared/seed");
 const admin_endpoints_1 = __importDefault(require("./modules/notification/infras/transport/admin-endpoints"));
+const notification_1 = require("./modules/notification");
 (0, dotenv_1.config)();
 (async () => {
     await prisma_1.prisma.$connect();
@@ -41,8 +47,23 @@ const admin_endpoints_1 = __importDefault(require("./modules/notification/infras
     app.use("/v1", (0, category_1.setupCategoryHexagon)((0, repo_1.createCategoryRepository)(prisma_1.prisma)));
     app.use("/v1", (0, auth_1.setupAuthHexagon)(prisma_1.prisma));
     app.use("/v1", (0, user_1.setupUserHexagon)(prisma_1.prisma));
+    app.use("/v1", (0, movie_1.setupPublicMovieRoutes)(prisma_1.prisma));
+    // Booking (auth required)
+    app.use("/v1", (0, booking_1.setupBookingRoutes)(prisma_1.prisma));
+    // Payment (auth required + public webhook)
+    app.use("/v1", (0, payment_1.setupPaymentRoutes)(prisma_1.prisma));
+    // User tickets (auth required)
+    app.use("/v1", (0, ticket_1.setupTicketRoutes)(prisma_1.prisma));
+    // Partner portal (requires PARTNER role)
+    app.use("/v1/partner", (0, partner_1.setupPartnerHexagon)(prisma_1.prisma));
+    // Partner registration flow routes
+    const { userRouter: partnerUserRouter, adminRouter: partnerAdminRouter } = (0, partner_1.setupPartnerRequestRoutes)(prisma_1.prisma);
+    app.use("/v1/user", partnerUserRouter);
+    app.use("/v1/admin", partnerAdminRouter);
     app.use("/v1", (0, upload_router_1.createUploadRouter)());
     app.use("/v1/admin/email", admin_endpoints_1.default);
+    // In-app push notifications
+    app.use("/v1/notifications", notification_1.notificationRouter);
     app.listen(port, () => {
         logger_1.logger.info(`Server is running on http://localhost:${port}`);
     });

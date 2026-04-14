@@ -53,6 +53,7 @@ export class SocialAuthService implements ISocialAuthService {
       avatar: payload.picture ?? null,
       emailVerified: payload.email_verified ?? true,
       provider: "google",
+      permissions_override: null,
     };
   }
 
@@ -81,6 +82,7 @@ export class SocialAuthService implements ISocialAuthService {
       avatar: profile.picture ?? null,
       emailVerified: profile.email_verified ?? true,
       provider: "google",
+      permissions_override: null,
     };
   }
 
@@ -108,6 +110,7 @@ export class SocialAuthService implements ISocialAuthService {
       avatar: profile.picture?.data?.url ?? null,
       emailVerified: true,
       provider: "facebook",
+      permissions_override: null,
     };
   }
 }

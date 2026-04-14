@@ -18,7 +18,10 @@ exports.shutdownQueueInfrastructure = exports.initializeQueueInfrastructure = vo
 const logger_1 = require("../modules/system/log/logger");
 const config_1 = require("./config/config");
 const email_queue_1 = require("./config/email.queue");
+const notification_queue_1 = require("./config/notification.queue");
 const email_worker_1 = require("./worker/email.worker");
+const notification_worker_1 = require("./worker/notification.worker");
+const seat_cleanup_worker_1 = require("./worker/seat-cleanup.worker");
 const initializeQueueInfrastructure = async () => {
     if (!config_1.isQueueEnabled) {
         logger_1.logger.warn("Queue infrastructure is disabled");
@@ -29,14 +32,24 @@ const initializeQueueInfrastructure = async () => {
         workersEnabled: config_1.areQueueWorkersEnabled,
     });
     (0, email_worker_1.startEmailWorker)();
+    (0, notification_worker_1.startNotificationWorker)();
+    (0, seat_cleanup_worker_1.startSeatCleanupWorker)();
 };
 exports.initializeQueueInfrastructure = initializeQueueInfrastructure;
 const shutdownQueueInfrastructure = async () => {
-    await Promise.allSettled([(0, email_worker_1.closeEmailWorker)(), (0, email_queue_1.closeEmailQueue)()]);
+    await Promise.allSettled([
+        (0, email_worker_1.closeEmailWorker)(),
+        (0, email_queue_1.closeEmailQueue)(),
+        (0, notification_worker_1.closeNotificationWorker)(),
+        (0, notification_queue_1.closeNotificationQueue)(),
+        (0, seat_cleanup_worker_1.closeSeatCleanupWorker)(),
+    ]);
     logger_1.logger.info("Queue infrastructure shut down");
 };
 exports.shutdownQueueInfrastructure = shutdownQueueInfrastructure;
 __exportStar(require("./config/config"), exports);
 __exportStar(require("./modules/types"), exports);
 __exportStar(require("./config/email.queue"), exports);
+__exportStar(require("./config/notification.queue"), exports);
 __exportStar(require("./worker/email.worker"), exports);
+__exportStar(require("./worker/notification.worker"), exports);

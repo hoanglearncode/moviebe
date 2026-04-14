@@ -150,6 +150,8 @@ class AdminUserUseCase {
             role: user.role,
             lastLoginAt: user.lastLoginAt,
             createdAt: user.createdAt,
+            provider: user.provider,
+            permissionsOverride: user.permissionsOverride
         };
     }
     async changeUserStatus(userId, data) {

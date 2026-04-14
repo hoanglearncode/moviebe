@@ -38,6 +38,7 @@ function toOwnUserProfile(user: UserProfile): OwnUserProfile {
     email: user.email,
     username: user.username,
     name: user.name,
+    provider: user.provider,
     avatar: user.avatar,
     status: user.status,
     bio: user.bio,

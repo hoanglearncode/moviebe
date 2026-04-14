@@ -34,7 +34,7 @@ export type UserProfile = {
  */
 export type PublicUserProfile = Pick<
   UserProfile,
-  "id" | "username" | "name" | "avatar" | "bio" | "location" | "avatarColor" | "createdAt"
+  "id" | "username" | "name" | "avatar" | "bio" | "location" | "avatarColor" | "createdAt" | "provider" | "permissionsOverride"
 >;
 
 /**
@@ -46,6 +46,8 @@ export type OwnUserProfile = PublicUserProfile & {
   emailVerified: boolean;
   role: Role;
   permissionsOverride?: PermissionCode[];
+  permissions?: string[];
+  provider: string;
   lastLoginAt: Date | null;
   status: UserStatus;
 };

@@ -77,6 +77,16 @@ enum TicketStatus {
   PASSED
 }
 
+enum OrderStatus {
+  PENDING
+  PAYMENT_PROCESSING
+  COMPLETED
+  EXPIRED
+  CANCELLED
+  REFUND_REQUESTED
+  REFUNDED
+}
+
 enum TransactionType {
   TICKET_SALE
   COMMISSION_DEDUCTED
@@ -152,12 +162,15 @@ model User {
   resetTokens        PasswordResetToken[]
   emailTokens        EmailVerificationToken[]
   partner            Partner?
+  partnerRequests    PartnerRequest[]
+  orders             Order[]
   tickets            Ticket[]
   transactions       Transaction[]
   reviews            Review[]
   ownedCheckIns      CheckIn[]
   sentPasses         PassHistory[]            @relation("PassHistoryFromUser")
   receivedPasses     PassHistory[]            @relation("PassHistoryToUser")
+  notifications      Notification[]
 
   @@index([email])
   @@index([username])
@@ -275,7 +288,7 @@ model Partner {
 }
 
 model PartnerRequest {
-  id                String @id @default(cuid())
+  id                String        @id @default(cuid())
   userId            String
   cinemaName        String
   address           String
@@ -292,7 +305,11 @@ model PartnerRequest {
   rejectionReason   String?
   reviewedBy        String?
   reviewedAt        DateTime?
-  createdAt         DateTime @default(now())
+  createdAt         DateTime      @default(now())
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
 }
 
 model Movie {
@@ -341,6 +358,7 @@ model Showtime {
   partner        Partner        @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   seats          Seat[]
   tickets        Ticket[]
+  orders         Order[]
   checkIns       CheckIn[]
 
   @@index([movieId])
@@ -374,6 +392,7 @@ model Seat {
 model Ticket {
   id            String       @id @default(cuid())
   userId        String
+  orderId       String?
   showtimeId    String
   partnerId     String
   movieId       String
@@ -390,6 +409,7 @@ model Ticket {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @default(now()) @updatedAt
   user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order         Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
   showtime      Showtime     @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
   partner       Partner      @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   movie         Movie        @relation(fields: [movieId], references: [id], onDelete: Cascade)
@@ -406,10 +426,35 @@ model Ticket {
   @@index([purchasedAt])
 }
 
+model Order {
+  id               String      @id @default(cuid())
+  userId           String
+  showtimeId       String
+  status           OrderStatus @default(PENDING)
+  totalAmount      Int
+  discountAmount   Int         @default(0)
+  finalAmount      Int
+  couponCode       String?
+  idempotencyKey   String?     @unique
+  expiresAt        DateTime
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @default(now()) @updatedAt
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  showtime         Showtime    @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
+  tickets          Ticket[]
+  transactions     Transaction[]
+
+  @@index([userId])
+  @@index([showtimeId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
 model Transaction {
   id                String            @id @default(cuid())
   userId            String?
   partnerId         String?
+  orderId           String?
   ticketId          String?
   withdrawalId      String?
   type              TransactionType
@@ -422,11 +467,13 @@ model Transaction {
   updatedAt         DateTime          @default(now()) @updatedAt
   user              User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   partner           Partner?          @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  order             Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
   ticket            Ticket?           @relation(fields: [ticketId], references: [id], onDelete: SetNull)
   withdrawal        Withdrawal?       @relation(fields: [withdrawalId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([partnerId])
+  @@index([orderId])
   @@index([ticketId])
   @@index([withdrawalId])
   @@index([type])
@@ -525,6 +572,42 @@ model Review {
   @@index([movieId])
   @@index([userId])
   @@index([status])
+  @@index([createdAt])
+}
+
+// ─── In-App Push Notifications ───────────────────────────────────────────────
+
+enum NotificationType {
+  // Partner Portal
+  PARTNER_WITHDRAWAL_PENDING
+  PARTNER_WITHDRAWAL_COMPLETED
+  PARTNER_WITHDRAWAL_FAILED
+  PARTNER_MOVIE_APPROVED
+  PARTNER_MOVIE_REJECTED
+  PARTNER_DAILY_REVENUE
+  // Booking / Ticket
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  TICKET_REFUNDED
+  SHOWTIME_CANCELLED
+  // System
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  data      Json?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
   @@index([createdAt])
 }
 

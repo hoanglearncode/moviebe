@@ -7,9 +7,11 @@ const http_server_1 = require("../../../share/transport/http-server");
 const error_code_1 = require("../../../share/model/error-code");
 const value_1 = require("../../../share/common/value");
 const dto_1 = require("../model/dto");
+const authorization_usecase_1 = require("../../user/usecase/authorization.usecase");
 class AuthUseCase {
     constructor(dependencies) {
         this.dependencies = dependencies;
+        this.authorizationUseCase = new authorization_usecase_1.AuthorizationUseCase();
     }
     isSessionAllowedStatus(status) {
         return status === client_1.UserStatus.ACTIVE || status === client_1.UserStatus.BANNED;
@@ -50,6 +52,7 @@ class AuthUseCase {
                 emailVerified: false,
                 mustChangePassword: false,
                 status: client_1.UserStatus.ACTIVE,
+                permissions_override: parsedData.data.permissions_override,
                 lastLoginAt: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -251,6 +254,7 @@ class AuthUseCase {
                     role: client_1.Role.USER,
                     emailVerified: profile.emailVerified,
                     mustChangePassword: false,
+                    permissions_override: profile.permissions_override,
                     status: client_1.UserStatus.ACTIVE,
                     lastLoginAt: new Date(),
                     createdAt: new Date(),
@@ -319,6 +323,12 @@ class AuthUseCase {
                 name: user.name,
                 emailVerified: user.emailVerified,
                 mustChangePassword: user.mustChangePassword,
+                provider: user.provider,
+                permissions_override: user.permissions_override,
+                permissions: this.authorizationUseCase.resolvePermissions({
+                    role: user.role,
+                    permissionsOverride: user.permissions_override,
+                }),
             },
         };
     }

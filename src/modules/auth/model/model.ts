@@ -18,6 +18,7 @@ export type AuthUser = {
   avatarColor: string | undefined;
   emailVerified: boolean;
   mustChangePassword: boolean;
+  permissions_override: any;
   status: UserStatus;
   createdAt: Date;
   updatedAt: Date;
@@ -34,8 +35,12 @@ export type AuthPublicUser = Pick<
   | "role"
   | "status"
   | "avatar"
-  | "avatarColor"
->;
+  | "avatarColor" 
+  | "provider"
+  | "permissions_override"
+> & {
+  permissions?: string[];
+};
 
 export type AuthSession = {
   accessToken: string;
@@ -52,4 +57,5 @@ export type AuthSocialProfile = {
   avatar?: string | null;
   emailVerified: boolean;
   provider: "google" | "facebook";
+  permissions_override: JSON | null;
 };

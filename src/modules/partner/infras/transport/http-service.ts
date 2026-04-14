@@ -36,7 +36,7 @@ export class PartnerProfileHttpService {
 
   async getProfile(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
@@ -50,7 +50,7 @@ export class PartnerProfileHttpService {
 
   async updateProfile(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
@@ -65,7 +65,7 @@ export class PartnerProfileHttpService {
 
   async getStatus(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
@@ -89,7 +89,7 @@ export class MovieManagementHttpService {
 
   async createMovie(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
@@ -104,7 +104,7 @@ export class MovieManagementHttpService {
 
   async getMovies(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
@@ -127,14 +127,14 @@ export class MovieManagementHttpService {
 
   async getMovieDetail(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       const { movieId } = req.params;
 
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
 
-      const movie = await this.useCase.getMovieDetail(partnerId, movieId);
+      const movie = await this.useCase.getMovieDetail(partnerId, String(movieId));
       successResponse(res, movie, "Movie retrieved successfully");
     } catch (error: any) {
       errorResponse(res, error.statusCode || 404, error.message, error.code);
@@ -143,7 +143,7 @@ export class MovieManagementHttpService {
 
   async updateMovie(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       const { movieId } = req.params;
       const data: UpdateMovieDTO = req.body;
 
@@ -151,7 +151,7 @@ export class MovieManagementHttpService {
         return errorResponse(res, 401, "Unauthorized");
       }
 
-      const updated = await this.useCase.updateMovie(partnerId, movieId, data);
+      const updated = await this.useCase.updateMovie(partnerId, String(movieId), data);
       successResponse(res, updated, "Movie updated successfully");
     } catch (error: any) {
       errorResponse(res, error.statusCode || 400, error.message, error.code);
@@ -160,14 +160,14 @@ export class MovieManagementHttpService {
 
   async deleteMovie(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       const { movieId } = req.params;
 
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
 
-      const result = await this.useCase.deleteMovie(partnerId, movieId);
+      const result = await this.useCase.deleteMovie(partnerId, String(movieId));
       successResponse(res, result, "Movie deleted successfully");
     } catch (error: any) {
       errorResponse(res, error.statusCode || 400, error.message, error.code);
@@ -176,14 +176,14 @@ export class MovieManagementHttpService {
 
   async submitMovie(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       const { movieId } = req.params;
 
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
 
-      const result = await this.useCase.submitMovieForApproval(partnerId, movieId);
+      const result = await this.useCase.submitMovieForApproval(partnerId, String(movieId));
       successResponse(res, result, "Movie submitted for approval");
     } catch (error: any) {
       errorResponse(res, error.statusCode || 400, error.message, error.code);
@@ -202,7 +202,7 @@ export class ShowtimeManagementHttpService {
 
   async createShowtime(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
@@ -217,7 +217,7 @@ export class ShowtimeManagementHttpService {
 
   async getShowtimes(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
@@ -242,14 +242,14 @@ export class ShowtimeManagementHttpService {
 
   async getShowtimeDetail(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       const { showtimeId } = req.params;
 
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
 
-      const showtime = await this.useCase.getShowtimeDetail(partnerId, showtimeId);
+      const showtime = await this.useCase.getShowtimeDetail(partnerId, String(showtimeId));
       successResponse(res, showtime, "Showtime retrieved successfully");
     } catch (error: any) {
       errorResponse(res, error.statusCode || 404, error.message, error.code);
@@ -258,7 +258,7 @@ export class ShowtimeManagementHttpService {
 
   async updateShowtime(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       const { showtimeId } = req.params;
       const data: UpdateShowtimeDTO = req.body;
 
@@ -266,7 +266,7 @@ export class ShowtimeManagementHttpService {
         return errorResponse(res, 401, "Unauthorized");
       }
 
-      const updated = await this.useCase.updateShowtime(partnerId, showtimeId, data);
+      const updated = await this.useCase.updateShowtime(partnerId, String(showtimeId), data);
       successResponse(res, updated, "Showtime updated successfully");
     } catch (error: any) {
       errorResponse(res, error.statusCode || 400, error.message, error.code);
@@ -275,14 +275,14 @@ export class ShowtimeManagementHttpService {
 
   async cancelShowtime(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       const { showtimeId } = req.params;
 
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
 
-      const result = await this.useCase.cancelShowtime(partnerId, showtimeId);
+      const result = await this.useCase.cancelShowtime(partnerId, String(showtimeId));
       successResponse(res, result, "Showtime cancelled successfully");
     } catch (error: any) {
       errorResponse(res, error.statusCode || 400, error.message, error.code);
@@ -301,14 +301,14 @@ export class SeatManagementHttpService {
 
   async getSeats(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       const { showtimeId } = req.params;
 
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
 
-      const seats = await this.useCase.getSeats(partnerId, showtimeId);
+      const seats = await this.useCase.getSeats(partnerId, String(showtimeId));
       successResponse(res, seats, "Seats retrieved successfully");
     } catch (error: any) {
       errorResponse(res, error.statusCode || 500, error.message, error.code);
@@ -317,7 +317,7 @@ export class SeatManagementHttpService {
 
   async updateSeat(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       const { seatId } = req.params;
       const data: UpdateSeatDTO = req.body;
 
@@ -325,7 +325,7 @@ export class SeatManagementHttpService {
         return errorResponse(res, 401, "Unauthorized");
       }
 
-      const updated = await this.useCase.updateSeat(partnerId, seatId, data);
+      const updated = await this.useCase.updateSeat(partnerId, String(seatId), data);
       successResponse(res, updated, "Seat updated successfully");
     } catch (error: any) {
       errorResponse(res, error.statusCode || 400, error.message, error.code);
@@ -334,14 +334,14 @@ export class SeatManagementHttpService {
 
   async getSeatMap(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       const { showtimeId } = req.params;
 
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
 
-      const seatMap = await this.useCase.getSeatMap(partnerId, showtimeId);
+      const seatMap = await this.useCase.getSeatMap(partnerId, String(showtimeId));
       successResponse(res, seatMap, "Seat map retrieved successfully");
     } catch (error: any) {
       errorResponse(res, error.statusCode || 500, error.message, error.code);
@@ -360,7 +360,7 @@ export class TicketCheckInHttpService {
 
   async getTickets(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
@@ -383,14 +383,14 @@ export class TicketCheckInHttpService {
 
   async getTicketDetail(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       const { ticketId } = req.params;
 
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
 
-      const ticket = await this.useCase.getTicketDetail(partnerId, ticketId);
+      const ticket = await this.useCase.getTicketDetail(partnerId, String(ticketId));
       successResponse(res, ticket, "Ticket retrieved successfully");
     } catch (error: any) {
       errorResponse(res, error.statusCode || 404, error.message, error.code);
@@ -399,7 +399,7 @@ export class TicketCheckInHttpService {
 
   async checkIn(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
@@ -414,14 +414,14 @@ export class TicketCheckInHttpService {
 
   async getCheckInHistory(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       const { showtimeId } = req.params;
 
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
 
-      const history = await this.useCase.getCheckInHistory(partnerId, showtimeId);
+      const history = await this.useCase.getCheckInHistory(partnerId, String(showtimeId));
       successResponse(res, history, "Check-in history retrieved successfully");
     } catch (error: any) {
       errorResponse(res, error.statusCode || 500, error.message, error.code);
@@ -440,7 +440,7 @@ export class PartnerFinanceHttpService {
 
   async getWallet(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
@@ -454,7 +454,7 @@ export class PartnerFinanceHttpService {
 
   async getTransactions(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
@@ -468,7 +468,7 @@ export class PartnerFinanceHttpService {
 
   async getRevenue(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
@@ -488,7 +488,7 @@ export class PartnerFinanceHttpService {
 
   async createWithdrawal(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
@@ -503,7 +503,7 @@ export class PartnerFinanceHttpService {
 
   async getWithdrawals(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
@@ -525,14 +525,14 @@ export class PartnerFinanceHttpService {
 
   async getWithdrawalDetail(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       const { withdrawalId } = req.params;
 
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
 
-      const withdrawal = await this.useCase.getWithdrawalDetail(partnerId, withdrawalId);
+      const withdrawal = await this.useCase.getWithdrawalDetail(partnerId, String(withdrawalId));
       successResponse(res, withdrawal, "Withdrawal retrieved successfully");
     } catch (error: any) {
       errorResponse(res, error.statusCode || 404, error.message, error.code);
@@ -551,7 +551,7 @@ export class PartnerDashboardHttpService {
 
   async getDashboard(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
@@ -565,7 +565,7 @@ export class PartnerDashboardHttpService {
 
   async getTopMovies(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }
@@ -580,7 +580,7 @@ export class PartnerDashboardHttpService {
 
   async getOccupancy(req: Request, res: Response): Promise<void> {
     try {
-      const partnerId = (req as any).user?.id;
+      const partnerId = (req as any).partnerId;
       if (!partnerId) {
         return errorResponse(res, 401, "Unauthorized");
       }

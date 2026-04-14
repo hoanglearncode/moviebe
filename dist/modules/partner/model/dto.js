@@ -64,12 +64,12 @@ exports.CreateMoviePayloadDTO = zod_1.default.object({
 });
 exports.UpdateMoviePayloadDTO = zod_1.default.object({
     title: zod_1.default.string().trim().min(1).max(255).optional(),
-    description: zod_1.default.string().trim().optional(),
+    description: zod_1.default.string().trim().nullable().optional(),
     genre: zod_1.default.string().trim().min(1).optional(),
     language: zod_1.default.string().trim().min(1).optional(),
     duration: zod_1.default.number().int().min(30).optional(),
-    releaseDate: zod_1.default.string().datetime().optional(),
-    endDate: zod_1.default.string().datetime().optional(),
+    releaseDate: zod_1.default.date().optional(),
+    endDate: zod_1.default.date().optional(),
     posterUrl: zod_1.default.string().trim().url().optional(),
     trailerUrl: zod_1.default.string().trim().url().optional(),
     rating: zod_1.default.string().trim().optional(),
@@ -111,7 +111,7 @@ exports.UnlockSeatPayloadDTO = zod_1.default.object({
 exports.CheckInPayloadDTO = zod_1.default.object({
     qrCode: zod_1.default.string().min(1, "QR code required"),
     scannedBy: zod_1.default.string().min(1, "Scanner ID required"),
-    ipAddress: zod_1.default.string().ip("v4").optional(),
+    ipAddress: zod_1.default.string().optional(),
 });
 /**
  * ==========================================

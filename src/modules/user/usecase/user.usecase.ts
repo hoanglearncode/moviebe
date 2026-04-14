@@ -8,12 +8,14 @@ import {
   ErrUserNotFound,
 } from "../model/errors";
 import { OwnUserProfile, SessionListResponse } from "../model/model";
+import { AuthorizationUseCase } from "./authorization.usecase";
 
 export class UserUseCase implements IUserUseCase {
   private readonly userRepo: UserHexagonDependencies["userRepository"];
   private readonly sessionRepo: UserHexagonDependencies["sessionRepository"];
   private readonly hasher: UserHexagonDependencies["passwordHasher"];
   private readonly notifier: UserHexagonDependencies["notificationService"];
+  private readonly authorizationUseCase = new AuthorizationUseCase();
 
   constructor(deps: UserHexagonDependencies) {
     this.userRepo = deps.userRepository;
@@ -111,6 +113,12 @@ export class UserUseCase implements IUserUseCase {
       role: user.role,
       lastLoginAt: user.lastLoginAt,
       createdAt: user.createdAt,
+      permissionsOverride: user.permissionsOverride,
+      permissions: this.authorizationUseCase.resolvePermissions({
+        role: user.role,
+        permissionsOverride: user.permissionsOverride,
+      }),
+      provider: user.provider || 'local'
     };
   }
 }

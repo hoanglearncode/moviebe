@@ -2,8 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserUseCase = void 0;
 const errors_1 = require("../model/errors");
+const authorization_usecase_1 = require("./authorization.usecase");
 class UserUseCase {
     constructor(deps) {
+        this.authorizationUseCase = new authorization_usecase_1.AuthorizationUseCase();
         this.userRepo = deps.userRepository;
         this.sessionRepo = deps.sessionRepository;
         this.hasher = deps.passwordHasher;
@@ -88,6 +90,12 @@ class UserUseCase {
             role: user.role,
             lastLoginAt: user.lastLoginAt,
             createdAt: user.createdAt,
+            permissionsOverride: user.permissionsOverride,
+            permissions: this.authorizationUseCase.resolvePermissions({
+                role: user.role,
+                permissionsOverride: user.permissionsOverride,
+            }),
+            provider: user.provider || 'local'
         };
     }
 }

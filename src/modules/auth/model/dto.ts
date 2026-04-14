@@ -14,6 +14,7 @@ export const RegisterPayloadDTO = z.object({
       (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
       z.string().trim().min(1, "name cannot be blank").optional(),
     ),
+  permissions_override: z.json().nullable().optional()
 });
 
 export const LoginPayloadDTO = z.object({

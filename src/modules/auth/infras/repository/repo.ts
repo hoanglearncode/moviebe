@@ -23,6 +23,7 @@ const toAuthUser = (raw: Prisma.UserGetPayload<Record<string, never>>): AuthUser
   status: raw.status,
   createdAt: raw.createdAt,
   updatedAt: raw.updatedAt,
+  permissions_override: raw.permissionsOverride
 });
 
 const toCreateInput = (data: AuthUser): Prisma.UserUncheckedCreateInput => ({

@@ -31,9 +31,12 @@ import {
   RefreshTokenPayloadDTO,
 } from "../model/dto";
 import { AuthResponse, AuthSocialProfile, AuthUser } from "../model/model";
+import { AuthorizationUseCase } from "../../user/usecase/authorization.usecase";
 
 export class AuthUseCase implements IAuthUseCase {
   constructor(private readonly dependencies: AuthHexagonDependencies) {}
+
+  private readonly authorizationUseCase = new AuthorizationUseCase();
 
   private isSessionAllowedStatus(status: UserStatus): boolean {
     return status === UserStatus.ACTIVE || status === UserStatus.BANNED;
@@ -92,6 +95,7 @@ export class AuthUseCase implements IAuthUseCase {
           emailVerified: false,
           mustChangePassword: false,
           status: UserStatus.ACTIVE,
+          permissions_override: parsedData.data.permissions_override,
           lastLoginAt: new Date(),
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -375,6 +379,7 @@ export class AuthUseCase implements IAuthUseCase {
             role: Role.USER,
             emailVerified: profile.emailVerified,
             mustChangePassword: false,
+            permissions_override: profile.permissions_override,
             status: UserStatus.ACTIVE,
             lastLoginAt: new Date(),
             createdAt: new Date(),
@@ -457,6 +462,12 @@ export class AuthUseCase implements IAuthUseCase {
         name: user.name,
         emailVerified: user.emailVerified,
         mustChangePassword: user.mustChangePassword,
+        provider: user.provider,
+        permissions_override: user.permissions_override,
+        permissions: this.authorizationUseCase.resolvePermissions({
+          role: user.role,
+          permissionsOverride: user.permissions_override,
+        }),
       },
     };
   }

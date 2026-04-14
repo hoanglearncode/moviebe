@@ -187,6 +187,8 @@ export class AdminUserUseCase implements IAdminUserUseCase {
       role: user.role,
       lastLoginAt: user.lastLoginAt,
       createdAt: user.createdAt,
+      provider: user.provider,
+      permissionsOverride: user.permissionsOverride
     };
   }
 

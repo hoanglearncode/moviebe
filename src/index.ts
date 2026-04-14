@@ -1,6 +1,11 @@
 import { setupCategoryHexagon } from "./modules/category";
 import { setupAuthHexagon } from "./modules/auth";
 import { setupUserHexagon } from "./modules/user";
+import { setupPartnerHexagon, setupPartnerRequestRoutes } from "./modules/partner";
+import { setupPublicMovieRoutes } from "./modules/movie";
+import { setupBookingRoutes } from "./modules/booking";
+import { setupPaymentRoutes } from "./modules/payment";
+import { setupTicketRoutes } from "./modules/ticket";
 
 import { createCategoryRepository } from "./modules/category/infras/repository/repo";
 import { prisma } from "./share/component/prisma";
@@ -18,6 +23,7 @@ import { createUploadRouter } from "./share/transport/upload.router";
 import { defaultSettings } from "./share/common/seed-setting";
 import { seedEmailTemplates } from "./modules/notification/shared/seed";
 import adminEmailRouter from "./modules/notification/infras/transport/admin-endpoints";
+import { notificationRouter } from "./modules/notification";
 
 config();
 
@@ -49,8 +55,30 @@ config();
   app.use("/v1", setupAuthHexagon(prisma));
   app.use("/v1", setupUserHexagon(prisma));
 
+  app.use("/v1", setupPublicMovieRoutes(prisma));
+
+  // Booking (auth required)
+  app.use("/v1", setupBookingRoutes(prisma));
+
+  // Payment (auth required + public webhook)
+  app.use("/v1", setupPaymentRoutes(prisma));
+
+  // User tickets (auth required)
+  app.use("/v1", setupTicketRoutes(prisma));
+
+  // Partner portal (requires PARTNER role)
+  app.use("/v1/partner", setupPartnerHexagon(prisma));
+
+  
+  const { userRouter: partnerUserRouter, adminRouter: partnerAdminRouter } = setupPartnerRequestRoutes(prisma);
+  app.use("/v1/user", partnerUserRouter);
+  app.use("/v1/admin", partnerAdminRouter);
+
   app.use("/v1", createUploadRouter());
   app.use("/v1/admin/email", adminEmailRouter);
+
+  // In-app push notifications
+  app.use("/v1/notifications", notificationRouter);
 
   app.listen(port, () => {
     logger.info(`Server is running on http://localhost:${port}`);

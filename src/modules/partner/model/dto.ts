@@ -64,12 +64,12 @@ export const CreateMoviePayloadDTO = z.object({
 
 export const UpdateMoviePayloadDTO = z.object({
   title: z.string().trim().min(1).max(255).optional(),
-  description: z.string().trim().optional(),
+  description: z.string().trim().nullable().optional(),
   genre: z.string().trim().min(1).optional(),
   language: z.string().trim().min(1).optional(),
   duration: z.number().int().min(30).optional(),
-  releaseDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
+  releaseDate: z.date().optional(),
+  endDate: z.date().optional(),
   posterUrl: z.string().trim().url().optional(),
   trailerUrl: z.string().trim().url().optional(),
   rating: z.string().trim().optional(),
@@ -119,7 +119,7 @@ export const UnlockSeatPayloadDTO = z.object({
 export const CheckInPayloadDTO = z.object({
   qrCode: z.string().min(1, "QR code required"),
   scannedBy: z.string().min(1, "Scanner ID required"),
-  ipAddress: z.string().ip("v4").optional(),
+  ipAddress: z.string().optional(),
 });
 
 /**
