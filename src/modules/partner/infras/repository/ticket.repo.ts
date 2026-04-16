@@ -4,14 +4,18 @@ import { Ticket, CheckIn, TicketListResponse } from "../../model/model";
 import { ListTicketsQueryDTO } from "../../model/dto";
 import { PagingDTO } from "../../../../share";
 
-// ─── Ticket Repository ────────────────────────────────────────────────────────
-
 export class TicketRepository implements ITicketRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async get(_id: string): Promise<Ticket | null> { return null; }
-  async list(_cond: Partial<Ticket>, _paging: PagingDTO): Promise<Ticket[]> { return []; }
-  async findByCond(_cond: Partial<Ticket>): Promise<Ticket | null> { return null; }
+  async get(_id: string): Promise<Ticket | null> {
+    return null;
+  }
+  async list(_cond: Partial<Ticket>, _paging: PagingDTO): Promise<Ticket[]> {
+    return [];
+  }
+  async findByCond(_cond: Partial<Ticket>): Promise<Ticket | null> {
+    return null;
+  }
 
   async findById(ticketId: string): Promise<Ticket | null> {
     const row = await this.prisma.ticket.findUnique({ where: { id: ticketId } });
@@ -87,14 +91,18 @@ export class TicketRepository implements ITicketRepository {
   }
 }
 
-// ─── CheckIn Repository ───────────────────────────────────────────────────────
-
 export class CheckInRepository implements ICheckInRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async get(_id: string): Promise<CheckIn | null> { return null; }
-  async list(_cond: Partial<CheckIn>, _paging: PagingDTO): Promise<CheckIn[]> { return []; }
-  async findByCond(_cond: Partial<CheckIn>): Promise<CheckIn | null> { return null; }
+  async get(_id: string): Promise<CheckIn | null> {
+    return null;
+  }
+  async list(_cond: Partial<CheckIn>, _paging: PagingDTO): Promise<CheckIn[]> {
+    return [];
+  }
+  async findByCond(_cond: Partial<CheckIn>): Promise<CheckIn | null> {
+    return null;
+  }
 
   async findByTicketId(ticketId: string): Promise<CheckIn | null> {
     const row = await this.prisma.checkIn.findFirst({ where: { ticketId } });
@@ -125,8 +133,6 @@ export class CheckInRepository implements ICheckInRepository {
     return true;
   }
 }
-
-// ─── Factories ────────────────────────────────────────────────────────────────
 
 export const createTicketRepository = (prisma: PrismaClient): ITicketRepository =>
   new TicketRepository(prisma);

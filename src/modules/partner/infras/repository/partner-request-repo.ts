@@ -60,7 +60,12 @@ export interface IPartnerRequestRepository {
     status?: string;
     search?: string;
   }): Promise<{ items: PartnerRequestRow[]; total: number }>;
-  updateStatus(id: string, status: string, reviewedBy: string, rejectionReason?: string): Promise<boolean>;
+  updateStatus(
+    id: string,
+    status: string,
+    reviewedBy: string,
+    rejectionReason?: string,
+  ): Promise<boolean>;
   existsByUserId(userId: string): Promise<boolean>;
   update(id: string, data: PartnerRequestUpdateInput): Promise<PartnerRequestRow>;
 }
@@ -180,6 +185,8 @@ export class PartnerRequestRepository implements IPartnerRequestRepository {
   }
 }
 
-export function createPartnerRequestRepository(prismaClient: PrismaClient): IPartnerRequestRepository {
+export function createPartnerRequestRepository(
+  prismaClient: PrismaClient,
+): IPartnerRequestRepository {
   return new PartnerRequestRepository(prismaClient);
 }

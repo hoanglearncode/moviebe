@@ -7,9 +7,15 @@ import { PagingDTO } from "../../../../share";
 export class MovieRepository implements IMovieRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async get(_id: string): Promise<Movie | null> { return null; }
-  async list(_cond: Partial<Movie>, _paging: PagingDTO): Promise<Movie[]> { return []; }
-  async findByCond(_cond: Partial<Movie>): Promise<Movie | null> { return null; }
+  async get(_id: string): Promise<Movie | null> {
+    return null;
+  }
+  async list(_cond: Partial<Movie>, _paging: PagingDTO): Promise<Movie[]> {
+    return [];
+  }
+  async findByCond(_cond: Partial<Movie>): Promise<Movie | null> {
+    return null;
+  }
 
   async findById(movieId: string): Promise<Movie | null> {
     const row = await this.prisma.movie.findUnique({ where: { id: movieId } });
@@ -20,8 +26,14 @@ export class MovieRepository implements IMovieRepository {
     partnerId: string,
     query: ListMoviesQueryDTO,
   ): Promise<{ items: Movie[]; total: number }> {
-    const { page = 1, limit = 20, status, keyword, sortBy = "createdAt", sortOrder = "desc" } =
-      query;
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      keyword,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = query;
     const skip = (page - 1) * limit;
     const where: any = { partnerId };
     if (status) where.status = status;

@@ -34,7 +34,16 @@ export type UserProfile = {
  */
 export type PublicUserProfile = Pick<
   UserProfile,
-  "id" | "username" | "name" | "avatar" | "bio" | "location" | "avatarColor" | "createdAt" | "provider" | "permissionsOverride"
+  | "id"
+  | "username"
+  | "name"
+  | "avatar"
+  | "bio"
+  | "location"
+  | "avatarColor"
+  | "createdAt"
+  | "provider"
+  | "permissionsOverride"
 >;
 
 /**

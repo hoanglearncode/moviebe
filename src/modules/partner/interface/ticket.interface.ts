@@ -4,8 +4,7 @@ import { CheckInDTO, ListTicketsQueryDTO } from "../model/dto";
 
 // ─── Repository Ports ─────────────────────────────────────────────────────────
 
-export interface ITicketRepository
-  extends IRepository<Ticket, Partial<Ticket>, Partial<Ticket>> {
+export interface ITicketRepository extends IRepository<Ticket, Partial<Ticket>, Partial<Ticket>> {
   findById(ticketId: string): Promise<Ticket | null>;
   findByQRCode(qrCode: string): Promise<Ticket | null>;
   findByPartnerId(partnerId: string, query: ListTicketsQueryDTO): Promise<TicketListResponse>;
@@ -13,8 +12,11 @@ export interface ITicketRepository
   updateStatus(ticketId: string, status: string): Promise<boolean>;
 }
 
-export interface ICheckInRepository
-  extends IRepository<CheckIn, Partial<CheckIn>, Partial<CheckIn>> {
+export interface ICheckInRepository extends IRepository<
+  CheckIn,
+  Partial<CheckIn>,
+  Partial<CheckIn>
+> {
   findByTicketId(ticketId: string): Promise<CheckIn | null>;
   findByShowtimeId(showtimeId: string): Promise<CheckIn[]>;
   countByShowtimeId(showtimeId: string): Promise<number>;

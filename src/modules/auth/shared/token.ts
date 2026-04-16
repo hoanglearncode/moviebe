@@ -44,13 +44,9 @@ type SessionModel = {
     };
   }): Promise<unknown>;
 
-  delete(args: {
-    where: { refreshToken: string };
-  }): Promise<unknown>;
+  delete(args: { where: { refreshToken: string } }): Promise<unknown>;
 
-  findUnique(args: {
-    where: { refreshToken: string };
-  }): Promise<{
+  findUnique(args: { where: { refreshToken: string } }): Promise<{
     userId: string;
     refreshToken: string;
     expiresAt: Date;

@@ -35,7 +35,7 @@ export type AuthPublicUser = Pick<
   | "role"
   | "status"
   | "avatar"
-  | "avatarColor" 
+  | "avatarColor"
   | "provider"
   | "permissions_override"
 > & {

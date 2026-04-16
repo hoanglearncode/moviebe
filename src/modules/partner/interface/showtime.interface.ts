@@ -4,8 +4,11 @@ import { CreateShowtimeDTO, UpdateShowtimeDTO, ListShowtimesQueryDTO } from "../
 
 // ─── Repository Port ──────────────────────────────────────────────────────────
 
-export interface IShowtimeRepository
-  extends IRepository<Showtime, Partial<Showtime>, Partial<Showtime>> {
+export interface IShowtimeRepository extends IRepository<
+  Showtime,
+  Partial<Showtime>,
+  Partial<Showtime>
+> {
   findById(showtimeId: string): Promise<Showtime | null>;
   findByPartnerId(
     partnerId: string,
@@ -25,10 +28,6 @@ export interface IShowtimeManagementUseCase {
     query: ListShowtimesQueryDTO,
   ): Promise<{ items: Showtime[]; total: number }>;
   getShowtimeDetail(partnerId: string, showtimeId: string): Promise<Showtime>;
-  updateShowtime(
-    partnerId: string,
-    showtimeId: string,
-    data: UpdateShowtimeDTO,
-  ): Promise<boolean>;
+  updateShowtime(partnerId: string, showtimeId: string, data: UpdateShowtimeDTO): Promise<boolean>;
   cancelShowtime(partnerId: string, showtimeId: string): Promise<{ message: string }>;
 }

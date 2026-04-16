@@ -4,23 +4,22 @@ import {
   IWithdrawalRepository,
   IWalletRepository,
 } from "../../interface/finance.interface";
-import {
-  Transaction,
-  Withdrawal,
-  PartnerWallet,
-  WithdrawalListResponse,
-} from "../../model/model";
+import { Transaction, Withdrawal, PartnerWallet, WithdrawalListResponse } from "../../model/model";
 import { ListWithdrawalsQueryDTO } from "../../model/dto";
 import { PagingDTO } from "../../../../share";
-
-// ─── Transaction Repository ───────────────────────────────────────────────────
 
 export class TransactionRepository implements ITransactionRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async get(_id: string): Promise<Transaction | null> { return null; }
-  async list(_cond: Partial<Transaction>, _paging: PagingDTO): Promise<Transaction[]> { return []; }
-  async findByCond(_cond: Partial<Transaction>): Promise<Transaction | null> { return null; }
+  async get(_id: string): Promise<Transaction | null> {
+    return null;
+  }
+  async list(_cond: Partial<Transaction>, _paging: PagingDTO): Promise<Transaction[]> {
+    return [];
+  }
+  async findByCond(_cond: Partial<Transaction>): Promise<Transaction | null> {
+    return null;
+  }
 
   async findByPartnerId(partnerId: string): Promise<Transaction[]> {
     const rows = await this.prisma.transaction.findMany({
@@ -72,9 +71,15 @@ export class TransactionRepository implements ITransactionRepository {
 export class WithdrawalRepository implements IWithdrawalRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async get(_id: string): Promise<Withdrawal | null> { return null; }
-  async list(_cond: Partial<Withdrawal>, _paging: PagingDTO): Promise<Withdrawal[]> { return []; }
-  async findByCond(_cond: Partial<Withdrawal>): Promise<Withdrawal | null> { return null; }
+  async get(_id: string): Promise<Withdrawal | null> {
+    return null;
+  }
+  async list(_cond: Partial<Withdrawal>, _paging: PagingDTO): Promise<Withdrawal[]> {
+    return [];
+  }
+  async findByCond(_cond: Partial<Withdrawal>): Promise<Withdrawal | null> {
+    return null;
+  }
 
   async findById(withdrawalId: string): Promise<Withdrawal | null> {
     const row = await this.prisma.withdrawal.findUnique({ where: { id: withdrawalId } });
@@ -146,9 +151,15 @@ export class WithdrawalRepository implements IWithdrawalRepository {
 export class WalletRepository implements IWalletRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async get(_id: string): Promise<PartnerWallet | null> { return null; }
-  async list(_cond: Partial<PartnerWallet>, _paging: PagingDTO): Promise<PartnerWallet[]> { return []; }
-  async findByCond(_cond: Partial<PartnerWallet>): Promise<PartnerWallet | null> { return null; }
+  async get(_id: string): Promise<PartnerWallet | null> {
+    return null;
+  }
+  async list(_cond: Partial<PartnerWallet>, _paging: PagingDTO): Promise<PartnerWallet[]> {
+    return [];
+  }
+  async findByCond(_cond: Partial<PartnerWallet>): Promise<PartnerWallet | null> {
+    return null;
+  }
 
   async findByPartnerId(partnerId: string): Promise<PartnerWallet | null> {
     const row = await this.prisma.partnerWallet.findUnique({ where: { partnerId } });

@@ -196,7 +196,14 @@ export function setupPublicMovieRoutes(prisma: PrismaClient): Router {
         where: { id: showtimeId },
         include: {
           movie: {
-            select: { id: true, title: true, posterUrl: true, duration: true, genre: true, rating: true },
+            select: {
+              id: true,
+              title: true,
+              posterUrl: true,
+              duration: true,
+              genre: true,
+              rating: true,
+            },
           },
           partner: { select: { cinemaName: true, city: true, address: true } },
         },

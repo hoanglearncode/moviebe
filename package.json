@@ -24,6 +24,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@payos/node": "^2.0.5",
     "@prisma/client": "^6.19.2",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.73.1",

@@ -70,7 +70,11 @@ export class AuthorizationUseCase {
     return Boolean(userId && ownerId && userId === ownerId);
   }
 
-  assertPermission(subject: AuthorizationSubject, permission: PermissionCode, message?: string): void {
+  assertPermission(
+    subject: AuthorizationSubject,
+    permission: PermissionCode,
+    message?: string,
+  ): void {
     if (!this.hasPermission(subject, permission)) {
       throw new ForbiddenError(message ?? `Missing required permission: ${permission}`);
     }

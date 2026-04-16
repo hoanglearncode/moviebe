@@ -7,13 +7,6 @@ const VALID_FOLDERS: UploadFolder[] = ["avatars", "categories", "products", "mis
 
 export function createUploadRouter(): Router {
   const router = Router();
-
-  /**
-   * POST /v1/upload
-   * Body: multipart/form-data
-   *   - file: File (required)
-   *   - folder: 'avatars' | 'categories' | 'products' | 'misc'  (optional, default: misc)
-   */
   router.post("/upload", uploadMiddleware.single("file"), async (req: Request, res: Response) => {
     try {
       if (!req.file) {

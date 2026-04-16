@@ -1,10 +1,5 @@
 import { Queue } from "bullmq";
-import {
-  createRedisConnection,
-  defaultJobOptions,
-  isQueueEnabled,
-  queuePrefix,
-} from "./config";
+import { createRedisConnection, defaultJobOptions, isQueueEnabled, queuePrefix } from "./config";
 import { NotificationJobData, NotificationJobName, QueueName } from "../modules/types";
 
 let notificationQueue: Queue<NotificationJobData, void, NotificationJobName> | null = null;

@@ -130,7 +130,10 @@ export class AuthUseCase implements IAuthUseCase {
     );
   }
 
-  async login(data: LoginDTO, context?: { userAgent?: string; ipAddress?: string }): Promise<AuthResponse> {
+  async login(
+    data: LoginDTO,
+    context?: { userAgent?: string; ipAddress?: string },
+  ): Promise<AuthResponse> {
     const parsedData = LoginPayloadDTO.safeParse(data);
     if (!parsedData.success) {
       throw new ValidationError("Invalid login data", parsedData.error.issues);
@@ -253,7 +256,7 @@ export class AuthUseCase implements IAuthUseCase {
   }
 
   async verifyEmail(data: VerifyEmailDTO): Promise<{ message: string }> {
-    const {notificationService,} = this.dependencies;
+    const { notificationService } = this.dependencies;
     const parsedData = VerifyEmailPayloadDTO.safeParse(data);
     if (!parsedData.success) {
       throw new ValidationError("Invalid verification data", parsedData.error.issues);
@@ -353,11 +356,15 @@ export class AuthUseCase implements IAuthUseCase {
     return { message: "Password changed successfully" };
   }
 
-  private async loginWithSocialProfile(profile: AuthSocialProfile, context?: { userAgent?: string; ipAddress?: string }): Promise<AuthResponse> {
+  private async loginWithSocialProfile(
+    profile: AuthSocialProfile,
+    context?: { userAgent?: string; ipAddress?: string },
+  ): Promise<AuthResponse> {
     return this.dependencies.concurrentLockService.runExclusive(
       this.getRegisterLockKeys(profile.email),
       async () => {
-        const { userRepository, tokenService, avatarColorService, notificationService } = this.dependencies;
+        const { userRepository, tokenService, avatarColorService, notificationService } =
+          this.dependencies;
 
         let user = await userRepository.findByEmail(profile.email);
 

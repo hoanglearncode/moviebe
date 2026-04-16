@@ -12,7 +12,7 @@ import {
 import { ErrEmailAlreadyExists, ErrUserNotFound, ErrUsernameAlreadyExists } from "../model/errors";
 import { OwnUserProfile, UserListResponse } from "../model/model";
 import { SeedService, SeedSummary } from "../shared/seed";
-import { IAuthNotificationService, ITokenService } from "../../auth/interface"
+import { IAuthNotificationService, ITokenService } from "../../auth/interface";
 
 export class AdminUserUseCase implements IAdminUserUseCase {
   private readonly userRepo: AdminUserHexagonDependencies["userRepository"];
@@ -24,10 +24,13 @@ export class AdminUserUseCase implements IAdminUserUseCase {
   private readonly prisma: AdminUserHexagonDependencies["prisma"];
   private readonly userSettingService?: IUserSetting;
   private readonly authNotifications: IAuthNotificationService;
-  private readonly tokenService: ITokenService
-  
+  private readonly tokenService: ITokenService;
 
-  constructor(deps: AdminUserHexagonDependencies, authNotifications: IAuthNotificationService, authTokenService: ITokenService) {
+  constructor(
+    deps: AdminUserHexagonDependencies,
+    authNotifications: IAuthNotificationService,
+    authTokenService: ITokenService,
+  ) {
     this.userRepo = deps.userRepository;
     this.sessionRepo = deps.sessionRepository;
     this.settingsRepo = deps.userSettingsRepository;
@@ -111,14 +114,14 @@ export class AdminUserUseCase implements IAdminUserUseCase {
           console.error(`⚠️ Failed to create default settings for user ${id}:`, error),
         );
     }
-    
-    if(data.sendEmailWellCome && data.emailVerified) {
+
+    if (data.sendEmailWellCome && data.emailVerified) {
       this.notifier
         .sendWelcomeEmail({ email: data.email, name: data.name ?? data.email })
         .catch(console.error);
     }
 
-    if(!data.emailVerified) {
+    if (!data.emailVerified) {
       const verifyToken = await this.tokenService.issueActionToken({
         userId: id,
         purpose: "verify-email",
@@ -164,11 +167,14 @@ export class AdminUserUseCase implements IAdminUserUseCase {
     const user = await this.userRepo.findById(id);
     if (!user) throw ErrUserNotFound;
     await this.sessionRepo.revokeAllSessionsByUserId(id);
-    this.notifier.sendAccountDeletedNotification({ email: user.email, name: user.name ?? user.email }).catch(console.error);
+    this.notifier
+      .sendAccountDeletedNotification({ email: user.email, name: user.name ?? user.email })
+      .catch(console.error);
     return this.userRepo.delete(id, false);
   }
 
-  async getDetail(id: string): Promise<OwnUserProfile | null> { // pending
+  async getDetail(id: string): Promise<OwnUserProfile | null> {
+    // pending
     const user = await this.userRepo.findById(id);
     if (!user) return null;
 
@@ -188,10 +194,9 @@ export class AdminUserUseCase implements IAdminUserUseCase {
       lastLoginAt: user.lastLoginAt,
       createdAt: user.createdAt,
       provider: user.provider,
-      permissionsOverride: user.permissionsOverride
+      permissionsOverride: user.permissionsOverride,
     };
   }
-
 
   async changeUserStatus(userId: string, data: ChangeUserStatusDTO): Promise<{ message: string }> {
     const user = await this.userRepo.findById(userId);
@@ -206,7 +211,8 @@ export class AdminUserUseCase implements IAdminUserUseCase {
     return { message: `User status updated to ${data.status}` };
   }
 
-  async resetUserPassword( // pending
+  async resetUserPassword(
+    // pending
     userId: string,
     data: ResetUserPasswordDTO,
   ): Promise<{ temporaryPassword: string }> {

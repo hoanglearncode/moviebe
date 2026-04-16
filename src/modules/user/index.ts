@@ -72,14 +72,26 @@ const buildAdminUserRouter = (useCase: IAdminUserUseCase) => {
     httpService.getStats.bind(httpService),
   );
 
-  router.get("/users", requirePermission(PERMISSIONS.VIEW_USERS), httpService.list.bind(httpService));
+  router.get(
+    "/users",
+    requirePermission(PERMISSIONS.VIEW_USERS),
+    httpService.list.bind(httpService),
+  );
   router.get(
     "/users/:id",
     requirePermission(PERMISSIONS.VIEW_USER_DETAIL),
     httpService.getUser.bind(httpService),
   );
-  router.post("/users", requirePermission(PERMISSIONS.CREATE_USER), httpService.createUser.bind(httpService));
-  router.put("/users/:id", requirePermission(PERMISSIONS.UPDATE_USER), httpService.updateUser.bind(httpService));
+  router.post(
+    "/users",
+    requirePermission(PERMISSIONS.CREATE_USER),
+    httpService.createUser.bind(httpService),
+  );
+  router.put(
+    "/users/:id",
+    requirePermission(PERMISSIONS.UPDATE_USER),
+    httpService.updateUser.bind(httpService),
+  );
   router.delete(
     "/users/:id",
     requirePermission(PERMISSIONS.DELETE_USER),
@@ -107,7 +119,11 @@ const buildAdminUserRouter = (useCase: IAdminUserUseCase) => {
   );
 
   // Seed routes
-  router.post("/users/seed", requirePermission(PERMISSIONS.SEED_USERS), httpService.seedUsers.bind(httpService));
+  router.post(
+    "/users/seed",
+    requirePermission(PERMISSIONS.SEED_USERS),
+    httpService.seedUsers.bind(httpService),
+  );
   router.get(
     "/users/seed/stats",
     requirePermission(PERMISSIONS.SEED_USERS),
@@ -135,7 +151,7 @@ export const setupUserHexagon = (prismaClient: PrismaClient = prisma) => {
   const dependencies = {
     userRepository,
     sessionRepository,
-    userSettingsRepository: {} as any, 
+    userSettingsRepository: {} as any,
     passwordHasher,
     notificationService,
     avatarColorService,
@@ -144,7 +160,11 @@ export const setupUserHexagon = (prismaClient: PrismaClient = prisma) => {
   };
 
   const userUseCase = new UserUseCase(dependencies);
-  const adminUserUseCase = new AdminUserUseCase(dependencies as any, authNotificationService, tokenService);
+  const adminUserUseCase = new AdminUserUseCase(
+    dependencies as any,
+    authNotificationService,
+    tokenService,
+  );
 
   const router = Router();
   router.use("/user", buildUserRouter(userUseCase));

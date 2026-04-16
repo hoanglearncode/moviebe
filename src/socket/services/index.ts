@@ -127,10 +127,7 @@ export class PusherService {
   /**
    * Push to the public broadcast channel.
    */
-  static async broadcast<E extends PusherEvent>(
-    event: E,
-    data: PusherEventMap[E],
-  ): Promise<void> {
+  static async broadcast<E extends PusherEvent>(event: E, data: PusherEventMap[E]): Promise<void> {
     return PusherService.trigger("public-notifications", event, data);
   }
 }

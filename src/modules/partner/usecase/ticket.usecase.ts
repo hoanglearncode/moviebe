@@ -1,5 +1,9 @@
 import { randomUUID } from "crypto";
-import { ITicketRepository, ICheckInRepository, ITicketCheckInUseCase } from "../interface/ticket.interface";
+import {
+  ITicketRepository,
+  ICheckInRepository,
+  ITicketCheckInUseCase,
+} from "../interface/ticket.interface";
 import { IShowtimeRepository } from "../interface/showtime.interface";
 import { Ticket, CheckIn, TicketListResponse } from "../model/model";
 import { CheckInDTO, ListTicketsQueryDTO } from "../model/dto";

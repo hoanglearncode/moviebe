@@ -4,6 +4,8 @@
  * ==========================================
  */
 
+import { number, string } from "zod";
+
 export type PartnerProfile = {
   id: string;
   userId: string;
@@ -332,4 +334,13 @@ export type TransactionListResponse = {
   page: number;
   limit: number;
   totalPages: number;
+};
+
+// Service
+export type Services = {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  icon?: string | null;
 };

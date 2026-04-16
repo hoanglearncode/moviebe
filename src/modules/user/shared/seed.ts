@@ -91,7 +91,7 @@ export class SeedService {
               lastLoginAt: null,
               createdAt: now,
               updatedAt: now,
-            }))
+            })),
           );
 
           // Insert batch vào database

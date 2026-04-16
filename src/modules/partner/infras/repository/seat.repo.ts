@@ -6,9 +6,15 @@ import { PagingDTO } from "../../../../share";
 export class SeatRepository implements ISeatRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async get(_id: string): Promise<Seat | null> { return null; }
-  async list(_cond: Partial<Seat>, _paging: PagingDTO): Promise<Seat[]> { return []; }
-  async findByCond(_cond: Partial<Seat>): Promise<Seat | null> { return null; }
+  async get(_id: string): Promise<Seat | null> {
+    return null;
+  }
+  async list(_cond: Partial<Seat>, _paging: PagingDTO): Promise<Seat[]> {
+    return [];
+  }
+  async findByCond(_cond: Partial<Seat>): Promise<Seat | null> {
+    return null;
+  }
 
   async findById(seatId: string): Promise<Seat | null> {
     const row = await this.prisma.seat.findUnique({ where: { id: seatId } });

@@ -4,7 +4,6 @@ import {
   ScheduledEmailNotification,
   EmailNotificationEvent,
 } from "@prisma/client";
-import { EmailNotificationEventType } from "../../model/types";
 
 export interface IEmailTemplateRepository {
   getTemplateByEvent(event: EmailNotificationEvent): Promise<EmailTemplate | null>;

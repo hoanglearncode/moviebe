@@ -68,7 +68,9 @@ export const startSeatCleanupWorker = (): void => {
   // Add repeatable job: run every 60 seconds
   seatCleanupQueue
     .add("cleanup", {}, { repeat: { every: 60_000 }, removeOnComplete: 10, removeOnFail: 5 })
-    .catch((err) => logger.error("[SeatCleanup] Failed to schedule repeatable job", { error: err.message }));
+    .catch((err) =>
+      logger.error("[SeatCleanup] Failed to schedule repeatable job", { error: err.message }),
+    );
 
   // Start worker
   seatCleanupWorker = new Worker(

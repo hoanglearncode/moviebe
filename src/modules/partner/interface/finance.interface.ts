@@ -1,20 +1,14 @@
 import { IRepository } from "../../../share/interface";
-import {
-  Transaction,
-  Withdrawal,
-  PartnerWallet,
-  WithdrawalListResponse,
-} from "../model/model";
-import {
-  CreateWithdrawalDTO,
-  ListWithdrawalsQueryDTO,
-  RevenueQueryDTO,
-} from "../model/dto";
+import { Transaction, Withdrawal, PartnerWallet, WithdrawalListResponse } from "../model/model";
+import { CreateWithdrawalDTO, ListWithdrawalsQueryDTO, RevenueQueryDTO } from "../model/dto";
 
 // ─── Repository Ports ─────────────────────────────────────────────────────────
 
-export interface ITransactionRepository
-  extends IRepository<Transaction, Partial<Transaction>, Partial<Transaction>> {
+export interface ITransactionRepository extends IRepository<
+  Transaction,
+  Partial<Transaction>,
+  Partial<Transaction>
+> {
   findByPartnerId(partnerId: string): Promise<Transaction[]>;
   findRevenueByPeriod(
     partnerId: string,
@@ -24,8 +18,11 @@ export interface ITransactionRepository
   findByType(partnerId: string, type: string): Promise<Transaction[]>;
 }
 
-export interface IWithdrawalRepository
-  extends IRepository<Withdrawal, Partial<Withdrawal>, Partial<Withdrawal>> {
+export interface IWithdrawalRepository extends IRepository<
+  Withdrawal,
+  Partial<Withdrawal>,
+  Partial<Withdrawal>
+> {
   findById(withdrawalId: string): Promise<Withdrawal | null>;
   findByPartnerId(
     partnerId: string,
@@ -34,8 +31,11 @@ export interface IWithdrawalRepository
   updateStatus(withdrawalId: string, status: string): Promise<boolean>;
 }
 
-export interface IWalletRepository
-  extends IRepository<PartnerWallet, Partial<PartnerWallet>, Partial<PartnerWallet>> {
+export interface IWalletRepository extends IRepository<
+  PartnerWallet,
+  Partial<PartnerWallet>,
+  Partial<PartnerWallet>
+> {
   findByPartnerId(partnerId: string): Promise<PartnerWallet | null>;
   updateBalance(partnerId: string, amount: number): Promise<boolean>;
   incrementBalance(partnerId: string, amount: number): Promise<boolean>;
@@ -91,10 +91,7 @@ export interface IPartnerFinanceUseCase {
   getTransactions(partnerId: string): Promise<Transaction[]>;
   getRevenue(partnerId: string, query: RevenueQueryDTO): Promise<any>;
   getRevenueByMovie(partnerId: string, startDate?: Date, endDate?: Date): Promise<any>;
-  createWithdrawal(
-    partnerId: string,
-    data: CreateWithdrawalDTO,
-  ): Promise<{ withdrawalId: string }>;
+  createWithdrawal(partnerId: string, data: CreateWithdrawalDTO): Promise<{ withdrawalId: string }>;
   getWithdrawals(
     partnerId: string,
     query: ListWithdrawalsQueryDTO,

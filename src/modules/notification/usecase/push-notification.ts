@@ -153,7 +153,12 @@ export const NotificationFactory = {
     data: { withdrawalId, amount },
   }),
 
-  partnerWithdrawalFailed: (userId: string, withdrawalId: string, amount: number, reason: string) => ({
+  partnerWithdrawalFailed: (
+    userId: string,
+    withdrawalId: string,
+    amount: number,
+    reason: string,
+  ) => ({
     userId,
     type: NotificationType.PARTNER_WITHDRAWAL_FAILED,
     title: "Rút tiền thất bại",
@@ -177,7 +182,12 @@ export const NotificationFactory = {
     data: { movieId, title, reason },
   }),
 
-  showtimeCancelled: (userId: string, showtimeId: string, movieTitle: string, refundedTickets: number) => ({
+  showtimeCancelled: (
+    userId: string,
+    showtimeId: string,
+    movieTitle: string,
+    refundedTickets: number,
+  ) => ({
     userId,
     type: NotificationType.SHOWTIME_CANCELLED,
     title: "Suất chiếu đã bị hủy",

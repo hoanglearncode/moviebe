@@ -138,6 +138,30 @@ export const CreateWithdrawalPayloadDTO = z.object({
 
 /**
  * ==========================================
+ * SERVICE DTOs
+ * ==========================================
+ */
+export const UpdateServicePayloadDTO = z.object({
+  name: z.string().trim().min(1, "Name is required").optional(),
+  price: z.number().min(0, "Price must > 0").optional(),
+  category: z.string().min(1, "Category is required").optional(),
+  icon: z.string().nullable().optional(),
+});
+
+export const CreateServicePayloadDTO = z.object({
+  name: z.string().trim().min(1, "Name is required"),
+  price: z.number().min(0, "Price must > 0"),
+  category: z.string().min(1, "Category is required"),
+  icon: z.string().nullable().optional(),
+});
+
+export const ServiceCondDTOSchema = z.object({
+  name: z.string().min(2, "name must be at least 3 characters").optional(),
+  price: z.number().min(0, "Price must > 0").optional(),
+  category: z.string().min(1, "Category is required").optional(),
+});
+/**
+ * ==========================================
  * QUERY DTOs
  * ==========================================
  */
@@ -212,3 +236,7 @@ export type ListShowtimesQueryDTO = z.infer<typeof ListShowtimesQueryPayloadDTO>
 export type ListTicketsQueryDTO = z.infer<typeof ListTicketsQueryPayloadDTO>;
 export type ListWithdrawalsQueryDTO = z.infer<typeof ListWithdrawalsQueryPayloadDTO>;
 export type RevenueQueryDTO = z.infer<typeof RevenueQueryPayloadDTO>;
+
+export type CreateServiceDTO = z.infer<typeof CreateServicePayloadDTO>;
+export type UpdateServiceDTO = z.infer<typeof UpdateServicePayloadDTO>;
+export type ServicesCondDTO = z.infer<typeof ServiceCondDTOSchema>;

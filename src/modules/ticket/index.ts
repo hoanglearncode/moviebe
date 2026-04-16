@@ -33,7 +33,9 @@ export function setupTicketRoutes(prisma: PrismaClient): Router {
           include: {
             showtime: {
               include: {
-                movie: { select: { id: true, title: true, posterUrl: true, genre: true, duration: true } },
+                movie: {
+                  select: { id: true, title: true, posterUrl: true, genre: true, duration: true },
+                },
                 partner: { select: { cinemaName: true, city: true, address: true } },
               },
             },
@@ -75,7 +77,9 @@ export function setupTicketRoutes(prisma: PrismaClient): Router {
               partner: { select: { cinemaName: true, city: true, address: true, phone: true } },
             },
           },
-          seat: { select: { seatNumber: true, rowLabel: true, columnNumber: true, seatType: true } },
+          seat: {
+            select: { seatNumber: true, rowLabel: true, columnNumber: true, seatType: true },
+          },
           checkIn: { select: { scannedAt: true, scannedBy: true } },
         },
       });

@@ -9,7 +9,12 @@ export { PartnerRepository, createPartnerRepository } from "./profile.repo";
 export { MovieRepository, createMovieRepository } from "./movie.repo";
 export { ShowtimeRepository, createShowtimeRepository } from "./showtime.repo";
 export { SeatRepository, createSeatRepository } from "./seat.repo";
-export { TicketRepository, CheckInRepository, createTicketRepository, createCheckInRepository } from "./ticket.repo";
+export {
+  TicketRepository,
+  CheckInRepository,
+  createTicketRepository,
+  createCheckInRepository,
+} from "./ticket.repo";
 export {
   TransactionRepository,
   WithdrawalRepository,

@@ -22,7 +22,7 @@ export type {
   IPartnerFinanceUseCase,
 } from "./finance.interface";
 export type { IPartnerDashboardUseCase } from "./dashboard.interface";
-
+export type { IPartnerServicesUseCase } from "./services.interface";
 // ─── Convenience: full dependency bag (legacy / composition root) ──────────────
 
 import type { IPartnerRepository } from "./profile.interface";

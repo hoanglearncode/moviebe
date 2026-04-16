@@ -14,7 +14,10 @@ export const SubmitPartnerRequestSchema = z.object({
   cinemaName: z.string().trim().min(1, "Cinema name is required").max(255),
   address: z.string().trim().min(5, "Address is required"),
   city: z.string().trim().min(1, "City is required"),
-  phone: z.string().trim().regex(/^\+?[0-9\s\-()]{9,}$/, "Invalid phone number"),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[0-9\s\-()]{9,}$/, "Invalid phone number"),
   email: z.string().trim().email("Invalid email"),
   logo: z.string().trim().optional(),
   taxCode: z.string().trim().min(1, "Tax code is required"),

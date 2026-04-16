@@ -126,7 +126,6 @@ export class PrismaUserRepository implements IUserRepository {
       const timestamp = Date.now();
       const newEmail = `${user.email.split("@")[0]}+inactive_${timestamp}@deleted.local`;
 
-
       await this.model.update({
         where: { id },
         data: {

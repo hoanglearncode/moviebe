@@ -31,9 +31,8 @@ export class AuthHttpService extends BaseHttpService<any, RegisterDTO, any, any>
       this.authUseCase.login(req.body, {
         userAgent: req.headers["user-agent"],
         ipAddress:
-          (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
-          req.socket.remoteAddress,
-      })
+          (req.headers["x-forwarded-for"] as string)?.split(",")[0] || req.socket.remoteAddress,
+      }),
     );
   }
 
@@ -46,20 +45,18 @@ export class AuthHttpService extends BaseHttpService<any, RegisterDTO, any, any>
       this.authUseCase.loginGoogle(req.body, {
         userAgent: req.headers["user-agent"],
         ipAddress:
-          (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
-          req.socket.remoteAddress,
-      })
+          (req.headers["x-forwarded-for"] as string)?.split(",")[0] || req.socket.remoteAddress,
+      }),
     );
   }
-  
+
   async loginGoogleTokenCallback(req: Request<any, any, GoogleTokenDTO>, res: Response) {
     await this.handleRequest(res, () =>
       this.authUseCase.loginGoogleTokenCallback(req.body, {
         userAgent: req.headers["user-agent"],
         ipAddress:
-          (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
-          req.socket.remoteAddress,
-      })
+          (req.headers["x-forwarded-for"] as string)?.split(",")[0] || req.socket.remoteAddress,
+      }),
     );
   }
 
@@ -68,9 +65,8 @@ export class AuthHttpService extends BaseHttpService<any, RegisterDTO, any, any>
       this.authUseCase.loginFacebook(req.body, {
         userAgent: req.headers["user-agent"],
         ipAddress:
-          (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
-          req.socket.remoteAddress,
-      })
+          (req.headers["x-forwarded-for"] as string)?.split(",")[0] || req.socket.remoteAddress,
+      }),
     );
   }
 

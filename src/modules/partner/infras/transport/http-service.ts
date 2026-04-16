@@ -8,6 +8,7 @@ import {
   ITicketCheckInUseCase,
   IPartnerFinanceUseCase,
   IPartnerDashboardUseCase,
+  IPartnerServicesUseCase,
 } from "../../interface";
 import {
   UpdatePartnerDTO,

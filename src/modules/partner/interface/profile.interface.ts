@@ -4,8 +4,11 @@ import { UpdatePartnerDTO } from "../model/dto";
 
 // ─── Repository Port ──────────────────────────────────────────────────────────
 
-export interface IPartnerRepository
-  extends IRepository<PartnerProfile, Partial<PartnerProfile>, Partial<PartnerProfile>> {
+export interface IPartnerRepository extends IRepository<
+  PartnerProfile,
+  Partial<PartnerProfile>,
+  Partial<PartnerProfile>
+> {
   findById(partnerId: string): Promise<PartnerProfile | null>;
   findByUserId(userId: string): Promise<PartnerProfile | null>;
   findByTaxCode(taxCode: string): Promise<PartnerProfile | null>;

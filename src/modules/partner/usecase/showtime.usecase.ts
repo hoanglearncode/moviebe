@@ -142,26 +142,20 @@ export class ShowtimeManagementUseCase implements IShowtimeManagementUseCase {
   ): Promise<boolean> {
     const showtime = await this.showtimeRepo.findByIdAndPartnerId(showtimeId, partnerId);
     if (!showtime) throw new Error("Showtime not found");
-    if (showtime.status !== "SCHEDULED")
-      throw new Error("Only SCHEDULED showtimes can be updated");
+    if (showtime.status !== "SCHEDULED") throw new Error("Only SCHEDULED showtimes can be updated");
 
     await this.showtimeRepo.update(showtimeId, { ...data, updatedAt: new Date() });
     return true;
   }
 
-  async cancelShowtime(
-    partnerId: string,
-    showtimeId: string,
-  ): Promise<{ message: string }> {
+  async cancelShowtime(partnerId: string, showtimeId: string): Promise<{ message: string }> {
     const showtime = await this.showtimeRepo.findByIdAndPartnerId(showtimeId, partnerId);
     if (!showtime) throw new Error("Showtime not found");
     if (showtime.status === "CANCELLED") throw new Error("Showtime is already cancelled");
     if (showtime.status === "ENDED") throw new Error("Cannot cancel an ended showtime");
 
     const tickets = await this.ticketRepo.findByShowtimeId(showtimeId);
-    const soldTickets = tickets.filter(
-      (t) => t.status === "CONFIRMED" || t.status === "RESERVED",
-    );
+    const soldTickets = tickets.filter((t) => t.status === "CONFIRMED" || t.status === "RESERVED");
 
     for (const ticket of soldTickets) {
       await this.ticketRepo.updateStatus(ticket.id, "REFUNDED");

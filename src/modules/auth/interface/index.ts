@@ -40,10 +40,14 @@ export interface IPasswordHasher {
 }
 
 export interface ITokenService {
-  issueAuthSession(user: AuthUser, context?: {
+  issueAuthSession(
+    user: AuthUser,
+    context?: {
       userAgent?: string;
       ipAddress?: string;
-    }, options?: { remember?: boolean }): Promise<AuthSession>;
+    },
+    options?: { remember?: boolean },
+  ): Promise<AuthSession>;
   refreshAuthSession(refreshToken: string): Promise<AuthSession & { userId: string }>;
   issueActionToken(payload: { userId: string; purpose: AuthActionTokenPurpose }): Promise<string>;
   verifyActionToken(
@@ -71,20 +75,20 @@ export interface IAuthUseCase {
   register(data: RegisterDTO): Promise<{ userId: string }>;
   login(
     data: LoginDTO,
-    context?: { userAgent?: string; ipAddress?: string }
+    context?: { userAgent?: string; ipAddress?: string },
   ): Promise<AuthResponse>;
   refreshToken(data: RefreshDTO): Promise<AuthResponse>;
   loginGoogle(
     data: GoogleDTO,
-    context?: { userAgent?: string; ipAddress?: string }
+    context?: { userAgent?: string; ipAddress?: string },
   ): Promise<AuthResponse>;
   loginGoogleTokenCallback(
     data: GoogleTokenDTO,
-    context?: { userAgent?: string; ipAddress?: string }
+    context?: { userAgent?: string; ipAddress?: string },
   ): Promise<AuthResponse>;
   loginFacebook(
     data: FacebookTO,
-    context?: { userAgent?: string; ipAddress?: string }
+    context?: { userAgent?: string; ipAddress?: string },
   ): Promise<AuthResponse>;
   verifyEmail(data: VerifyEmailDTO): Promise<{ message: string }>;
   resendVerification(data: ResendVerificationDTO): Promise<{ message: string }>;

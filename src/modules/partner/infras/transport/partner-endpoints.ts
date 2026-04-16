@@ -32,6 +32,9 @@ import {
   createWalletRepository,
 } from "../repository/repo";
 import { PartnerNotificationService } from "../../shared/notification";
+import { createServerRepository } from "../repository/services.repo";
+import { ServicePartnerUser } from "../../usecase/service.usecase";
+import { ServicesHttpService } from "./service-http-services";
 
 function resolvePartnerIdMiddleware(partnerRepo: ReturnType<typeof createPartnerRepository>) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -66,9 +69,12 @@ export default function buildPartnerRouter(prisma: PrismaClient): Router {
   const withdrawalRepository = createWithdrawalRepository(prisma);
   const checkInRepository = createCheckInRepository(prisma);
   const walletRepository = createWalletRepository(prisma);
+  const serviceRepository = createServerRepository(prisma);
+
   const notificationService = new PartnerNotificationService();
 
   const profileUseCase = new PartnerProfileUseCase(partnerRepository);
+  const serviceUseCase = new ServicePartnerUser(serviceRepository);
   const movieUseCase = new MovieManagementUseCase(partnerRepository, movieRepository);
   const showtimeUseCase = new ShowtimeManagementUseCase(
     partnerRepository,
@@ -111,6 +117,7 @@ export default function buildPartnerRouter(prisma: PrismaClient): Router {
   const ticketSvc = new TicketCheckInHttpService(ticketUseCase);
   const financeSvc = new PartnerFinanceHttpService(financeUseCase);
   const dashboardSvc = new PartnerDashboardHttpService(dashboardUseCase);
+  const serviceHttp = new ServicesHttpService(serviceUseCase);
 
   const router = Router();
   const guard = [
@@ -132,13 +139,23 @@ export default function buildPartnerRouter(prisma: PrismaClient): Router {
 
   router.post("/showtimes", ...guard, (req, res) => showtimeSvc.createShowtime(req, res));
   router.get("/showtimes", ...guard, (req, res) => showtimeSvc.getShowtimes(req, res));
-  router.get("/showtimes/:showtimeId", ...guard, (req, res) => showtimeSvc.getShowtimeDetail(req, res));
-  router.put("/showtimes/:showtimeId", ...guard, (req, res) => showtimeSvc.updateShowtime(req, res));
-  router.delete("/showtimes/:showtimeId", ...guard, (req, res) => showtimeSvc.cancelShowtime(req, res));
+  router.get("/showtimes/:showtimeId", ...guard, (req, res) =>
+    showtimeSvc.getShowtimeDetail(req, res),
+  );
+  router.put("/showtimes/:showtimeId", ...guard, (req, res) =>
+    showtimeSvc.updateShowtime(req, res),
+  );
+  router.delete("/showtimes/:showtimeId", ...guard, (req, res) =>
+    showtimeSvc.cancelShowtime(req, res),
+  );
 
   router.get("/showtimes/:showtimeId/seats", ...guard, (req, res) => seatSvc.getSeats(req, res));
-  router.get("/showtimes/:showtimeId/seat-map", ...guard, (req, res) => seatSvc.getSeatMap(req, res));
-  router.get("/showtimes/:showtimeId/check-ins", ...guard, (req, res) => ticketSvc.getCheckInHistory(req, res));
+  router.get("/showtimes/:showtimeId/seat-map", ...guard, (req, res) =>
+    seatSvc.getSeatMap(req, res),
+  );
+  router.get("/showtimes/:showtimeId/check-ins", ...guard, (req, res) =>
+    ticketSvc.getCheckInHistory(req, res),
+  );
   router.put("/seats/:seatId", ...guard, (req, res) => seatSvc.updateSeat(req, res));
 
   router.get("/tickets", ...guard, (req, res) => ticketSvc.getTickets(req, res));
@@ -150,11 +167,26 @@ export default function buildPartnerRouter(prisma: PrismaClient): Router {
   router.get("/revenue", ...guard, (req, res) => financeSvc.getRevenue(req, res));
   router.post("/withdrawals", ...guard, (req, res) => financeSvc.createWithdrawal(req, res));
   router.get("/withdrawals", ...guard, (req, res) => financeSvc.getWithdrawals(req, res));
-  router.get("/withdrawals/:withdrawalId", ...guard, (req, res) => financeSvc.getWithdrawalDetail(req, res));
+  router.get("/withdrawals/:withdrawalId", ...guard, (req, res) =>
+    financeSvc.getWithdrawalDetail(req, res),
+  );
 
   router.get("/dashboard", ...guard, (req, res) => dashboardSvc.getDashboard(req, res));
   router.get("/stats/top-movies", ...guard, (req, res) => dashboardSvc.getTopMovies(req, res));
   router.get("/stats/occupancy", ...guard, (req, res) => dashboardSvc.getOccupancy(req, res));
+
+  router.get("/rooms", ...guard, (req, res) => ticketSvc.getTickets(req, res));
+  router.post("/rooms", ...guard, (req, res) => ticketSvc.getTickets(req, res));
+  router.get("/rooms/:ticketId", ...guard, (req, res) => ticketSvc.getTicketDetail(req, res));
+  router.put("/rooms/:ticketId", ...guard, (req, res) => ticketSvc.getTicketDetail(req, res));
+  router.delete("/rooms/:ticketId", ...guard, (req, res) => ticketSvc.getTicketDetail(req, res));
+
+  router.get("/services", ...guard, (req, res) => serviceHttp.list(req, res));
+  router.get("/services/search", ...guard, (req, res) => serviceHttp.findByCond(req, res));
+  router.get("/services/:id", ...guard, (req, res) => serviceHttp.findById(req, res));
+  router.post("/services", ...guard, (req, res) => serviceHttp.create(req, res));
+  router.put("/services/:id", ...guard, (req, res) => serviceHttp.update(req, res));
+  router.delete("/services/:id", ...guard, (req, res) => serviceHttp.delete(req, res));
 
   return router;
 }

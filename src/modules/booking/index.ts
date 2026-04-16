@@ -28,7 +28,13 @@ export function setupBookingRoutes(prisma: PrismaClient): Router {
 
       const parsed = LockSeatsSchema.safeParse(req.body);
       if (!parsed.success) {
-        return errorResponse(res, 400, "Dữ liệu không hợp lệ", "VALIDATION_ERROR", parsed.error.flatten());
+        return errorResponse(
+          res,
+          400,
+          "Dữ liệu không hợp lệ",
+          "VALIDATION_ERROR",
+          parsed.error.flatten(),
+        );
       }
 
       const { showtimeId, seatIds } = parsed.data;
@@ -56,9 +62,15 @@ export function setupBookingRoutes(prisma: PrismaClient): Router {
         },
       });
       if (existingOrder) {
-        return errorResponse(res, 409, "Bạn đã có đơn hàng đang xử lý cho suất chiếu này", "ORDER_EXISTS", {
-          orderId: existingOrder.id,
-        });
+        return errorResponse(
+          res,
+          409,
+          "Bạn đã có đơn hàng đang xử lý cho suất chiếu này",
+          "ORDER_EXISTS",
+          {
+            orderId: existingOrder.id,
+          },
+        );
       }
 
       // 3. Fetch and validate seats
@@ -72,12 +84,19 @@ export function setupBookingRoutes(prisma: PrismaClient): Router {
 
       const now = new Date();
       const unavailable = seats.filter(
-        (s) => s.status === "BOOKED" || (s.status === "LOCKED" && s.lockedUntil && s.lockedUntil > now),
+        (s) =>
+          s.status === "BOOKED" || (s.status === "LOCKED" && s.lockedUntil && s.lockedUntil > now),
       );
       if (unavailable.length > 0) {
-        return errorResponse(res, 409, "Một số ghế đã được đặt hoặc đang bị giữ", "SEATS_UNAVAILABLE", {
-          unavailableSeats: unavailable.map((s) => s.seatNumber),
-        });
+        return errorResponse(
+          res,
+          409,
+          "Một số ghế đã được đặt hoặc đang bị giữ",
+          "SEATS_UNAVAILABLE",
+          {
+            unavailableSeats: unavailable.map((s) => s.seatNumber),
+          },
+        );
       }
 
       // 4. Lock seats + create order atomically
@@ -129,10 +148,17 @@ export function setupBookingRoutes(prisma: PrismaClient): Router {
           await (tx.ticket as any).create({ data: t });
         }
 
-        return { order, seats: seats.map((s) => ({ id: s.id, seatNumber: s.seatNumber, price: s.price })) };
+        return {
+          order,
+          seats: seats.map((s) => ({ id: s.id, seatNumber: s.seatNumber, price: s.price })),
+        };
       });
 
-      logger.info("[Booking] Seats locked", { orderId: result.order.id, userId, seatCount: seatIds.length });
+      logger.info("[Booking] Seats locked", {
+        orderId: result.order.id,
+        userId,
+        seatCount: seatIds.length,
+      });
       successResponse(
         res,
         { orderId: result.order.id, expiresAt, seats: result.seats, totalAmount },
@@ -169,7 +195,8 @@ export function setupBookingRoutes(prisma: PrismaClient): Router {
       });
 
       if (!order) return errorResponse(res, 404, "Đơn hàng không tồn tại");
-      if (order.userId !== userId) return errorResponse(res, 403, "Bạn không có quyền xem đơn hàng này");
+      if (order.userId !== userId)
+        return errorResponse(res, 403, "Bạn không có quyền xem đơn hàng này");
 
       // Mark expired orders
       if (order.status === "PENDING" && new Date() > new Date(order.expiresAt)) {

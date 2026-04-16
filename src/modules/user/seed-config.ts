@@ -1,4 +1,3 @@
-
 export const seedPresets = {
   quickTest: {
     count: 100,
@@ -39,7 +38,6 @@ export const seedPresets = {
     defaultRole: "USER" as const,
     defaultStatus: "ACTIVE" as const,
   },
-
 
   veryLargeDataset: {
     count: 50000,
@@ -125,7 +123,6 @@ export const seedPresets = {
     defaultStatus: "PENDING" as const,
   },
 };
-
 
 export const seedExamples = {
   basicUsage: `

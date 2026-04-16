@@ -27,7 +27,9 @@ export class PartnerNotificationService implements IPartnerNotificationService {
 
     if (input.userId) {
       await pushNotificationService
-        .send(NotificationFactory.partnerWithdrawalPending(input.userId, input.reference, input.amount))
+        .send(
+          NotificationFactory.partnerWithdrawalPending(input.userId, input.reference, input.amount),
+        )
         .catch((err) => logger.warn("[PartnerNotif] push failed", { err: err.message }));
     }
   }
@@ -47,7 +49,13 @@ export class PartnerNotificationService implements IPartnerNotificationService {
 
     if (input.userId) {
       await pushNotificationService
-        .send(NotificationFactory.partnerWithdrawalCompleted(input.userId, input.reference, input.amount))
+        .send(
+          NotificationFactory.partnerWithdrawalCompleted(
+            input.userId,
+            input.reference,
+            input.amount,
+          ),
+        )
         .catch((err) => logger.warn("[PartnerNotif] push failed", { err: err.message }));
     }
   }
@@ -67,7 +75,14 @@ export class PartnerNotificationService implements IPartnerNotificationService {
 
     if (input.userId) {
       await pushNotificationService
-        .send(NotificationFactory.partnerWithdrawalFailed(input.userId, "unknown", input.amount, input.reason))
+        .send(
+          NotificationFactory.partnerWithdrawalFailed(
+            input.userId,
+            "unknown",
+            input.amount,
+            input.reason,
+          ),
+        )
         .catch((err) => logger.warn("[PartnerNotif] push failed", { err: err.message }));
     }
   }
@@ -86,7 +101,13 @@ export class PartnerNotificationService implements IPartnerNotificationService {
 
     if (input.userId) {
       await pushNotificationService
-        .send(NotificationFactory.partnerMovieApproved(input.userId, input.movieId ?? "", input.movieTitle))
+        .send(
+          NotificationFactory.partnerMovieApproved(
+            input.userId,
+            input.movieId ?? "",
+            input.movieTitle,
+          ),
+        )
         .catch((err) => logger.warn("[PartnerNotif] push failed", { err: err.message }));
     }
   }
@@ -107,7 +128,14 @@ export class PartnerNotificationService implements IPartnerNotificationService {
 
     if (input.userId) {
       await pushNotificationService
-        .send(NotificationFactory.partnerMovieRejected(input.userId, input.movieId ?? "", input.movieTitle, input.reason))
+        .send(
+          NotificationFactory.partnerMovieRejected(
+            input.userId,
+            input.movieId ?? "",
+            input.movieTitle,
+            input.reason,
+          ),
+        )
         .catch((err) => logger.warn("[PartnerNotif] push failed", { err: err.message }));
     }
   }
@@ -127,12 +155,14 @@ export class PartnerNotificationService implements IPartnerNotificationService {
 
     if (input.userId) {
       await pushNotificationService
-        .send(NotificationFactory.system(
-          input.userId,
-          "Báo cáo doanh thu hôm nay",
-          `Doanh thu ngày ${input.date}: ${input.revenue.toLocaleString("vi-VN")} VND`,
-          { revenue: input.revenue, date: input.date },
-        ))
+        .send(
+          NotificationFactory.system(
+            input.userId,
+            "Báo cáo doanh thu hôm nay",
+            `Doanh thu ngày ${input.date}: ${input.revenue.toLocaleString("vi-VN")} VND`,
+            { revenue: input.revenue, date: input.date },
+          ),
+        )
         .catch((err) => logger.warn("[PartnerNotif] push failed", { err: err.message }));
     }
   }

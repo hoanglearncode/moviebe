@@ -13,13 +13,8 @@ export class UserNotificationService implements IUserNotificationService {
   /**
    * 1. Password changed
    */
-  async sendPasswordChangeConfirmation(input: {
-    email: string;
-    name: string;
-  }): Promise<void> {
-    const template = await this.getTemplate(
-      EmailNotificationEvent.PASSWORD_CHANGED,
-    );
+  async sendPasswordChangeConfirmation(input: { email: string; name: string }): Promise<void> {
+    const template = await this.getTemplate(EmailNotificationEvent.PASSWORD_CHANGED);
 
     const html = this.render(template.body, {
       email: input.email,
@@ -41,13 +36,8 @@ export class UserNotificationService implements IUserNotificationService {
   /**
    * 2. Account deleted
    */
-  async sendAccountDeletedNotification(input: {
-    email: string;
-    name: string;
-  }): Promise<void> {
-    const template = await this.getTemplate(
-      EmailNotificationEvent.ACCOUNT_DELETED,
-    );
+  async sendAccountDeletedNotification(input: { email: string; name: string }): Promise<void> {
+    const template = await this.getTemplate(EmailNotificationEvent.ACCOUNT_DELETED);
 
     const html = this.render(template.body, {
       email: input.email,
@@ -69,13 +59,8 @@ export class UserNotificationService implements IUserNotificationService {
   /**
    * 3. Reset password (theo interface)
    */
-  async sendPasswordResetNotification(input: {
-    email: string;
-    token: string;
-  }): Promise<void> {
-    const resetUrl = `${ENV.FRONTEND_URL}/reset-password?token=${encodeURIComponent(
-      input.token,
-    )}`;
+  async sendPasswordResetNotification(input: { email: string; token: string }): Promise<void> {
+    const resetUrl = `${ENV.FRONTEND_URL}/reset-password?token=${encodeURIComponent(input.token)}`;
 
     const template = await this.getTemplate(
       EmailNotificationEvent.RESET_PASSWORD, // ⚠️ dùng đúng template seed
@@ -103,13 +88,8 @@ export class UserNotificationService implements IUserNotificationService {
   /**
    * 4. Welcome email
    */
-  async sendWelcomeEmail(input: {
-    email: string;
-    name: string;
-  }): Promise<void> {
-    const template = await this.getTemplate(
-      EmailNotificationEvent.WELCOME_NEW_ACCOUNT,
-    );
+  async sendWelcomeEmail(input: { email: string; name: string }): Promise<void> {
+    const template = await this.getTemplate(EmailNotificationEvent.WELCOME_NEW_ACCOUNT);
 
     const html = this.render(template.body, {
       email: input.email,
@@ -171,13 +151,10 @@ export class UserNotificationService implements IUserNotificationService {
         jobId: `mail:${input.to}:${Date.now()}`,
       });
     } catch (error) {
-      logger.warn(
-        "Queue email dispatch failed, falling back to direct mail send",
-        {
-          to: input.to,
-          error: (error as Error).message,
-        },
-      );
+      logger.warn("Queue email dispatch failed, falling back to direct mail send", {
+        to: input.to,
+        error: (error as Error).message,
+      });
 
       await this.emailService.send(input);
     }

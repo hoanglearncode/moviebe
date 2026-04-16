@@ -3,10 +3,7 @@ import { areQueueWorkersEnabled, isQueueEnabled, queuePrefix } from "./config/co
 import { closeEmailQueue } from "./config/email.queue";
 import { closeNotificationQueue } from "./config/notification.queue";
 import { closeEmailWorker, startEmailWorker } from "./worker/email.worker";
-import {
-  closeNotificationWorker,
-  startNotificationWorker,
-} from "./worker/notification.worker";
+import { closeNotificationWorker, startNotificationWorker } from "./worker/notification.worker";
 import { closeSeatCleanupWorker, startSeatCleanupWorker } from "./worker/seat-cleanup.worker";
 
 export const initializeQueueInfrastructure = async (): Promise<void> => {

@@ -85,10 +85,7 @@ export class MovieManagementUseCase implements IMovieManagementUseCase {
     return { message: "Movie deleted successfully" };
   }
 
-  async submitMovieForApproval(
-    partnerId: string,
-    movieId: string,
-  ): Promise<{ message: string }> {
+  async submitMovieForApproval(partnerId: string, movieId: string): Promise<{ message: string }> {
     const movie = await this.movieRepo.findByIdAndPartnerId(movieId, partnerId);
     if (!movie) throw new Error("Movie not found");
     if (movie.status !== "DRAFT")

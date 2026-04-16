@@ -31,6 +31,28 @@ enum UserStatus {
   PENDING
 }
 
+enum StaffRole {
+  OWNER
+  MANAGER
+  CASHIER
+  SCANNER
+  STAFF
+}
+
+enum RoomType {
+  TWO_D
+  THREE_D
+  IMAX
+  VIP
+  FOUR_DX
+}
+
+enum RoomStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+}
+
 enum PartnerStatus {
   PENDING
   APPROVED
@@ -57,8 +79,8 @@ enum ShowtimeStatus {
 enum SeatType {
   STANDARD
   VIP
-  PREMIUM
-  ACCESSIBLE
+  COUPLE
+  BLOCKED
 }
 
 enum SeatStatus {
@@ -153,6 +175,7 @@ model User {
   permissionsOverride Json?                   @map("permissions_override")
   status             UserStatus               @default(ACTIVE)
   emailVerified      Boolean                  @default(false)
+  dateOfBirth     DateTime?
   mustChangePassword Boolean                  @default(false)
   lastLoginAt        DateTime?
   createdAt          DateTime                 @default(now())
@@ -171,6 +194,7 @@ model User {
   sentPasses         PassHistory[]            @relation("PassHistoryFromUser")
   receivedPasses     PassHistory[]            @relation("PassHistoryToUser")
   notifications      Notification[]
+  staffPartners      PartnerStaff[]
 
   @@index([email])
   @@index([username])
@@ -187,8 +211,6 @@ model UserSetting {
   smsNotifications Boolean  @default(false)
   shareHistory     Boolean  @default(false)
   personalizedRecs Boolean  @default(true)
-  referralCode     String?
-  referrals        Int      @default(0)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @default(now()) @updatedAt
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -246,6 +268,9 @@ model Category {
   status      ModelStatus @default(active)
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at")
+  slug String @unique
+
+  movies Movie[]
 
   @@map("categories")
 }
@@ -282,6 +307,12 @@ model Partner {
   wallet            PartnerWallet?
   withdrawals       Withdrawal[]
   checkIns          CheckIn[]
+  rooms Room[]
+  approvedBy String?
+  approvedRequests PartnerRequest[] 
+  staffs PartnerStaff[]
+  services Service[]
+  orders Order[]
 
   @@index([status])
   @@index([createdAt])
@@ -308,8 +339,24 @@ model PartnerRequest {
   createdAt         DateTime      @default(now())
   user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  approvedPartnerId String?
+  approvedPartner   Partner? @relation(fields: [approvedPartnerId], references: [id])
+
   @@index([userId])
   @@index([status])
+}
+
+model PartnerStaff {
+  id        String    @id @default(cuid())
+  partnerId String
+  userId    String
+  role      StaffRole @default(STAFF)
+  createdAt DateTime  @default(now())
+
+  partner Partner @relation(fields: [partnerId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([partnerId, userId])
 }
 
 model Movie {
@@ -317,7 +364,8 @@ model Movie {
   partnerId   String
   title       String
   description String?
-  genre       String
+  genre String[]
+  categories Category[]
   language    String
   duration    Int
   releaseDate DateTime
@@ -333,6 +381,7 @@ model Movie {
   showtimes   Showtime[]
   tickets     Ticket[]
   reviews     Review[]
+  
 
   @@index([partnerId])
   @@index([status])
@@ -344,18 +393,24 @@ model Showtime {
   id             String         @id @default(cuid())
   movieId        String
   partnerId      String
-  cinemaRoomId   String
+  roomId         String
+
   startTime      DateTime
   endTime        DateTime
   basePrice      Int
   status         ShowtimeStatus @default(SCHEDULED)
+
   totalSeats     Int
   availableSeats Int
   bookedSeats    Int            @default(0)
+
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @default(now()) @updatedAt
+
   movie          Movie          @relation(fields: [movieId], references: [id], onDelete: Cascade)
   partner        Partner        @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  room           Room           @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
   seats          Seat[]
   tickets        Ticket[]
   orders         Order[]
@@ -363,6 +418,7 @@ model Showtime {
 
   @@index([movieId])
   @@index([partnerId])
+  @@index([roomId])
   @@index([startTime])
   @@index([status])
 }
@@ -370,23 +426,111 @@ model Showtime {
 model Seat {
   id           String     @id @default(cuid())
   showtimeId   String
+
   seatNumber   String
   rowLabel     String
   columnNumber Int
+
   seatType     SeatType
   status       SeatStatus @default(AVAILABLE)
+
   price        Int
+
   lockedUntil  DateTime?
   lockedBy     String?
+
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @default(now()) @updatedAt
+
   showtime     Showtime   @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
   ticket       Ticket?
 
   @@unique([showtimeId, seatNumber])
   @@index([showtimeId])
   @@index([status])
-  @@index([lockedUntil])
+}
+
+model SeatTemplate {
+  id        String   @id @default(cuid())
+  roomId    String
+
+  row       Int
+  col       Int
+  seatType  SeatType
+  version   Int     @default(1) 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, row, col])
+  @@index([roomId])
+}
+
+model Room {
+  id            String   @id @default(cuid())
+  partnerId     String
+
+  name          String
+  type          RoomType
+  status        RoomStatus
+
+  rows          Int
+  seatsPerRow   Int
+  capacity      Int
+
+  vipRows       Int[]
+  coupleRow     Int?
+
+  tech          String[]
+
+  screenWidth   Float
+  screenHeight  Float
+  aspectRatio   String
+
+  screenPos     String
+  entrancePos   String
+  aislePos      String?
+
+  description   String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  partner       Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  showtimes     Showtime[]
+  seatTemplates SeatTemplate[]
+  services RoomService[]
+
+  @@unique([partnerId, name])
+  @@index([partnerId])
+  @@index([status])
+}
+
+
+model Service {
+  id       Int @id @default(autoincrement())
+  name     String
+  price    Int
+  category String
+  icon     String?
+  partnerId String
+  partner   Partner @relation(fields: [partnerId], references: [id])
+  rooms RoomService[]
+
+  @@index([id])
+}
+
+model RoomService {
+  id        String   @id @default(cuid())
+  roomId    String
+  serviceId Int 
+  assignedAt DateTime @default(now())
+
+  room    Room    @relation(fields: [roomId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
+
+  @@unique([roomId, serviceId])
 }
 
 model Ticket {
@@ -443,6 +587,8 @@ model Order {
   showtime         Showtime    @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
   tickets          Ticket[]
   transactions     Transaction[]
+  partnerId String
+  partner   Partner @relation(fields: [partnerId], references: [id])
 
   @@index([userId])
   @@index([showtimeId])
@@ -567,6 +713,8 @@ model Review {
   updatedAt DateTime     @default(now()) @updatedAt
   movie     Movie        @relation(fields: [movieId], references: [id], onDelete: Cascade)
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verifiedPurchase Boolean @default(false)
+  helpfulCount     Int     @default(0)
 
   @@unique([movieId, userId])
   @@index([movieId])
@@ -624,6 +772,8 @@ model EmailTemplate {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
+  scheduledEmails ScheduledEmailNotification[]
+
   @@index([event])
   @@index([isActive])
 }
@@ -633,6 +783,7 @@ model ScheduledEmailNotification {
   userId       String?
   email        String
   templateId   String
+  template     EmailTemplate @relation(fields: [templateId], references: [id])
   subject      String
   body         String                    @db.Text
   variables    Json? // Dinamically replace variables: { "name": "John", "link": "..." }

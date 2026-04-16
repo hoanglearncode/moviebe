@@ -79,7 +79,6 @@ export class AuthNotificationService implements IAuthNotificationService {
   }
 
   async sendChangePasswordEmail(email: string): Promise<void> {
-
     const template = await this.getTemplate(EmailNotificationEvent.PASSWORD_CHANGED);
 
     const html = this.render(template.body, {

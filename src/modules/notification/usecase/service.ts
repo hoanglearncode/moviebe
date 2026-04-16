@@ -1,39 +1,10 @@
 import { EmailNotificationEvent, EmailTemplate } from "@prisma/client";
 import { enqueueEmailJob } from "../../../queue/config/email.queue";
 import { logger } from "../../system/log/logger";
-import { EmailNotificationEventType, EmailNotificationPayload } from "../model/types";
-import { IEmailTemplateRepository, IScheduledEmailRepository } from "../infras/repository/repository";
-
-/**
- * Email Notification Service
- *
- * Giúp dễ hiểu:
- * ─────────────────────────────────────────────────────────────────────
- * - Quản lý việc gửi email thông báo cho người dùng
- * - Khi có sự kiện (ví dụ: tạo tài khoản, đổi mật khẩu), gọi hàm tương ứng
- * - Service tìm template trong DB, thay thế biến ({{name}}, {{email}}, v.v.)
- * - Đưa vào hàng đợi (Redis Queue) để xử lý bất đồng bộ
- * - Worker sẽ lấy từ hàng đợi và gửi email
- *
- * Quy trình:
- * ─────────────────────────────────────────────────────────────────────
- * 1. Sự kiện xảy ra (ví dụ: User tạo tài khoản)
- *        ↓
- * 2. Gọi service → sendWelcomeEmail({ email, name })
- *        ↓
- * 3. Service lấy template "WELCOME_NEW_ACCOUNT" từ DB
- *        ↓
- * 4. Thay thế biến: {{name}} → "Nguyễn Văn A"
- *        ↓
- * 5. Thêm công việc vào hàng đợi (Redis)
- *        ↓
- * 6. Worker lấy công việc từ hàng đợi
- *        ↓
- * 7. Gửi email qua Nodemailer
- *        ↓
- * 8. Cập nhật trạng thái: SENT or FAILED
- * ─────────────────────────────────────────────────────────────────────
- */
+import {
+  IEmailTemplateRepository,
+  IScheduledEmailRepository,
+} from "../infras/repository/repository";
 
 export class EmailNotificationService {
   constructor(
@@ -41,12 +12,6 @@ export class EmailNotificationService {
     private scheduledEmailRepo: IScheduledEmailRepository,
   ) {}
 
-  /**
-   * Helper: Thay thế biến trong template
-   * Ví dụ: "Chào {{name}}, email của bạn là {{email}}"
-   *        với { name: "John", email: "john@example.com" }
-   *        → "Chào John, email của bạn là john@example.com"
-   */
   private replaceVariables(text: string, variables: Record<string, any>): string {
     let result = text;
     Object.entries(variables).forEach(([key, value]) => {
@@ -56,9 +21,6 @@ export class EmailNotificationService {
     return result;
   }
 
-  /**
-   * Helper: Lấy template từ DB và thay thế biến
-   */
   private async getAndProcessTemplate(
     event: EmailNotificationEvent,
     variables: Record<string, any>,
@@ -84,7 +46,7 @@ export class EmailNotificationService {
         to,
         subject,
         html,
-        text: html, // Có thể cải thiện: chuyển HTML sang plaintext
+        text: html,
       });
       logger.info(`Email queued successfully`, { to, subject });
     } catch (error) {
@@ -93,9 +55,6 @@ export class EmailNotificationService {
     }
   }
 
-  /**
-   * 1️⃣ Welcome Email - Khi tài khoản mới được tạo (Admin tạo hoặc đăng ký)
-   */
   async sendWelcomeEmail(payload: { email: string; name?: string }): Promise<void> {
     const processed = await this.getAndProcessTemplate(EmailNotificationEvent.WELCOME_NEW_ACCOUNT, {
       name: payload.name || payload.email,
@@ -107,9 +66,6 @@ export class EmailNotificationService {
     await this.enqueueEmail(payload.email, processed.subject, processed.body);
   }
 
-  /**
-   * 2️⃣ Welcome Email - Khi tài khoản được tạo qua Social Login (Google, Facebook, v.v.)
-   */
   async sendWelcomeSocialLoginEmail(payload: {
     email: string;
     name?: string;
@@ -129,9 +85,6 @@ export class EmailNotificationService {
     await this.enqueueEmail(payload.email, processed.subject, processed.body);
   }
 
-  /**
-   * 3️⃣ Account Updated - Khi Admin cập nhật thông tin tài khoản người dùng
-   */
   async sendAccountUpdatedEmail(payload: {
     email: string;
     name?: string;

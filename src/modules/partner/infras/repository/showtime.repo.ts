@@ -7,9 +7,15 @@ import { PagingDTO } from "../../../../share";
 export class ShowtimeRepository implements IShowtimeRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async get(_id: string): Promise<Showtime | null> { return null; }
-  async list(_cond: Partial<Showtime>, _paging: PagingDTO): Promise<Showtime[]> { return []; }
-  async findByCond(_cond: Partial<Showtime>): Promise<Showtime | null> { return null; }
+  async get(_id: string): Promise<Showtime | null> {
+    return null;
+  }
+  async list(_cond: Partial<Showtime>, _paging: PagingDTO): Promise<Showtime[]> {
+    return [];
+  }
+  async findByCond(_cond: Partial<Showtime>): Promise<Showtime | null> {
+    return null;
+  }
 
   async findById(showtimeId: string): Promise<Showtime | null> {
     const row = await this.prisma.showtime.findUnique({ where: { id: showtimeId } });

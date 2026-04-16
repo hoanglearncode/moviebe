@@ -4,7 +4,7 @@ import { setupUserHexagon } from "./modules/user";
 import { setupPartnerHexagon, setupPartnerRequestRoutes } from "./modules/partner";
 import { setupPublicMovieRoutes } from "./modules/movie";
 import { setupBookingRoutes } from "./modules/booking";
-import { setupPaymentRoutes } from "./modules/payment";
+// import { setupPaymentRoutes } from "./modules/payment";
 import { setupTicketRoutes } from "./modules/ticket";
 
 import { createCategoryRepository } from "./modules/category/infras/repository/repo";
@@ -55,22 +55,22 @@ config();
   app.use("/v1", setupAuthHexagon(prisma));
   app.use("/v1", setupUserHexagon(prisma));
 
-  app.use("/v1", setupPublicMovieRoutes(prisma));
+  // app.use("/v1", setupPublicMovieRoutes(prisma));
 
   // Booking (auth required)
-  app.use("/v1", setupBookingRoutes(prisma));
+  // app.use("/v1", setupBookingRoutes(prisma));
 
   // Payment (auth required + public webhook)
-  app.use("/v1", setupPaymentRoutes(prisma));
+  // app.use("/v1", setupPaymentRoutes(prisma));
 
   // User tickets (auth required)
-  app.use("/v1", setupTicketRoutes(prisma));
+  // app.use("/v1", setupTicketRoutes(prisma));
 
   // Partner portal (requires PARTNER role)
   app.use("/v1/partner", setupPartnerHexagon(prisma));
 
-  
-  const { userRouter: partnerUserRouter, adminRouter: partnerAdminRouter } = setupPartnerRequestRoutes(prisma);
+  const { userRouter: partnerUserRouter, adminRouter: partnerAdminRouter } =
+    setupPartnerRequestRoutes(prisma);
   app.use("/v1/user", partnerUserRouter);
   app.use("/v1/admin", partnerAdminRouter);
 

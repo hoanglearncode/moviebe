@@ -101,7 +101,9 @@ const syncUserFromDatabase = async (req: AuthenticatedRequest): Promise<boolean>
     email: dbUser.email,
     role: dbUser.role,
     status: dbUser.status,
-    permissionsOverride: authorizationUseCase.normalizePermissionsOverride(dbUser.permissionsOverride),
+    permissionsOverride: authorizationUseCase.normalizePermissionsOverride(
+      dbUser.permissionsOverride,
+    ),
     permissions: authorizationUseCase.resolvePermissions({
       role: dbUser.role,
       permissionsOverride: dbUser.permissionsOverride,

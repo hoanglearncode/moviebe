@@ -9,12 +9,11 @@ export const RegisterPayloadDTO = z.object({
     .min(3, "username too short")
     .max(50, "username max 50 characters")
     .optional(),
-  name: z
-    .preprocess(
-      (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
-      z.string().trim().min(1, "name cannot be blank").optional(),
-    ),
-  permissions_override: z.json().nullable().optional()
+  name: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().trim().min(1, "name cannot be blank").optional(),
+  ),
+  permissions_override: z.json().nullable().optional(),
 });
 
 export const LoginPayloadDTO = z.object({

@@ -59,19 +59,13 @@ export class PartnerFinanceUseCase implements IPartnerFinanceUseCase {
       return this.getRevenueByMovie(partnerId, startDate, endDate);
     }
 
-    const revenue = await this.transactionRepo.findRevenueByPeriod(
-      partnerId,
-      startDate,
-      endDate,
-    );
+    const revenue = await this.transactionRepo.findRevenueByPeriod(partnerId, startDate, endDate);
 
     const transactions = await this.transactionRepo.findByType(
       partnerId,
       TransactionType.TICKET_SALE,
     );
-    const filtered = transactions.filter(
-      (t) => t.createdAt >= startDate && t.createdAt <= endDate,
-    );
+    const filtered = transactions.filter((t) => t.createdAt >= startDate && t.createdAt <= endDate);
 
     const keyFn = (t: Transaction) =>
       query.groupBy === "DAY"
@@ -98,11 +92,7 @@ export class PartnerFinanceUseCase implements IPartnerFinanceUseCase {
     };
   }
 
-  async getRevenueByMovie(
-    partnerId: string,
-    startDate?: Date,
-    endDate?: Date,
-  ): Promise<any> {
+  async getRevenueByMovie(partnerId: string, startDate?: Date, endDate?: Date): Promise<any> {
     const transactions = await this.transactionRepo.findByType(
       partnerId,
       TransactionType.TICKET_SALE,

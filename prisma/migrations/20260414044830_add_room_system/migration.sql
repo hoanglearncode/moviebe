@@ -17,13 +17,16 @@ CREATE TYPE "MovieStatus" AS ENUM ('DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED',
 CREATE TYPE "ShowtimeStatus" AS ENUM ('SCHEDULED', 'STARTED', 'ENDED', 'CANCELLED');
 
 -- CreateEnum
-CREATE TYPE "SeatType" AS ENUM ('STANDARD', 'VIP', 'PREMIUM', 'ACCESSIBLE');
+CREATE TYPE "SeatType" AS ENUM ('STANDARD', 'VIP', 'COUPLE', 'BLOCKED');
 
 -- CreateEnum
 CREATE TYPE "SeatStatus" AS ENUM ('AVAILABLE', 'LOCKED', 'BOOKED', 'MAINTENANCE');
 
 -- CreateEnum
 CREATE TYPE "TicketStatus" AS ENUM ('RESERVED', 'CONFIRMED', 'USED', 'CANCELLED', 'REFUNDED', 'PASSED');
+
+-- CreateEnum
+CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'PAYMENT_PROCESSING', 'COMPLETED', 'EXPIRED', 'CANCELLED', 'REFUND_REQUESTED', 'REFUNDED');
 
 -- CreateEnum
 CREATE TYPE "TransactionType" AS ENUM ('TICKET_SALE', 'COMMISSION_DEDUCTED', 'WITHDRAWAL', 'REFUND', 'BONUS', 'PENALTY');
@@ -36,6 +39,15 @@ CREATE TYPE "WithdrawalStatus" AS ENUM ('PENDING', 'PROCESSING', 'COMPLETED', 'F
 
 -- CreateEnum
 CREATE TYPE "ReviewStatus" AS ENUM ('PENDING', 'APPROVED', 'HIDDEN', 'REMOVED');
+
+-- CreateEnum
+CREATE TYPE "EmailNotificationEvent" AS ENUM ('VERIFY_EMAIL', 'RESET_PASSWORD', 'WELCOME_NEW_ACCOUNT', 'WELCOME_SOCIAL_LOGIN', 'ACCOUNT_UPDATED_BY_ADMIN', 'PASSWORD_CHANGED', 'ACCOUNT_DELETED', 'LOGIN_WARNING', 'PROMO_CAMPAIGN');
+
+-- CreateEnum
+CREATE TYPE "EmailNotificationStatus" AS ENUM ('PENDING', 'SENT', 'FAILED', 'SCHEDULED');
+
+-- CreateEnum
+CREATE TYPE "NotificationType" AS ENUM ('PARTNER_WITHDRAWAL_PENDING', 'PARTNER_WITHDRAWAL_COMPLETED', 'PARTNER_WITHDRAWAL_FAILED', 'PARTNER_MOVIE_APPROVED', 'PARTNER_MOVIE_REJECTED', 'PARTNER_DAILY_REVENUE', 'BOOKING_CONFIRMED', 'BOOKING_CANCELLED', 'TICKET_REFUNDED', 'SHOWTIME_CANCELLED', 'SYSTEM');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -51,6 +63,7 @@ CREATE TABLE "User" (
     "avatarColor" TEXT,
     "provider" TEXT NOT NULL DEFAULT 'local',
     "role" "Role" NOT NULL DEFAULT 'USER',
+    "permissions_override" JSONB,
     "status" "UserStatus" NOT NULL DEFAULT 'ACTIVE',
     "emailVerified" BOOLEAN NOT NULL DEFAULT false,
     "mustChangePassword" BOOLEAN NOT NULL DEFAULT false,
@@ -69,11 +82,6 @@ CREATE TABLE "UserSetting" (
     "marketingEmails" BOOLEAN NOT NULL DEFAULT false,
     "pushNotifications" BOOLEAN NOT NULL DEFAULT true,
     "smsNotifications" BOOLEAN NOT NULL DEFAULT false,
-    "autoplay" BOOLEAN NOT NULL DEFAULT true,
-    "autoQuality" BOOLEAN NOT NULL DEFAULT true,
-    "alwaysSubtitle" BOOLEAN NOT NULL DEFAULT false,
-    "autoPreviews" BOOLEAN NOT NULL DEFAULT true,
-    "publicWatchlist" BOOLEAN NOT NULL DEFAULT false,
     "shareHistory" BOOLEAN NOT NULL DEFAULT false,
     "personalizedRecs" BOOLEAN NOT NULL DEFAULT true,
     "referralCode" TEXT,
@@ -170,6 +178,30 @@ CREATE TABLE "Partner" (
 );
 
 -- CreateTable
+CREATE TABLE "PartnerRequest" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "cinemaName" TEXT NOT NULL,
+    "address" TEXT NOT NULL,
+    "city" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "logo" TEXT,
+    "taxCode" TEXT NOT NULL,
+    "businessLicense" TEXT,
+    "bankAccountName" TEXT NOT NULL,
+    "bankAccountNumber" TEXT NOT NULL,
+    "bankName" TEXT NOT NULL,
+    "status" "PartnerStatus" NOT NULL DEFAULT 'PENDING',
+    "rejectionReason" TEXT,
+    "reviewedBy" TEXT,
+    "reviewedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PartnerRequest_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Movie" (
     "id" TEXT NOT NULL,
     "partnerId" TEXT NOT NULL,
@@ -196,7 +228,7 @@ CREATE TABLE "Showtime" (
     "id" TEXT NOT NULL,
     "movieId" TEXT NOT NULL,
     "partnerId" TEXT NOT NULL,
-    "cinemaRoomId" TEXT NOT NULL,
+    "roomId" TEXT NOT NULL,
     "startTime" TIMESTAMP(3) NOT NULL,
     "endTime" TIMESTAMP(3) NOT NULL,
     "basePrice" INTEGER NOT NULL,
@@ -229,9 +261,50 @@ CREATE TABLE "Seat" (
 );
 
 -- CreateTable
+CREATE TABLE "SeatTemplate" (
+    "id" TEXT NOT NULL,
+    "roomId" TEXT NOT NULL,
+    "row" INTEGER NOT NULL,
+    "col" INTEGER NOT NULL,
+    "seatType" "SeatType" NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "SeatTemplate_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Room" (
+    "id" TEXT NOT NULL,
+    "partnerId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "rows" INTEGER NOT NULL,
+    "seatsPerRow" INTEGER NOT NULL,
+    "capacity" INTEGER NOT NULL,
+    "vipRows" INTEGER[],
+    "coupleRow" INTEGER,
+    "tech" TEXT[],
+    "services" INTEGER[],
+    "screenWidth" DOUBLE PRECISION NOT NULL,
+    "screenHeight" DOUBLE PRECISION NOT NULL,
+    "aspectRatio" TEXT NOT NULL,
+    "screenPos" TEXT NOT NULL,
+    "entrancePos" TEXT NOT NULL,
+    "aislePos" TEXT,
+    "description" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Room_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Ticket" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
+    "orderId" TEXT,
     "showtimeId" TEXT NOT NULL,
     "partnerId" TEXT NOT NULL,
     "movieId" TEXT NOT NULL,
@@ -252,10 +325,29 @@ CREATE TABLE "Ticket" (
 );
 
 -- CreateTable
+CREATE TABLE "Order" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "showtimeId" TEXT NOT NULL,
+    "status" "OrderStatus" NOT NULL DEFAULT 'PENDING',
+    "totalAmount" INTEGER NOT NULL,
+    "discountAmount" INTEGER NOT NULL DEFAULT 0,
+    "finalAmount" INTEGER NOT NULL,
+    "couponCode" TEXT,
+    "idempotencyKey" TEXT,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Transaction" (
     "id" TEXT NOT NULL,
     "userId" TEXT,
     "partnerId" TEXT,
+    "orderId" TEXT,
     "ticketId" TEXT,
     "withdrawalId" TEXT,
     "type" "TransactionType" NOT NULL,
@@ -346,6 +438,55 @@ CREATE TABLE "Review" (
     CONSTRAINT "Review_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Notification" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "type" "NotificationType" NOT NULL,
+    "title" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "data" JSONB,
+    "isRead" BOOLEAN NOT NULL DEFAULT false,
+    "readAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "EmailTemplate" (
+    "id" TEXT NOT NULL,
+    "event" "EmailNotificationEvent" NOT NULL,
+    "subject" TEXT NOT NULL,
+    "body" TEXT NOT NULL,
+    "description" TEXT,
+    "variables" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "EmailTemplate_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ScheduledEmailNotification" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT,
+    "email" TEXT NOT NULL,
+    "templateId" TEXT NOT NULL,
+    "subject" TEXT NOT NULL,
+    "body" TEXT NOT NULL,
+    "variables" JSONB,
+    "status" "EmailNotificationStatus" NOT NULL DEFAULT 'PENDING',
+    "sentAt" TIMESTAMP(3),
+    "failedReason" TEXT,
+    "scheduledFor" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ScheduledEmailNotification_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -404,6 +545,12 @@ CREATE INDEX "Partner_status_idx" ON "Partner"("status");
 CREATE INDEX "Partner_createdAt_idx" ON "Partner"("createdAt");
 
 -- CreateIndex
+CREATE INDEX "PartnerRequest_userId_idx" ON "PartnerRequest"("userId");
+
+-- CreateIndex
+CREATE INDEX "PartnerRequest_status_idx" ON "PartnerRequest"("status");
+
+-- CreateIndex
 CREATE INDEX "Movie_partnerId_idx" ON "Movie"("partnerId");
 
 -- CreateIndex
@@ -422,6 +569,9 @@ CREATE INDEX "Showtime_movieId_idx" ON "Showtime"("movieId");
 CREATE INDEX "Showtime_partnerId_idx" ON "Showtime"("partnerId");
 
 -- CreateIndex
+CREATE INDEX "Showtime_roomId_idx" ON "Showtime"("roomId");
+
+-- CreateIndex
 CREATE INDEX "Showtime_startTime_idx" ON "Showtime"("startTime");
 
 -- CreateIndex
@@ -434,10 +584,19 @@ CREATE INDEX "Seat_showtimeId_idx" ON "Seat"("showtimeId");
 CREATE INDEX "Seat_status_idx" ON "Seat"("status");
 
 -- CreateIndex
-CREATE INDEX "Seat_lockedUntil_idx" ON "Seat"("lockedUntil");
+CREATE UNIQUE INDEX "Seat_showtimeId_seatNumber_key" ON "Seat"("showtimeId", "seatNumber");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Seat_showtimeId_seatNumber_key" ON "Seat"("showtimeId", "seatNumber");
+CREATE INDEX "SeatTemplate_roomId_idx" ON "SeatTemplate"("roomId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "SeatTemplate_roomId_row_col_key" ON "SeatTemplate"("roomId", "row", "col");
+
+-- CreateIndex
+CREATE INDEX "Room_partnerId_idx" ON "Room"("partnerId");
+
+-- CreateIndex
+CREATE INDEX "Room_status_idx" ON "Room"("status");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Ticket_seatId_key" ON "Ticket"("seatId");
@@ -464,10 +623,28 @@ CREATE INDEX "Ticket_status_idx" ON "Ticket"("status");
 CREATE INDEX "Ticket_purchasedAt_idx" ON "Ticket"("purchasedAt");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Order_idempotencyKey_key" ON "Order"("idempotencyKey");
+
+-- CreateIndex
+CREATE INDEX "Order_userId_idx" ON "Order"("userId");
+
+-- CreateIndex
+CREATE INDEX "Order_showtimeId_idx" ON "Order"("showtimeId");
+
+-- CreateIndex
+CREATE INDEX "Order_status_idx" ON "Order"("status");
+
+-- CreateIndex
+CREATE INDEX "Order_expiresAt_idx" ON "Order"("expiresAt");
+
+-- CreateIndex
 CREATE INDEX "Transaction_userId_idx" ON "Transaction"("userId");
 
 -- CreateIndex
 CREATE INDEX "Transaction_partnerId_idx" ON "Transaction"("partnerId");
+
+-- CreateIndex
+CREATE INDEX "Transaction_orderId_idx" ON "Transaction"("orderId");
 
 -- CreateIndex
 CREATE INDEX "Transaction_ticketId_idx" ON "Transaction"("ticketId");
@@ -538,6 +715,36 @@ CREATE INDEX "Review_createdAt_idx" ON "Review"("createdAt");
 -- CreateIndex
 CREATE UNIQUE INDEX "Review_movieId_userId_key" ON "Review"("movieId", "userId");
 
+-- CreateIndex
+CREATE INDEX "Notification_userId_isRead_idx" ON "Notification"("userId", "isRead");
+
+-- CreateIndex
+CREATE INDEX "Notification_userId_createdAt_idx" ON "Notification"("userId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "Notification_createdAt_idx" ON "Notification"("createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "EmailTemplate_event_key" ON "EmailTemplate"("event");
+
+-- CreateIndex
+CREATE INDEX "EmailTemplate_event_idx" ON "EmailTemplate"("event");
+
+-- CreateIndex
+CREATE INDEX "EmailTemplate_isActive_idx" ON "EmailTemplate"("isActive");
+
+-- CreateIndex
+CREATE INDEX "ScheduledEmailNotification_userId_idx" ON "ScheduledEmailNotification"("userId");
+
+-- CreateIndex
+CREATE INDEX "ScheduledEmailNotification_status_idx" ON "ScheduledEmailNotification"("status");
+
+-- CreateIndex
+CREATE INDEX "ScheduledEmailNotification_scheduledFor_idx" ON "ScheduledEmailNotification"("scheduledFor");
+
+-- CreateIndex
+CREATE INDEX "ScheduledEmailNotification_createdAt_idx" ON "ScheduledEmailNotification"("createdAt");
+
 -- AddForeignKey
 ALTER TABLE "UserSetting" ADD CONSTRAINT "UserSetting_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -554,6 +761,9 @@ ALTER TABLE "EmailVerificationToken" ADD CONSTRAINT "EmailVerificationToken_user
 ALTER TABLE "Partner" ADD CONSTRAINT "Partner_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "PartnerRequest" ADD CONSTRAINT "PartnerRequest_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Movie" ADD CONSTRAINT "Movie_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "Partner"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -563,10 +773,22 @@ ALTER TABLE "Showtime" ADD CONSTRAINT "Showtime_movieId_fkey" FOREIGN KEY ("movi
 ALTER TABLE "Showtime" ADD CONSTRAINT "Showtime_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "Partner"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Showtime" ADD CONSTRAINT "Showtime_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "Room"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Seat" ADD CONSTRAINT "Seat_showtimeId_fkey" FOREIGN KEY ("showtimeId") REFERENCES "Showtime"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "SeatTemplate" ADD CONSTRAINT "SeatTemplate_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "Room"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Room" ADD CONSTRAINT "Room_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "Partner"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_showtimeId_fkey" FOREIGN KEY ("showtimeId") REFERENCES "Showtime"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -581,10 +803,19 @@ ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_movieId_fkey" FOREIGN KEY ("movieId"
 ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_seatId_fkey" FOREIGN KEY ("seatId") REFERENCES "Seat"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Order" ADD CONSTRAINT "Order_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Order" ADD CONSTRAINT "Order_showtimeId_fkey" FOREIGN KEY ("showtimeId") REFERENCES "Showtime"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "Partner"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_ticketId_fkey" FOREIGN KEY ("ticketId") REFERENCES "Ticket"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -624,3 +855,6 @@ ALTER TABLE "Review" ADD CONSTRAINT "Review_movieId_fkey" FOREIGN KEY ("movieId"
 
 -- AddForeignKey
 ALTER TABLE "Review" ADD CONSTRAINT "Review_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
