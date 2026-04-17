@@ -31,7 +31,7 @@ export class ShowtimeManagementUseCase implements IShowtimeManagementUseCase {
   private async requireApprovedPartner(partnerId: string): Promise<PartnerProfile> {
     const partner = await this.partnerRepo.findById(partnerId);
     if (!partner) throw new Error("Partner not found");
-    if (partner.status !== "APPROVED")
+    if (partner.status !== "ACTIVE")
       throw new Error(`Partner is not approved (current status: ${partner.status})`);
     return partner;
   }
@@ -59,7 +59,7 @@ export class ShowtimeManagementUseCase implements IShowtimeManagementUseCase {
     });
     const conflict = existing.items.find(
       (s) =>
-        s.cinemaRoomId === data.cinemaRoomId &&
+        s.roomId === data.roomId &&
         s.status !== "CANCELLED" &&
         s.startTime < endTime &&
         s.endTime > startTime,
@@ -75,7 +75,7 @@ export class ShowtimeManagementUseCase implements IShowtimeManagementUseCase {
       id: showtimeId,
       movieId: data.movieId,
       partnerId,
-      cinemaRoomId: data.cinemaRoomId,
+      roomId: data.roomId,
       startTime,
       endTime,
       basePrice: data.basePrice,
@@ -110,6 +110,8 @@ export class ShowtimeManagementUseCase implements IShowtimeManagementUseCase {
         id: randomUUID(),
         showtimeId,
         seatNumber: `${rowLabel}${colIndex}`,
+        rowLabel,
+        columnNumber: colIndex,
         seatType: SeatType.STANDARD,
         status: SeatStatus.AVAILABLE,
         price: basePrice,
@@ -169,7 +171,7 @@ export class ShowtimeManagementUseCase implements IShowtimeManagementUseCase {
           type: TransactionType.REFUND,
           amount: -ticket.partnerAmount,
           status: TransactionStatus.COMPLETED,
-          relatedId: ticket.id,
+          ticketId: ticket.id,
           description: `Refund for cancelled showtime ${showtimeId}`,
           createdAt: new Date(),
           updatedAt: new Date(),

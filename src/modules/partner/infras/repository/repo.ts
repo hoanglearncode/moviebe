@@ -23,3 +23,4 @@ export {
   createWithdrawalRepository,
   createWalletRepository,
 } from "./finance.repo";
+export { StaffRepository, createStaffRepository } from "./staff.repo";

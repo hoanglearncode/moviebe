@@ -7,10 +7,9 @@ export const defaultSettings: DefaultUserSetting = {
   smsNotifications: false,
   shareHistory: false,
   personalizedRecs: true,
-
-  referralCode: null,
-  referrals: 0,
-
-  createdAt: new Date(),
-  updatedAt: new Date(),
 };
+
+
+export const defaultPartnerSetting: any = {}
+
+export const defaultSystemSetting: any  = {}

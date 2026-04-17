@@ -105,7 +105,7 @@ export class PartnerFinanceUseCase implements IPartnerFinanceUseCase {
 
     const byRelated: Record<string, { amount: number; count: number }> = {};
     for (const t of filtered) {
-      const key = t.relatedId ?? "unknown";
+      const key = t.ticketId ?? "unknown";
       if (!byRelated[key]) byRelated[key] = { amount: 0, count: 0 };
       byRelated[key].amount += t.amount;
       byRelated[key].count += 1;
@@ -159,7 +159,7 @@ export class PartnerFinanceUseCase implements IPartnerFinanceUseCase {
       type: TransactionType.WITHDRAWAL,
       amount: -data.amount,
       status: TransactionStatus.PENDING,
-      relatedId: withdrawalId,
+      withdrawalId,
       description: data.note ?? `Withdrawal to ${data.bankName} - ${data.bankAccountNumber}`,
       createdAt: now,
       updatedAt: now,

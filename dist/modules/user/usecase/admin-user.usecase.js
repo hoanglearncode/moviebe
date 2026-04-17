@@ -128,10 +128,13 @@ class AdminUserUseCase {
         if (!user)
             throw errors_1.ErrUserNotFound;
         await this.sessionRepo.revokeAllSessionsByUserId(id);
-        this.notifier.sendAccountDeletedNotification({ email: user.email, name: user.name ?? user.email }).catch(console.error);
+        this.notifier
+            .sendAccountDeletedNotification({ email: user.email, name: user.name ?? user.email })
+            .catch(console.error);
         return this.userRepo.delete(id, false);
     }
     async getDetail(id) {
+        // pending
         const user = await this.userRepo.findById(id);
         if (!user)
             return null;
@@ -151,7 +154,7 @@ class AdminUserUseCase {
             lastLoginAt: user.lastLoginAt,
             createdAt: user.createdAt,
             provider: user.provider,
-            permissionsOverride: user.permissionsOverride
+            permissionsOverride: user.permissionsOverride,
         };
     }
     async changeUserStatus(userId, data) {
@@ -164,7 +167,8 @@ class AdminUserUseCase {
         }
         return { message: `User status updated to ${data.status}` };
     }
-    async resetUserPassword(// pending
+    async resetUserPassword(
+    // pending
     userId, data) {
         const user = await this.userRepo.findById(userId);
         if (!user)

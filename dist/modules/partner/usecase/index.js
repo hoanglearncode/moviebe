@@ -6,9 +6,11 @@
  * all classes so existing import paths continue to work.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PartnerDashboardUseCase = exports.PartnerFinanceUseCase = exports.TicketCheckInUseCase = exports.SeatManagementUseCase = exports.ShowtimeManagementUseCase = exports.MovieManagementUseCase = exports.PartnerProfileUseCase = void 0;
+exports.PartnerDashboardUseCase = exports.PartnerFinanceUseCase = exports.TicketCheckInUseCase = exports.SeatManagementUseCase = exports.ShowtimeManagementUseCase = exports.MovieManagementUseCase = exports.RequestUseCase = exports.PartnerProfileUseCase = void 0;
 var profile_usecase_1 = require("./profile.usecase");
 Object.defineProperty(exports, "PartnerProfileUseCase", { enumerable: true, get: function () { return profile_usecase_1.PartnerProfileUseCase; } });
+var request_usecase_1 = require("./request.usecase");
+Object.defineProperty(exports, "RequestUseCase", { enumerable: true, get: function () { return request_usecase_1.RequestUseCase; } });
 var movie_usecase_1 = require("./movie.usecase");
 Object.defineProperty(exports, "MovieManagementUseCase", { enumerable: true, get: function () { return movie_usecase_1.MovieManagementUseCase; } });
 var showtime_usecase_1 = require("./showtime.usecase");

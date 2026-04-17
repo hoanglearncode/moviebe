@@ -4,8 +4,6 @@
  * ==========================================
  */
 
-import { number, string } from "zod";
-
 export type PartnerProfile = {
   id: string;
   userId: string;
@@ -13,21 +11,27 @@ export type PartnerProfile = {
   address: string;
   city: string;
   country: string;
-  postalCode: string;
+  postalCode?: string | null;
   phone: string;
   email: string;
   website?: string | null;
   logo?: string | null;
   taxCode: string;
   businessLicense?: string | null;
+  businessLicenseFile?: string | null;
+  representativeName?: string | null;
+  representativeIdNumber?: string | null;
+  representativeIdFile?: string | null;
+  taxCertificateFile?: string | null;
   bankAccountName: string;
   bankAccountNumber: string;
   bankName: string;
   bankCode: string;
-  status: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
+  status: "ACTIVE" | "BANNED" | "DELETE";
   approvedAt?: Date | null;
   rejectionReason?: string | null;
-  commissionRate: number; // 0.1 = 10%
+  approvedBy?: string | null;
+  commissionRate: number;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -43,14 +47,14 @@ export type Movie = {
   partnerId: string;
   title: string;
   description?: string | null;
-  genre: string;
+  genre: string[];
   language: string;
-  duration: number; // minutes
+  duration: number;
   releaseDate: Date;
   endDate: Date;
   posterUrl?: string | null;
   trailerUrl?: string | null;
-  rating?: string | null; // PG, R, NC-17, etc.
+  rating?: string | null;
   status: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "ACTIVE" | "INACTIVE";
   publishedAt?: Date | null;
   createdAt: Date;
@@ -67,10 +71,10 @@ export type Showtime = {
   id: string;
   movieId: string;
   partnerId: string;
-  cinemaRoomId: string;
+  roomId: string;
   startTime: Date;
   endTime: Date;
-  basePrice: number; // giá vé cơ bản
+  basePrice: number;
   status: "SCHEDULED" | "STARTED" | "ENDED" | "CANCELLED";
   totalSeats: number;
   availableSeats: number;
@@ -88,33 +92,35 @@ export type Showtime = {
 export enum SeatType {
   STANDARD = "STANDARD",
   VIP = "VIP",
-  PREMIUM = "PREMIUM",
-  ACCESSIBLE = "ACCESSIBLE",
+  COUPLE = "COUPLE",
+  BLOCKED = "BLOCKED",
 }
 
 export enum SeatStatus {
   AVAILABLE = "AVAILABLE",
-  LOCKED = "LOCKED", // đã lock tạm thời
-  BOOKED = "BOOKED", // đã đặt/bán
-  MAINTENANCE = "MAINTENANCE", // bảo trì
+  LOCKED = "LOCKED",
+  BOOKED = "BOOKED",
+  MAINTENANCE = "MAINTENANCE",
 }
 
 export type SeatPrice = {
   [SeatType.STANDARD]: number;
   [SeatType.VIP]: number;
-  [SeatType.PREMIUM]: number;
-  [SeatType.ACCESSIBLE]: number;
+  [SeatType.COUPLE]: number;
+  [SeatType.BLOCKED]: number;
 };
 
 export type Seat = {
   id: string;
   showtimeId: string;
-  seatNumber: string; // A1, A2, B1, etc.
+  seatNumber: string;
+  rowLabel: string;
+  columnNumber: number;
   seatType: SeatType;
   status: SeatStatus;
   price: number;
-  lockedUntil?: Date | null; // đến khi nào thì mở lock
-  lockedBy?: string | null; // user ID nếu đang lock
+  lockedUntil?: Date | null;
+  lockedBy?: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -126,24 +132,26 @@ export type Seat = {
  */
 
 export enum TicketStatus {
-  RESERVED = "RESERVED", // đã đặt chưa thanh toán
-  CONFIRMED = "CONFIRMED", // đã thanh toán
-  USED = "USED", // đã xem phim
+  RESERVED = "RESERVED",
+  CONFIRMED = "CONFIRMED",
+  USED = "USED",
   CANCELLED = "CANCELLED",
   REFUNDED = "REFUNDED",
+  PASSED = "PASSED",
 }
 
 export type Ticket = {
   id: string;
   userId: string;
+  orderId?: string | null;
   showtimeId: string;
   partnerId: string;
   movieId: string;
   seatId: string;
   seatNumber: string;
   purchasePrice: number;
-  partnerAmount: number; // số tiền partner nhận
-  platformFee: number; // platform commission
+  partnerAmount: number;
+  platformFee: number;
   status: TicketStatus;
   qrCode: string;
   purchasedAt: Date;
@@ -177,11 +185,16 @@ export enum TransactionStatus {
 
 export type Transaction = {
   id: string;
-  partnerId: string;
+  userId?: string | null;
+  partnerId?: string | null;
+  orderId?: string | null;
+  ticketId?: string | null;
+  withdrawalId?: string | null;
   type: TransactionType;
-  amount: number;
   status: TransactionStatus;
-  relatedId?: string | null; // ticket ID, withdrawal ID, etc.
+  amount: number;
+  paymentMethod?: string | null;
+  paymentGatewayRef?: string | null;
   description?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -222,7 +235,9 @@ export type Withdrawal = {
   status: WithdrawalStatus;
   transactionReference?: string | null;
   failureReason?: string | null;
+  note?: string | null;
   processedAt?: Date | null;
+  approvedBy?: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -240,7 +255,7 @@ export type CheckIn = {
   showtimeId: string;
   userId: string;
   scannedAt: Date;
-  scannedBy: string; // staff/partner ID
+  scannedBy: string;
   ipAddress?: string | null;
   deviceInfo?: string | null;
   createdAt: Date;
@@ -255,7 +270,7 @@ export type CheckIn = {
 export type DashboardStats = {
   totalRevenue: number;
   ticketsSold: number;
-  occupancyRate: number; // 0-1
+  occupancyRate: number;
   avgSalesPerShowtime: number;
   activeShowtimes: number;
   pendingWithdrawals: number;
@@ -282,7 +297,7 @@ export type ShowtimeStats = {
 };
 
 export type RevenueReport = {
-  period: string; // YYYY-MM
+  period: string;
   totalRevenue: number;
   ticketsSold: number;
   commissionDeducted: number;
@@ -336,7 +351,6 @@ export type TransactionListResponse = {
   totalPages: number;
 };
 
-// Service
 export type Services = {
   id: string;
   name: string;
@@ -344,3 +358,103 @@ export type Services = {
   category: string;
   icon?: string | null;
 };
+
+export enum StaffRole {
+  OWNER = "OWNER",
+  MANAGER = "MANAGER",
+  CASHIER = "CASHIER",
+  SCANNER = "SCANNER",
+  STAFF = "STAFF",
+}
+
+export type PartnerStaff = {
+  id: string;
+  partnerId: string;
+  userId: string;
+  role: StaffRole;
+  createdAt: Date;
+};
+
+export interface PartnerRequestRow {
+  id: string;
+  userId: string;
+  cinemaName: string;
+  address: string;
+  city: string;
+  phone: string;
+  email: string;
+  logo: string | null;
+  taxCode: string;
+  businessLicense: string;
+  businessLicenseFile: string;
+  representativeName: string;
+  representativeIdNumber: string;
+  representativeIdFile: string;
+  taxCertificateFile: string;
+  bankAccountName: string;
+  bankAccountNumber: string;
+  bankName: string;
+  bankCode: string;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
+  rejectionReason: string | null;
+  reviewedBy: string | null;
+  reviewedAt: Date | null;
+  approvedPartnerId?: string | null;
+  createdAt: Date;
+  user?: {
+    id: string;
+    name: string | null;
+    email: string;
+    avatar: string | null;
+    phone: string | null;
+  };
+}
+
+export interface PartnerRequest {
+  id: string;
+  userId: string;
+  cinemaName: string;
+  address: string;
+  city: string;
+  phone: string;
+  email: string;
+  logo: string | null;
+  taxCode: string;
+  businessLicense: string;
+  businessLicenseFile: string;
+  representativeName: string;
+  representativeIdNumber: string;
+  representativeIdFile: string;
+  taxCertificateFile: string;
+  bankAccountName: string;
+  bankAccountNumber: string;
+  bankName: string;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
+  rejectionReason: string | null;
+  reviewedBy: string | null;
+  reviewedAt: Date | null;
+  approvedPartnerId?: string | null;
+  createdAt: Date;
+}
+
+export type PartnerRequestUpdateInput = Partial<
+  Pick<
+    PartnerRequestRow,
+    | "cinemaName"
+    | "address"
+    | "city"
+    | "phone"
+    | "email"
+    | "logo"
+    | "taxCode"
+    | "businessLicense"
+    | "businessLicenseFile"
+    | "representativeName"
+    | "representativeIdNumber"
+    | "representativeIdFile"
+    | "taxCertificateFile"
+    | "bankAccountName"
+    | "bankAccountNumber"
+    | "bankName"
+  >
+>;

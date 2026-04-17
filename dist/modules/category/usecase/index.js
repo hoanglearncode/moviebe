@@ -26,9 +26,11 @@ class CategoryUseCase {
         const category = {
             id: newId,
             name: parsedData.name,
+            slug: parsedData.slug,
             position: 0,
             image: parsedData.image,
             description: parsedData.description,
+            parentId: parsedData.parentId ?? null,
             status: base_model_1.ModelStatus.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date(),

@@ -157,7 +157,7 @@ class AuthUseCase {
         return this.loginWithSocialProfile(profile, context);
     }
     async verifyEmail(data) {
-        const { notificationService, } = this.dependencies;
+        const { notificationService } = this.dependencies;
         const parsedData = dto_1.VerifyEmailPayloadDTO.safeParse(data);
         if (!parsedData.success) {
             throw new http_server_1.ValidationError("Invalid verification data", parsedData.error.issues);

@@ -22,7 +22,7 @@ const toAuthUser = (raw) => ({
     status: raw.status,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
-    permissions_override: raw.permissionsOverride
+    permissions_override: raw.permissionsOverride,
 });
 const toCreateInput = (data) => ({
     id: data.id,

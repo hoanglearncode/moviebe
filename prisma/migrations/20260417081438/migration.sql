@@ -8,7 +8,19 @@ CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN', 'PARTNER');
 CREATE TYPE "UserStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'BANNED', 'PENDING');
 
 -- CreateEnum
-CREATE TYPE "PartnerStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED');
+CREATE TYPE "StaffRole" AS ENUM ('OWNER', 'MANAGER', 'CASHIER', 'SCANNER', 'STAFF');
+
+-- CreateEnum
+CREATE TYPE "RoomType" AS ENUM ('TWO_D', 'THREE_D', 'IMAX', 'VIP', 'FOUR_DX');
+
+-- CreateEnum
+CREATE TYPE "RoomStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'MAINTENANCE');
+
+-- CreateEnum
+CREATE TYPE "PartnerStatus" AS ENUM ('BANNED', 'ACTIVE', 'DELETE');
+
+-- CreateEnum
+CREATE TYPE "PartnerRequestStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 
 -- CreateEnum
 CREATE TYPE "MovieStatus" AS ENUM ('DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED', 'ACTIVE', 'INACTIVE');
@@ -66,6 +78,7 @@ CREATE TABLE "User" (
     "permissions_override" JSONB,
     "status" "UserStatus" NOT NULL DEFAULT 'ACTIVE',
     "emailVerified" BOOLEAN NOT NULL DEFAULT false,
+    "dateOfBirth" TIMESTAMP(3),
     "mustChangePassword" BOOLEAN NOT NULL DEFAULT false,
     "lastLoginAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -84,8 +97,6 @@ CREATE TABLE "UserSetting" (
     "smsNotifications" BOOLEAN NOT NULL DEFAULT false,
     "shareHistory" BOOLEAN NOT NULL DEFAULT false,
     "personalizedRecs" BOOLEAN NOT NULL DEFAULT true,
-    "referralCode" TEXT,
-    "referrals" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -144,6 +155,7 @@ CREATE TABLE "categories" (
     "status" "ModelStatus" NOT NULL DEFAULT 'active',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "slug" TEXT NOT NULL,
 
     CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
 );
@@ -167,12 +179,18 @@ CREATE TABLE "Partner" (
     "bankAccountNumber" TEXT NOT NULL,
     "bankName" TEXT NOT NULL,
     "bankCode" TEXT NOT NULL,
-    "status" "PartnerStatus" NOT NULL DEFAULT 'PENDING',
+    "status" "PartnerStatus" NOT NULL DEFAULT 'ACTIVE',
     "approvedAt" TIMESTAMP(3),
     "rejectionReason" TEXT,
     "commissionRate" DOUBLE PRECISION NOT NULL DEFAULT 0.1,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "approvedBy" TEXT,
+    "businessLicenseFile" TEXT,
+    "representativeName" TEXT,
+    "representativeIdNumber" TEXT,
+    "representativeIdFile" TEXT,
+    "taxCertificateFile" TEXT,
 
     CONSTRAINT "Partner_pkey" PRIMARY KEY ("id")
 );
@@ -188,17 +206,34 @@ CREATE TABLE "PartnerRequest" (
     "email" TEXT NOT NULL,
     "logo" TEXT,
     "taxCode" TEXT NOT NULL,
-    "businessLicense" TEXT,
+    "businessLicense" TEXT NOT NULL,
+    "businessLicenseFile" TEXT NOT NULL,
+    "representativeName" TEXT NOT NULL,
+    "representativeIdNumber" TEXT NOT NULL,
+    "representativeIdFile" TEXT NOT NULL,
+    "taxCertificateFile" TEXT NOT NULL,
     "bankAccountName" TEXT NOT NULL,
     "bankAccountNumber" TEXT NOT NULL,
     "bankName" TEXT NOT NULL,
-    "status" "PartnerStatus" NOT NULL DEFAULT 'PENDING',
+    "status" "PartnerRequestStatus" NOT NULL DEFAULT 'PENDING',
     "rejectionReason" TEXT,
     "reviewedBy" TEXT,
     "reviewedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "approvedPartnerId" TEXT,
 
     CONSTRAINT "PartnerRequest_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PartnerStaff" (
+    "id" TEXT NOT NULL,
+    "partnerId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "role" "StaffRole" NOT NULL DEFAULT 'STAFF',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PartnerStaff_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -207,7 +242,7 @@ CREATE TABLE "Movie" (
     "partnerId" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "description" TEXT,
-    "genre" TEXT NOT NULL,
+    "genre" TEXT[],
     "language" TEXT NOT NULL,
     "duration" INTEGER NOT NULL,
     "releaseDate" TIMESTAMP(3) NOT NULL,
@@ -267,6 +302,7 @@ CREATE TABLE "SeatTemplate" (
     "row" INTEGER NOT NULL,
     "col" INTEGER NOT NULL,
     "seatType" "SeatType" NOT NULL,
+    "version" INTEGER NOT NULL DEFAULT 1,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -278,15 +314,14 @@ CREATE TABLE "Room" (
     "id" TEXT NOT NULL,
     "partnerId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "type" TEXT NOT NULL,
-    "status" TEXT NOT NULL,
+    "type" "RoomType" NOT NULL,
+    "status" "RoomStatus" NOT NULL,
     "rows" INTEGER NOT NULL,
     "seatsPerRow" INTEGER NOT NULL,
     "capacity" INTEGER NOT NULL,
     "vipRows" INTEGER[],
     "coupleRow" INTEGER,
     "tech" TEXT[],
-    "services" INTEGER[],
     "screenWidth" DOUBLE PRECISION NOT NULL,
     "screenHeight" DOUBLE PRECISION NOT NULL,
     "aspectRatio" TEXT NOT NULL,
@@ -298,6 +333,28 @@ CREATE TABLE "Room" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Room_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Service" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "price" INTEGER NOT NULL,
+    "category" TEXT NOT NULL,
+    "icon" TEXT,
+    "partnerId" TEXT NOT NULL,
+
+    CONSTRAINT "Service_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "RoomService" (
+    "id" TEXT NOT NULL,
+    "roomId" TEXT NOT NULL,
+    "serviceId" INTEGER NOT NULL,
+    "assignedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "RoomService_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -338,6 +395,7 @@ CREATE TABLE "Order" (
     "expiresAt" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "partnerId" TEXT NOT NULL,
 
     CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
 );
@@ -434,6 +492,8 @@ CREATE TABLE "Review" (
     "status" "ReviewStatus" NOT NULL DEFAULT 'PENDING',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "verifiedPurchase" BOOLEAN NOT NULL DEFAULT false,
+    "helpfulCount" INTEGER NOT NULL DEFAULT 0,
 
     CONSTRAINT "Review_pkey" PRIMARY KEY ("id")
 );
@@ -487,6 +547,14 @@ CREATE TABLE "ScheduledEmailNotification" (
     CONSTRAINT "ScheduledEmailNotification_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "_CategoryToMovie" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL,
+
+    CONSTRAINT "_CategoryToMovie_AB_pkey" PRIMARY KEY ("A","B")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -530,10 +598,10 @@ CREATE UNIQUE INDEX "EmailVerificationToken_token_key" ON "EmailVerificationToke
 CREATE INDEX "EmailVerificationToken_userId_idx" ON "EmailVerificationToken"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Partner_userId_key" ON "Partner"("userId");
+CREATE UNIQUE INDEX "categories_slug_key" ON "categories"("slug");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Partner_email_key" ON "Partner"("email");
+CREATE UNIQUE INDEX "Partner_userId_key" ON "Partner"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Partner_taxCode_key" ON "Partner"("taxCode");
@@ -549,6 +617,9 @@ CREATE INDEX "PartnerRequest_userId_idx" ON "PartnerRequest"("userId");
 
 -- CreateIndex
 CREATE INDEX "PartnerRequest_status_idx" ON "PartnerRequest"("status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "PartnerStaff_partnerId_userId_key" ON "PartnerStaff"("partnerId", "userId");
 
 -- CreateIndex
 CREATE INDEX "Movie_partnerId_idx" ON "Movie"("partnerId");
@@ -597,6 +668,15 @@ CREATE INDEX "Room_partnerId_idx" ON "Room"("partnerId");
 
 -- CreateIndex
 CREATE INDEX "Room_status_idx" ON "Room"("status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Room_partnerId_name_key" ON "Room"("partnerId", "name");
+
+-- CreateIndex
+CREATE INDEX "Service_id_idx" ON "Service"("id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "RoomService_roomId_serviceId_key" ON "RoomService"("roomId", "serviceId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Ticket_seatId_key" ON "Ticket"("seatId");
@@ -745,6 +825,9 @@ CREATE INDEX "ScheduledEmailNotification_scheduledFor_idx" ON "ScheduledEmailNot
 -- CreateIndex
 CREATE INDEX "ScheduledEmailNotification_createdAt_idx" ON "ScheduledEmailNotification"("createdAt");
 
+-- CreateIndex
+CREATE INDEX "_CategoryToMovie_B_index" ON "_CategoryToMovie"("B");
+
 -- AddForeignKey
 ALTER TABLE "UserSetting" ADD CONSTRAINT "UserSetting_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -762,6 +845,15 @@ ALTER TABLE "Partner" ADD CONSTRAINT "Partner_userId_fkey" FOREIGN KEY ("userId"
 
 -- AddForeignKey
 ALTER TABLE "PartnerRequest" ADD CONSTRAINT "PartnerRequest_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerRequest" ADD CONSTRAINT "PartnerRequest_approvedPartnerId_fkey" FOREIGN KEY ("approvedPartnerId") REFERENCES "Partner"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerStaff" ADD CONSTRAINT "PartnerStaff_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "Partner"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PartnerStaff" ADD CONSTRAINT "PartnerStaff_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Movie" ADD CONSTRAINT "Movie_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "Partner"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -783,6 +875,15 @@ ALTER TABLE "SeatTemplate" ADD CONSTRAINT "SeatTemplate_roomId_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "Room" ADD CONSTRAINT "Room_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "Partner"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Service" ADD CONSTRAINT "Service_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "Partner"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "RoomService" ADD CONSTRAINT "RoomService_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "Room"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "RoomService" ADD CONSTRAINT "RoomService_serviceId_fkey" FOREIGN KEY ("serviceId") REFERENCES "Service"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Ticket" ADD CONSTRAINT "Ticket_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -807,6 +908,9 @@ ALTER TABLE "Order" ADD CONSTRAINT "Order_userId_fkey" FOREIGN KEY ("userId") RE
 
 -- AddForeignKey
 ALTER TABLE "Order" ADD CONSTRAINT "Order_showtimeId_fkey" FOREIGN KEY ("showtimeId") REFERENCES "Showtime"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Order" ADD CONSTRAINT "Order_partnerId_fkey" FOREIGN KEY ("partnerId") REFERENCES "Partner"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -858,3 +962,12 @@ ALTER TABLE "Review" ADD CONSTRAINT "Review_userId_fkey" FOREIGN KEY ("userId") 
 
 -- AddForeignKey
 ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ScheduledEmailNotification" ADD CONSTRAINT "ScheduledEmailNotification_templateId_fkey" FOREIGN KEY ("templateId") REFERENCES "EmailTemplate"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_CategoryToMovie" ADD CONSTRAINT "_CategoryToMovie_A_fkey" FOREIGN KEY ("A") REFERENCES "categories"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_CategoryToMovie" ADD CONSTRAINT "_CategoryToMovie_B_fkey" FOREIGN KEY ("B") REFERENCES "Movie"("id") ON DELETE CASCADE ON UPDATE CASCADE;

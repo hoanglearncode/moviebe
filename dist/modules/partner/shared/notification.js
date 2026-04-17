@@ -3,15 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PartnerNotificationService = void 0;
 const logger_1 = require("../../system/log/logger");
 const notification_1 = require("../../notification");
-/**
- * PartnerNotificationService
- *
- * Kết hợp hai kênh:
- *  1. Logger / email (TODO: thay bằng mailService khi tích hợp)
- *  2. In-app push notification qua PushNotificationService → BullMQ → Pusher
- *
- * Nếu `userId` không được truyền vào, chỉ log — không gửi push.
- */
 class PartnerNotificationService {
     async sendWithdrawalPending(input) {
         logger_1.logger.info("[PartnerNotif] withdrawal.pending", {
@@ -19,7 +10,6 @@ class PartnerNotificationService {
             amount: input.amount,
             ref: input.reference,
         });
-        // TODO: await mailService.send(input.email, "Withdrawal Initiated", ...)
         if (input.userId) {
             await notification_1.pushNotificationService
                 .send(notification_1.NotificationFactory.partnerWithdrawalPending(input.userId, input.reference, input.amount))
@@ -32,7 +22,6 @@ class PartnerNotificationService {
             amount: input.amount,
             ref: input.reference,
         });
-        // TODO: await mailService.send(input.email, "Withdrawal Completed", ...)
         if (input.userId) {
             await notification_1.pushNotificationService
                 .send(notification_1.NotificationFactory.partnerWithdrawalCompleted(input.userId, input.reference, input.amount))
@@ -45,7 +34,6 @@ class PartnerNotificationService {
             amount: input.amount,
             reason: input.reason,
         });
-        // TODO: await mailService.send(input.email, "Withdrawal Failed", ...)
         if (input.userId) {
             await notification_1.pushNotificationService
                 .send(notification_1.NotificationFactory.partnerWithdrawalFailed(input.userId, "unknown", input.amount, input.reason))
@@ -57,7 +45,6 @@ class PartnerNotificationService {
             email: input.email,
             movie: input.movieTitle,
         });
-        // TODO: await mailService.send(input.email, "Movie Approved", ...)
         if (input.userId) {
             await notification_1.pushNotificationService
                 .send(notification_1.NotificationFactory.partnerMovieApproved(input.userId, input.movieId ?? "", input.movieTitle))
@@ -70,7 +57,6 @@ class PartnerNotificationService {
             movie: input.movieTitle,
             reason: input.reason,
         });
-        // TODO: await mailService.send(input.email, "Movie Rejected", ...)
         if (input.userId) {
             await notification_1.pushNotificationService
                 .send(notification_1.NotificationFactory.partnerMovieRejected(input.userId, input.movieId ?? "", input.movieTitle, input.reason))
@@ -83,7 +69,6 @@ class PartnerNotificationService {
             date: input.date,
             revenue: input.revenue,
         });
-        // TODO: await mailService.send(input.email, "Daily Revenue Report", ...)
         if (input.userId) {
             await notification_1.pushNotificationService
                 .send(notification_1.NotificationFactory.system(input.userId, "Báo cáo doanh thu hôm nay", `Doanh thu ngày ${input.date}: ${input.revenue.toLocaleString("vi-VN")} VND`, { revenue: input.revenue, date: input.date }))

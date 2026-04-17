@@ -6,7 +6,7 @@
  * all factories so existing import paths continue to work.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createWalletRepository = exports.createWithdrawalRepository = exports.createTransactionRepository = exports.WalletRepository = exports.WithdrawalRepository = exports.TransactionRepository = exports.createCheckInRepository = exports.createTicketRepository = exports.CheckInRepository = exports.TicketRepository = exports.createSeatRepository = exports.SeatRepository = exports.createShowtimeRepository = exports.ShowtimeRepository = exports.createMovieRepository = exports.MovieRepository = exports.createPartnerRepository = exports.PartnerRepository = void 0;
+exports.createStaffRepository = exports.StaffRepository = exports.createWalletRepository = exports.createWithdrawalRepository = exports.createTransactionRepository = exports.WalletRepository = exports.WithdrawalRepository = exports.TransactionRepository = exports.createCheckInRepository = exports.createTicketRepository = exports.CheckInRepository = exports.TicketRepository = exports.createSeatRepository = exports.SeatRepository = exports.createShowtimeRepository = exports.ShowtimeRepository = exports.createMovieRepository = exports.MovieRepository = exports.createPartnerRepository = exports.PartnerRepository = void 0;
 var profile_repo_1 = require("./profile.repo");
 Object.defineProperty(exports, "PartnerRepository", { enumerable: true, get: function () { return profile_repo_1.PartnerRepository; } });
 Object.defineProperty(exports, "createPartnerRepository", { enumerable: true, get: function () { return profile_repo_1.createPartnerRepository; } });
@@ -31,3 +31,6 @@ Object.defineProperty(exports, "WalletRepository", { enumerable: true, get: func
 Object.defineProperty(exports, "createTransactionRepository", { enumerable: true, get: function () { return finance_repo_1.createTransactionRepository; } });
 Object.defineProperty(exports, "createWithdrawalRepository", { enumerable: true, get: function () { return finance_repo_1.createWithdrawalRepository; } });
 Object.defineProperty(exports, "createWalletRepository", { enumerable: true, get: function () { return finance_repo_1.createWalletRepository; } });
+var staff_repo_1 = require("./staff.repo");
+Object.defineProperty(exports, "StaffRepository", { enumerable: true, get: function () { return staff_repo_1.StaffRepository; } });
+Object.defineProperty(exports, "createStaffRepository", { enumerable: true, get: function () { return staff_repo_1.createStaffRepository; } });

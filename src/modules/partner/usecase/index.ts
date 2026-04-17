@@ -6,6 +6,7 @@
  */
 
 export { PartnerProfileUseCase } from "./profile.usecase";
+export { RequestUseCase } from "./request.usecase";
 export { MovieManagementUseCase } from "./movie.usecase";
 export { ShowtimeManagementUseCase } from "./showtime.usecase";
 export { SeatManagementUseCase } from "./seat.usecase";

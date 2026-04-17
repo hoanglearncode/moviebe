@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { IMovieRepository } from "../../interface/movie.interface";
 import { Movie } from "../../model/model";
-import { UpdateMovieDTO, ListMoviesQueryDTO } from "../../model/dto";
+import { ListMoviesQueryDTO } from "../../model/dto";
 import { PagingDTO } from "../../../../share";
 
 export class MovieRepository implements IMovieRepository {
@@ -61,7 +61,7 @@ export class MovieRepository implements IMovieRepository {
     return true;
   }
 
-  async update(id: string, data: UpdateMovieDTO & { updatedAt?: Date }): Promise<boolean> {
+  async update(id: string, data: Partial<Movie>): Promise<boolean> {
     await this.prisma.movie.update({ where: { id }, data: data as any });
     return true;
   }

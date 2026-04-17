@@ -1,6 +1,8 @@
 // ─ Email Notification Event Types ───────────────────────────────────────
 
 export enum EmailNotificationEventType {
+  VERIFY_EMAIL = "VERIFY_EMAIL",
+  RESET_PASSWORD = "RESET_PASSWORD",
   WELCOME_NEW_ACCOUNT = "WELCOME_NEW_ACCOUNT",
   WELCOME_SOCIAL_LOGIN = "WELCOME_SOCIAL_LOGIN",
   ACCOUNT_UPDATED_BY_ADMIN = "ACCOUNT_UPDATED_BY_ADMIN",

@@ -2,7 +2,6 @@ import { IRepository } from "../../../share/interface";
 import { Transaction, Withdrawal, PartnerWallet, WithdrawalListResponse } from "../model/model";
 import { CreateWithdrawalDTO, ListWithdrawalsQueryDTO, RevenueQueryDTO } from "../model/dto";
 
-// ─── Repository Ports ─────────────────────────────────────────────────────────
 
 export interface ITransactionRepository extends IRepository<
   Transaction,

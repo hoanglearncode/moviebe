@@ -136,43 +136,7 @@ export class SeedService {
       }
 
       // Tạo UserSettings cho mỗi user
-      try {
-        const users = await this.prisma.user.findMany({
-          select: { id: true },
-          orderBy: { createdAt: "desc" },
-          take: totalCreated,
-        });
-
-        const now = new Date();
-        await this.prisma.userSetting.createMany({
-          data: users.map((user) => ({
-            id: crypto.randomUUID(),
-            userId: user.id,
-            notifications: true,
-            marketingEmails: false,
-            pushNotifications: true,
-            smsNotifications: false,
-            autoplay: true,
-            autoQuality: true,
-            alwaysSubtitle: false,
-            autoPreviews: true,
-            publicWatchlist: false,
-            shareHistory: false,
-            personalizedRecs: true,
-            referralCode: null,
-            referrals: 0,
-            createdAt: now,
-            updatedAt: now,
-          })),
-          skipDuplicates: true,
-        });
-      } catch (error) {
-        const errorMsg = `Error creating user settings: ${
-          error instanceof Error ? error.message : String(error)
-        }`;
-        errors.push(errorMsg);
-        progressCallback?.onError?.(errorMsg);
-      }
+      // User settings are created together with each user batch above.
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       errors.push(errorMsg);

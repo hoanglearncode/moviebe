@@ -97,23 +97,12 @@ export type SessionResponse = Omit<UserSession, "refreshToken">;
 export type UserSettings = {
   id: string;
   userId: string;
-  // Notifications
   notifications: boolean;
   marketingEmails: boolean;
   pushNotifications: boolean;
   smsNotifications: boolean;
-  // Playback
-  autoplay: boolean;
-  autoQuality: boolean;
-  alwaysSubtitle: boolean;
-  autoPreviews: boolean;
-  // Privacy
-  publicWatchlist: boolean;
   shareHistory: boolean;
   personalizedRecs: boolean;
-  // Referral
-  referralCode: string | null;
-  referrals: number;
   createdAt: Date;
   updatedAt: Date;
 };

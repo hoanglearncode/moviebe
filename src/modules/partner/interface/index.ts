@@ -23,7 +23,7 @@ export type {
 } from "./finance.interface";
 export type { IPartnerDashboardUseCase } from "./dashboard.interface";
 export type { IPartnerServicesUseCase } from "./services.interface";
-// ─── Convenience: full dependency bag (legacy / composition root) ──────────────
+export type { IStaffRepo } from "./staff.interface";
 
 import type { IPartnerRepository } from "./profile.interface";
 import type { IMovieRepository } from "./movie.interface";
@@ -36,6 +36,7 @@ import type {
   IWalletRepository,
   IPartnerNotificationService,
 } from "./finance.interface";
+import type { IStaffRepo } from "./staff.interface";
 
 export interface PartnerHexagonDependencies {
   partnerRepository: IPartnerRepository;
@@ -47,5 +48,6 @@ export interface PartnerHexagonDependencies {
   withdrawalRepository: IWithdrawalRepository;
   checkInRepository: ICheckInRepository;
   walletRepository: IWalletRepository;
+  staffRepository: IStaffRepo;
   notificationService: IPartnerNotificationService;
 }

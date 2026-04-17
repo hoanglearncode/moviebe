@@ -41,7 +41,7 @@ export const ChangePasswordPayloadDTO = ChangePasswordPayloadSchema;
 // ── SESSION MANAGEMENT ─────────────────────────────────────────────────────────
 
 export const RevokeSessionPayloadSchema = z.object({
-  sessionId: z.string().uuid("session id must be a valid UUID"),
+  sessionId: z.string().trim().min(1, "sessionId is required"),
 });
 
 export type RevokeSessionDTO = z.infer<typeof RevokeSessionPayloadSchema>;
@@ -64,11 +64,6 @@ export const UpdateSettingsPayloadSchema = z.object({
   marketingEmails: z.boolean().optional(),
   pushNotifications: z.boolean().optional(),
   smsNotifications: z.boolean().optional(),
-  autoplay: z.boolean().optional(),
-  autoQuality: z.boolean().optional(),
-  alwaysSubtitle: z.boolean().optional(),
-  autoPreviews: z.boolean().optional(),
-  publicWatchlist: z.boolean().optional(),
   shareHistory: z.boolean().optional(),
   personalizedRecs: z.boolean().optional(),
 });
@@ -175,7 +170,7 @@ export const UserCreate = CreateUserPayloadSchema;
 export const UserUpdate = UpdateUserPayloadSchema;
 export const UserCond = ListUsersQueryPayloadSchema;
 export const UserBan = z.object({
-  userId: z.string().uuid("userId must be a valid UUID"),
+  userId: z.string().trim().min(1, "userId is required"),
 });
 
 export type UserCreateDTO = z.infer<typeof UserCreate>;

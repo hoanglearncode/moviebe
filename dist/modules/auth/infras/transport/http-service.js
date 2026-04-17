@@ -13,8 +13,7 @@ class AuthHttpService extends http_server_1.BaseHttpService {
     async login(req, res) {
         await this.handleRequest(res, () => this.authUseCase.login(req.body, {
             userAgent: req.headers["user-agent"],
-            ipAddress: req.headers["x-forwarded-for"]?.split(",")[0] ||
-                req.socket.remoteAddress,
+            ipAddress: req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress,
         }));
     }
     async refreshToken(req, res) {
@@ -23,22 +22,19 @@ class AuthHttpService extends http_server_1.BaseHttpService {
     async loginGoogle(req, res) {
         await this.handleRequest(res, () => this.authUseCase.loginGoogle(req.body, {
             userAgent: req.headers["user-agent"],
-            ipAddress: req.headers["x-forwarded-for"]?.split(",")[0] ||
-                req.socket.remoteAddress,
+            ipAddress: req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress,
         }));
     }
     async loginGoogleTokenCallback(req, res) {
         await this.handleRequest(res, () => this.authUseCase.loginGoogleTokenCallback(req.body, {
             userAgent: req.headers["user-agent"],
-            ipAddress: req.headers["x-forwarded-for"]?.split(",")[0] ||
-                req.socket.remoteAddress,
+            ipAddress: req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress,
         }));
     }
     async loginFacebook(req, res) {
         await this.handleRequest(res, () => this.authUseCase.loginFacebook(req.body, {
             userAgent: req.headers["user-agent"],
-            ipAddress: req.headers["x-forwarded-for"]?.split(",")[0] ||
-                req.socket.remoteAddress,
+            ipAddress: req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress,
         }));
     }
     async verifyEmail(req, res) {

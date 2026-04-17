@@ -95,7 +95,7 @@ class UserUseCase {
                 role: user.role,
                 permissionsOverride: user.permissionsOverride,
             }),
-            provider: user.provider || 'local'
+            provider: user.provider || "local",
         };
     }
 }

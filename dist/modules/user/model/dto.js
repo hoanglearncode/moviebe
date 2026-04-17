@@ -34,7 +34,7 @@ exports.ChangePasswordPayloadSchema = zod_1.z
 exports.ChangePasswordPayloadDTO = exports.ChangePasswordPayloadSchema;
 // ── SESSION MANAGEMENT ─────────────────────────────────────────────────────────
 exports.RevokeSessionPayloadSchema = zod_1.z.object({
-    sessionId: zod_1.z.string().uuid("session id must be a valid UUID"),
+    sessionId: zod_1.z.string().trim().min(1, "sessionId is required"),
 });
 exports.RevokeSessionPayloadDTO = exports.RevokeSessionPayloadSchema;
 exports.GetSessionsQueryPayloadSchema = zod_1.z.object({
@@ -50,11 +50,6 @@ exports.UpdateSettingsPayloadSchema = zod_1.z.object({
     marketingEmails: zod_1.z.boolean().optional(),
     pushNotifications: zod_1.z.boolean().optional(),
     smsNotifications: zod_1.z.boolean().optional(),
-    autoplay: zod_1.z.boolean().optional(),
-    autoQuality: zod_1.z.boolean().optional(),
-    alwaysSubtitle: zod_1.z.boolean().optional(),
-    autoPreviews: zod_1.z.boolean().optional(),
-    publicWatchlist: zod_1.z.boolean().optional(),
     shareHistory: zod_1.z.boolean().optional(),
     personalizedRecs: zod_1.z.boolean().optional(),
 });
@@ -137,5 +132,5 @@ exports.UserCreate = exports.CreateUserPayloadSchema;
 exports.UserUpdate = exports.UpdateUserPayloadSchema;
 exports.UserCond = exports.ListUsersQueryPayloadSchema;
 exports.UserBan = zod_1.z.object({
-    userId: zod_1.z.string().uuid("userId must be a valid UUID"),
+    userId: zod_1.z.string().trim().min(1, "userId is required"),
 });

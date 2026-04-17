@@ -8,12 +8,6 @@ const logger_1 = require("../../modules/system/log/logger");
 const VALID_FOLDERS = ["avatars", "categories", "products", "misc"];
 function createUploadRouter() {
     const router = (0, express_1.Router)();
-    /**
-     * POST /v1/upload
-     * Body: multipart/form-data
-     *   - file: File (required)
-     *   - folder: 'avatars' | 'categories' | 'products' | 'misc'  (optional, default: misc)
-     */
     router.post("/upload", upload_middleware_1.uploadMiddleware.single("file"), async (req, res) => {
         try {
             if (!req.file) {

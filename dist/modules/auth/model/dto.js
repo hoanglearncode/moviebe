@@ -14,9 +14,8 @@ exports.RegisterPayloadDTO = zod_1.default.object({
         .min(3, "username too short")
         .max(50, "username max 50 characters")
         .optional(),
-    name: zod_1.default
-        .preprocess((value) => (typeof value === "string" && value.trim() === "" ? undefined : value), zod_1.default.string().trim().min(1, "name cannot be blank").optional()),
-    permissions_override: zod_1.default.json().nullable().optional()
+    name: zod_1.default.preprocess((value) => (typeof value === "string" && value.trim() === "" ? undefined : value), zod_1.default.string().trim().min(1, "name cannot be blank").optional()),
+    permissions_override: zod_1.default.json().nullable().optional(),
 });
 exports.LoginPayloadDTO = zod_1.default.object({
     emailOrUsername: zod_1.default

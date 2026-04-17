@@ -2,15 +2,6 @@ import { IPartnerNotificationService } from "../interface";
 import { logger } from "../../system/log/logger";
 import { pushNotificationService, NotificationFactory } from "../../notification";
 
-/**
- * PartnerNotificationService
- *
- * Kết hợp hai kênh:
- *  1. Logger / email (TODO: thay bằng mailService khi tích hợp)
- *  2. In-app push notification qua PushNotificationService → BullMQ → Pusher
- *
- * Nếu `userId` không được truyền vào, chỉ log — không gửi push.
- */
 export class PartnerNotificationService implements IPartnerNotificationService {
   async sendWithdrawalPending(input: {
     userId?: string;
@@ -23,7 +14,6 @@ export class PartnerNotificationService implements IPartnerNotificationService {
       amount: input.amount,
       ref: input.reference,
     });
-    // TODO: await mailService.send(input.email, "Withdrawal Initiated", ...)
 
     if (input.userId) {
       await pushNotificationService
@@ -45,7 +35,6 @@ export class PartnerNotificationService implements IPartnerNotificationService {
       amount: input.amount,
       ref: input.reference,
     });
-    // TODO: await mailService.send(input.email, "Withdrawal Completed", ...)
 
     if (input.userId) {
       await pushNotificationService
@@ -71,7 +60,6 @@ export class PartnerNotificationService implements IPartnerNotificationService {
       amount: input.amount,
       reason: input.reason,
     });
-    // TODO: await mailService.send(input.email, "Withdrawal Failed", ...)
 
     if (input.userId) {
       await pushNotificationService
@@ -97,7 +85,6 @@ export class PartnerNotificationService implements IPartnerNotificationService {
       email: input.email,
       movie: input.movieTitle,
     });
-    // TODO: await mailService.send(input.email, "Movie Approved", ...)
 
     if (input.userId) {
       await pushNotificationService
@@ -124,7 +111,6 @@ export class PartnerNotificationService implements IPartnerNotificationService {
       movie: input.movieTitle,
       reason: input.reason,
     });
-    // TODO: await mailService.send(input.email, "Movie Rejected", ...)
 
     if (input.userId) {
       await pushNotificationService
@@ -151,7 +137,6 @@ export class PartnerNotificationService implements IPartnerNotificationService {
       date: input.date,
       revenue: input.revenue,
     });
-    // TODO: await mailService.send(input.email, "Daily Revenue Report", ...)
 
     if (input.userId) {
       await pushNotificationService

@@ -13,7 +13,7 @@ export class MovieManagementUseCase implements IMovieManagementUseCase {
   private async requireApprovedPartner(partnerId: string): Promise<PartnerProfile> {
     const partner = await this.partnerRepo.findById(partnerId);
     if (!partner) throw new Error("Partner not found");
-    if (partner.status !== "APPROVED")
+    if (partner.status !== "ACTIVE")
       throw new Error(`Partner is not approved (current status: ${partner.status})`);
     return partner;
   }
@@ -69,7 +69,13 @@ export class MovieManagementUseCase implements IMovieManagementUseCase {
     if (movie.status !== "DRAFT" && movie.status !== "SUBMITTED")
       throw new Error("Only DRAFT or SUBMITTED movies can be updated");
 
-    await this.movieRepo.update(movieId, { ...data, updatedAt: new Date() });
+    const { releaseDate, endDate, ...rest } = data;
+    await this.movieRepo.update(movieId, {
+      ...rest,
+      ...(releaseDate ? { releaseDate: new Date(releaseDate) } : {}),
+      ...(endDate ? { endDate: new Date(endDate) } : {}),
+      updatedAt: new Date(),
+    });
 
     const updated = await this.movieRepo.findByIdAndPartnerId(movieId, partnerId);
     if (!updated) throw new Error("Movie not found after update");
