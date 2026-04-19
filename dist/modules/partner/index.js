@@ -51,9 +51,11 @@ const buildPartnerRequestAdminRouter = (prisma) => {
     const service = new partner_request_http_service_1.PartnerRequestHttpService(requestUseCase);
     const adminGuard = [auth_1.authMiddleware, (0, auth_1.requireRole)("ADMIN")];
     router.get("/partner-requests", ...adminGuard, (req, res) => service.adminListRequests(req, res));
+    router.get("/partner-requests/stats", ...adminGuard, (req, res) => service.stats(req, res));
     router.get("/partner-requests/:id", ...adminGuard, (req, res) => service.adminGetRequest(req, res));
     router.put("/partner-requests/:id/approve", ...adminGuard, (req, res) => service.adminApprove(req, res));
     router.put("/partner-requests/:id/reject", ...adminGuard, (req, res) => service.adminReject(req, res));
+    router.put("/partner-requests/:id/reset", ...adminGuard, (req, res) => service.adminReset(req, res));
     return router;
 };
 exports.buildPartnerRequestAdminRouter = buildPartnerRequestAdminRouter;

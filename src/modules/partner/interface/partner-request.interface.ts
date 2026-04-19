@@ -5,7 +5,11 @@ import {
   SubmitPartnerRequestInput,
   UpdatePartnerDTO,
 } from "../model/dto";
-import { PartnerRequestRow, PartnerRequest, PartnerRequestUpdateInput  } from "../model/model";
+import {
+  MyPartnerStatusResponse,
+  PartnerRequestRow,
+  PartnerRequestUpdateInput,
+} from "../model/model";
 
 export interface IPartnerRequestRepository {
   create(data: SubmitPartnerRequestInput): Promise<PartnerRequestRow>;
@@ -26,15 +30,19 @@ export interface IPartnerRequestRepository {
   ): Promise<boolean>;
   existsByUserId(userId: string): Promise<boolean>;
   update(id: string, data: PartnerRequestUpdateInput): Promise<PartnerRequestRow>;
+  getStatsData(): Promise<any>;
 }
 
-
 export interface IPartnerRequestUseCase {
-  submit(userId: string, data: RegisterPartnerDTO): Promise<boolean> 
-  editSubmit(userId: string, data: UpdatePartnerDTO): Promise<boolean> 
-  getMyRequest(userId: string): Promise<PartnerRequest> 
-  adminListRequests( cond: RequestCondDTO ): Promise<{ data: PartnerRequestRow[]; paging: PagingDTO; }> 
-  adminGetRequest(id: string): Promise<PartnerRequestRow>
-  adminApprove(id: string): Promise<boolean> 
-  adminReject(id: string, reason: string): Promise<boolean> 
+  submit(userId: string, data: RegisterPartnerDTO): Promise<PartnerRequestRow>;
+  editSubmit(userId: string, data: UpdatePartnerDTO): Promise<PartnerRequestRow>;
+  getMyRequest(userId: string): Promise<MyPartnerStatusResponse>;
+  adminListRequests(
+    cond: RequestCondDTO,
+  ): Promise<{ data: PartnerRequestRow[]; paging: PagingDTO }>;
+  adminGetRequest(id: string): Promise<PartnerRequestRow>;
+  adminApprove(id: string): Promise<boolean>;
+  adminReject(id: string, reason: string): Promise<boolean>;
+  getStats(): Promise<any>;
+  adminReset(id: string): Promise<boolean>;
 }

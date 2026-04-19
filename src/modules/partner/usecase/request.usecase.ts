@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { ConflictError, NotFoundError, ValidationError } from "../../../share";
+import { ConflictError, NotFoundError, PagingDTO, ValidationError } from "../../../share";
 import {
   IPartnerRequestRepository,
   IPartnerRequestUseCase,
@@ -10,10 +10,8 @@ import {
   SubmitPartnerRequestSchema,
   UpdatePartnerDTO,
 } from "../model/dto";
-import { PartnerRequest, PartnerRequestRow, StaffRole } from "../model/model";
-import {
-  IWalletRepository,
-} from "../interface/finance.interface";
+import { MyPartnerStatusResponse, PartnerRequestRow, StaffRole } from "../model/model";
+import { IWalletRepository } from "../interface/finance.interface";
 import { IPartnerRepository } from "../interface/profile.interface";
 import { IStaffRepo } from "../interface/staff.interface";
 import { ISessionRepository, IUserRepository } from "../../user/interface";
@@ -28,7 +26,7 @@ export class RequestUseCase implements IPartnerRequestUseCase {
     private readonly staffRepo: IStaffRepo,
   ) {}
 
-  async submit(userId: string, data: RegisterPartnerDTO): Promise<boolean> {
+  async submit(userId: string, data: RegisterPartnerDTO): Promise<PartnerRequestRow> {
     const existing = await this.repo.findByUserId(userId);
 
     if (existing && existing.status === "PENDING") {
@@ -41,15 +39,13 @@ export class RequestUseCase implements IPartnerRequestUseCase {
       throw new ValidationError("Invalid partner request data", parsedData.error.issues);
     }
 
-    const inserted = await this.repo.create({
+    return this.repo.create({
       ...parsedData.data,
       userId,
     });
-
-    return Boolean(inserted);
   }
 
-  async editSubmit(userId: string, data: UpdatePartnerDTO): Promise<boolean> {
+  async editSubmit(userId: string, data: UpdatePartnerDTO): Promise<PartnerRequestRow> {
     const existing = await this.repo.findByUserId(userId);
 
     if (!existing) {
@@ -60,23 +56,46 @@ export class RequestUseCase implements IPartnerRequestUseCase {
       throw new ConflictError("Cannot edit a non-pending request");
     }
 
-    const updated = await this.repo.update(existing.id, data);
-    return Boolean(updated);
+    return this.repo.update(existing.id, data);
   }
 
-  async getMyRequest(userId: string): Promise<PartnerRequest> {
-    const data = await this.repo.findByUserId(userId);
+  async getMyRequest(userId: string): Promise<MyPartnerStatusResponse> {
+    const [partner, request] = await Promise.all([
+      this.partnerRepo.findByUserId(userId),
+      this.repo.findByUserId(userId),
+    ]);
 
-    if (!data) {
-      throw new NotFoundError("Request");
+    if (partner) {
+      return {
+        type: "partner",
+        request,
+        partner,
+      };
     }
 
+    if (request) {
+      return {
+        type: "request",
+        request,
+        partner: null,
+      };
+    }
+
+    return {
+      type: "none",
+      request: null,
+      partner: null,
+    };
+  }
+
+  async getStats(): Promise<any> {
+    const data = await this.repo.getStatsData();
     return data;
   }
 
   async adminListRequests(
     cond: RequestCondDTO,
-  ): Promise<{ data: PartnerRequestRow[]; paging: any }> {
+  ): Promise<{ data: PartnerRequestRow[]; paging: PagingDTO }> {
     const result = await this.repo.findAll(cond);
 
     return {
@@ -189,5 +208,20 @@ export class RequestUseCase implements IPartnerRequestUseCase {
     }
 
     return this.repo.updateStatus(id, "REJECTED", adminId, reason.trim());
+  }
+
+  async adminReset(id: string): Promise<boolean> {
+    const adminId = "system-admin";
+    const request = await this.repo.findById(id);
+
+    if (!request) {
+      throw new NotFoundError("Request");
+    }
+
+    if (request.status === "PENDING") {
+      throw new ConflictError("Request is already pending");
+    }
+
+    return this.repo.updateStatus(id, "PENDING", adminId);
   }
 }

@@ -64,7 +64,7 @@ class BaseHttpService {
     async handleRequest(res, operation, successStatus = 200) {
         try {
             const result = await operation();
-            res.status(successStatus).json({ data: result });
+            successResponse(res, result, "Success", successStatus);
         }
         catch (error) {
             this.handleError(error, res);
@@ -118,10 +118,11 @@ exports.BaseHttpService = BaseHttpService;
 /**
  * Send success response
  */
-function successResponse(res, data, message = "Success", statusCode = 200) {
+function successResponse(res, data, message = "Success", statusCode = 200, paging = null) {
     res.status(statusCode).json({
         success: true,
         data,
+        paging,
         message,
     });
 }

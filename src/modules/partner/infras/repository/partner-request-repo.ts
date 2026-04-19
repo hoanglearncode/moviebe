@@ -124,6 +124,18 @@ export class PartnerRequestRepository implements IPartnerRequestRepository {
     return true;
   }
 
+  async getStatsData(): Promise<any> {
+    const [total, pending, reject, approve] = await Promise.all([
+      this.prismaClient.partnerRequest.count(),
+      this.prismaClient.partnerRequest.count({ where: { status: "PENDING"  } }),
+      this.prismaClient.partnerRequest.count({ where: { status: "REJECTED" } }),
+      this.prismaClient.partnerRequest.count({ where: { status: "APPROVED" } }),
+    ]);
+    
+    return {total, pending, reject, approve};
+  }
+
+
   async existsByUserId(userId: string): Promise<boolean> {
     const count = await this.prismaClient.partnerRequest.count({
       where: {

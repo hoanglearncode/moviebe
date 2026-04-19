@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { IUseCase } from "../interface";
-import { PagingDTOSchema } from "../model/paging";
+import { PagingDTO, PagingDTOSchema } from "../model/paging";
 import { ErrorCode } from "../model/error-code";
 
 export class AppError extends Error {
@@ -73,7 +73,7 @@ export abstract class BaseHttpService<Entity, CreateDTO, UpdateDTO, Cond> {
   ): Promise<void> {
     try {
       const result = await operation();
-      res.status(successStatus).json({ data: result });
+      successResponse(res, result, "Success", successStatus);
     } catch (error) {
       this.handleError(error, res);
     }
@@ -140,6 +140,7 @@ export abstract class BaseHttpService<Entity, CreateDTO, UpdateDTO, Cond> {
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
+  paging?: PagingDTO | null;
   message?: string;
   error?: {
     code: string;
@@ -156,10 +157,12 @@ export function successResponse<T>(
   data: T,
   message: string = "Success",
   statusCode: number = 200,
+  paging: PagingDTO | null = null,
 ): void {
   res.status(statusCode).json({
     success: true,
     data,
+    paging,
     message,
   } as ApiResponse<T>);
 }

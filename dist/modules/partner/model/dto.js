@@ -196,8 +196,10 @@ exports.RevenueQueryPayloadDTO = zod_1.default.object({
     groupBy: zod_1.default.enum(["DAY", "MONTH", "MOVIE"]).default("DAY"),
 });
 exports.RequestCondDTOSchema = zod_1.default.object({
-    page: zod_1.default.number().default(0),
-    limit: zod_1.default.number().default(10),
-    status: zod_1.default.enum(["PENDING", "APPROVED", "REJECTED", "SUSPENDED"]),
+    page: zod_1.default.coerce.number().default(1),
+    limit: zod_1.default.coerce.number().default(10),
+    status: zod_1.default
+        .enum(["PENDING", "APPROVED", "REJECTED", "SUSPENDED"])
+        .optional(),
     search: zod_1.default.string().optional()
 });

@@ -437,6 +437,12 @@ export interface PartnerRequest {
   createdAt: Date;
 }
 
+export type MyPartnerStatusResponse = {
+  type: "none" | "request" | "partner";
+  request: PartnerRequestRow | null;
+  partner: PartnerProfile | null;
+};
+
 export type PartnerRequestUpdateInput = Partial<
   Pick<
     PartnerRequestRow,
