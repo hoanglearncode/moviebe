@@ -1,10 +1,4 @@
 "use strict";
-/**
- * Partner repositories — barrel re-export.
- *
- * Each domain owns its own repository file; this barrel re-exports
- * all factories so existing import paths continue to work.
- */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createStaffRepository = exports.StaffRepository = exports.createWalletRepository = exports.createWithdrawalRepository = exports.createTransactionRepository = exports.WalletRepository = exports.WithdrawalRepository = exports.TransactionRepository = exports.createCheckInRepository = exports.createTicketRepository = exports.CheckInRepository = exports.TicketRepository = exports.createSeatRepository = exports.SeatRepository = exports.createShowtimeRepository = exports.ShowtimeRepository = exports.createMovieRepository = exports.MovieRepository = exports.createPartnerRepository = exports.PartnerRepository = void 0;
 var profile_repo_1 = require("./profile.repo");

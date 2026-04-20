@@ -98,6 +98,64 @@ export const UpdateShowtimePayloadDTO = z.object({
   status: z.enum(["SCHEDULED", "STARTED", "ENDED", "CANCELLED"]).optional(),
 });
 
+/**
+ * ==========================================
+ * ROOM DTOs
+ * ==========================================
+ */
+
+export const CreateRoomPayloadDTO = z.object({
+  name: z.string().trim().min(1, "Room name required").max(100),
+  type: z.enum(["TWO_D", "THREE_D", "IMAX", "VIP", "FOUR_DX"]),
+  status: z.enum(["ACTIVE", "INACTIVE", "MAINTENANCE"]).default("ACTIVE"),
+  rows: z.number().int().min(1, "At least 1 row"),
+  seatsPerRow: z.number().int().min(1, "At least 1 seat per row"),
+  tech: z.array(z.string().trim()).default([]),
+  screenWidth: z.number().min(1, "Screen width required"),
+  screenHeight: z.number().min(1, "Screen height required"),
+  screenPos: z.string().min(1, "Screen position required"),
+  aspectRatio: z.string().min(1, "Aspect ratio required"),
+  entrancePos: z.string().min(1, "Entrance position required"),
+  aislePos: z.string().optional().nullable(),
+  layoutSeat: z.array(z.array(z.number())).default([]),
+  allowOnlineBooking: z.boolean().default(true),
+  allowSeatSelection: z.boolean().default(true),
+  maxBookingDays: z.number().int().min(1).default(14),
+  maxSeatsPerTransaction: z.number().int().min(1).default(10),
+  buildYear: z.number().int().optional().nullable(),
+  lastRenovated: z.number().int().optional().nullable(),
+  description: z.string().trim().optional().nullable(),
+  internalNotes: z.string().trim().optional().nullable(),
+  services: z.array(z.number().int()).default([]),
+});
+
+export const UpdateRoomPayloadDTO = z.object({
+  name: z.string().trim().min(1).max(100).optional(),
+  type: z.enum(["TWO_D", "THREE_D", "IMAX", "VIP", "FOUR_DX"]).optional(),
+  status: z.enum(["ACTIVE", "INACTIVE", "MAINTENANCE"]).optional(),
+  rows: z.number().int().min(1).optional(),
+  seatsPerRow: z.number().int().min(1).optional(),
+  tech: z.array(z.string().trim()).optional(),
+  screenWidth: z.number().min(1).optional(),
+  screenHeight: z.number().min(1).optional(),
+  screenPos: z.string().min(1).optional(),
+  aspectRatio: z.string().min(1).optional(),
+  entrancePos: z.string().min(1).optional(),
+  aislePos: z.string().optional().nullable(),
+  layoutSeat: z.array(z.array(z.number())).optional(),
+  allowOnlineBooking: z.boolean().optional(),
+  allowSeatSelection: z.boolean().optional(),
+  maxBookingDays: z.number().int().min(1).optional(),
+  maxSeatsPerTransaction: z.number().int().min(1).optional(),
+  buildYear: z.number().int().optional().nullable(),
+  lastRenovated: z.number().int().optional().nullable(),
+  description: z.string().trim().optional().nullable(),
+  internalNotes: z.string().trim().optional().nullable(),
+  services: z.array(z.number().int()).optional(),
+});
+
+
+
 export const UpdateSeatPayloadDTO = z.object({
   type: z.enum(["STANDARD", "VIP", "COUPLE", "BLOCKED"]).optional(),
   status: z.enum(["AVAILABLE", "LOCKED", "BOOKED", "MAINTENANCE"]).optional(),
@@ -147,22 +205,27 @@ export const CreateWithdrawalPayloadDTO = z.object({
  */
 export const UpdateServicePayloadDTO = z.object({
   name: z.string().trim().min(1, "Name is required").optional(),
-  price: z.number().min(0, "Price must > 0").optional(),
-  category: z.string().min(1, "Category is required").optional(),
+  price: z.coerce.number().min(0, "Price must > 0").optional(),
+  category: z.string().trim().min(1, "Category is required").optional(),
   icon: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  roomIds: z.array(z.string().trim().min(1, "Room ID is required")).optional(),
 });
 
 export const CreateServicePayloadDTO = z.object({
   name: z.string().trim().min(1, "Name is required"),
-  price: z.number().min(0, "Price must > 0"),
-  category: z.string().min(1, "Category is required"),
+  price: z.coerce.number().min(0, "Price must > 0"),
+  category: z.string().trim().min(1, "Category is required"),
   icon: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  roomIds: z.array(z.string().trim().min(1, "Room ID is required")).default([]),
 });
 
 export const ServiceCondDTOSchema = z.object({
-  name: z.string().min(2, "name must be at least 3 characters").optional(),
-  price: z.number().min(0, "Price must > 0").optional(),
-  category: z.string().min(1, "Category is required").optional(),
+  name: z.string().trim().min(2, "name must be at least 2 characters").optional(),
+  price: z.coerce.number().min(0, "Price must > 0").optional(),
+  category: z.string().trim().min(1, "Category is required").optional(),
+  roomId: z.string().trim().min(1, "Room ID is required").optional(),
 });
 /**
  * ==========================================
@@ -257,3 +320,6 @@ export type RevenueQueryDTO = z.infer<typeof RevenueQueryPayloadDTO>;
 export type CreateServiceDTO = z.infer<typeof CreateServicePayloadDTO>;
 export type UpdateServiceDTO = z.infer<typeof UpdateServicePayloadDTO>;
 export type ServicesCondDTO = z.infer<typeof ServiceCondDTOSchema>;
+
+export type CreateRoomDTO = z.infer<typeof CreateRoomPayloadDTO>;
+export type UpdateRoomDTO = z.infer<typeof UpdateRoomPayloadDTO>;

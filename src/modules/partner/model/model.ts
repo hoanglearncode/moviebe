@@ -85,6 +85,54 @@ export type Showtime = {
 
 /**
  * ==========================================
+ * ROOM MODEL
+ * ==========================================
+ */
+
+export enum RoomType {
+  TWO_D = "TWO_D",
+  THREE_D = "THREE_D",
+  IMAX = "IMAX",
+  VIP = "VIP",
+  FOUR_DX = "FOUR_DX",
+}
+
+export enum RoomStatus {
+  ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
+  MAINTENANCE = "MAINTENANCE",
+}
+
+export type Room = {
+  id: string;
+  partnerId: string;
+  name: string;
+  type: RoomType;
+  status: RoomStatus;
+  rows: number;
+  seatsPerRow: number;
+  tech: string[];
+  screenWidth: number;
+  screenHeight: number;
+  screenPos: string;
+  aspectRatio: string;
+  entrancePos: string;
+  aislePos?: string | null;
+  layoutSeat: number[][];
+  allowOnlineBooking: boolean;
+  allowSeatSelection: boolean;
+  maxBookingDays: number;
+  maxSeatsPerTransaction: number;
+  buildYear?: number | null;
+  lastRenovated?: number | null;
+  description?: string | null;
+  internalNotes?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+/**
+ * ==========================================
  * SEAT MODEL & CONSTANTS
  * ==========================================
  */
@@ -352,11 +400,20 @@ export type TransactionListResponse = {
 };
 
 export type Services = {
-  id: string;
+  id: number;
+  partnerId: string;
   name: string;
   price: number;
   category: string;
+  description: string | null;
   icon?: string | null;
+  roomIds: string[];
+  rooms: {
+    id: string;
+    name: string;
+    type: "TWO_D" | "THREE_D" | "IMAX" | "VIP" | "FOUR_DX";
+    status: "ACTIVE" | "INACTIVE" | "MAINTENANCE";
+  }[];
 };
 
 export enum StaffRole {

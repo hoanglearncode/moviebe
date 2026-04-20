@@ -137,20 +137,23 @@ exports.CreateWithdrawalPayloadDTO = zod_1.default.object({
  */
 exports.UpdateServicePayloadDTO = zod_1.default.object({
     name: zod_1.default.string().trim().min(1, "Name is required").optional(),
-    price: zod_1.default.number().min(0, "Price must > 0").optional(),
-    category: zod_1.default.string().min(1, "Category is required").optional(),
+    price: zod_1.default.coerce.number().min(0, "Price must > 0").optional(),
+    category: zod_1.default.string().trim().min(1, "Category is required").optional(),
     icon: zod_1.default.string().nullable().optional(),
+    roomIds: zod_1.default.array(zod_1.default.string().trim().min(1, "Room ID is required")).optional(),
 });
 exports.CreateServicePayloadDTO = zod_1.default.object({
     name: zod_1.default.string().trim().min(1, "Name is required"),
-    price: zod_1.default.number().min(0, "Price must > 0"),
-    category: zod_1.default.string().min(1, "Category is required"),
+    price: zod_1.default.coerce.number().min(0, "Price must > 0"),
+    category: zod_1.default.string().trim().min(1, "Category is required"),
     icon: zod_1.default.string().nullable().optional(),
+    roomIds: zod_1.default.array(zod_1.default.string().trim().min(1, "Room ID is required")).default([]),
 });
 exports.ServiceCondDTOSchema = zod_1.default.object({
-    name: zod_1.default.string().min(2, "name must be at least 3 characters").optional(),
-    price: zod_1.default.number().min(0, "Price must > 0").optional(),
-    category: zod_1.default.string().min(1, "Category is required").optional(),
+    name: zod_1.default.string().trim().min(2, "name must be at least 2 characters").optional(),
+    price: zod_1.default.coerce.number().min(0, "Price must > 0").optional(),
+    category: zod_1.default.string().trim().min(1, "Category is required").optional(),
+    roomId: zod_1.default.string().trim().min(1, "Room ID is required").optional(),
 });
 /**
  * ==========================================

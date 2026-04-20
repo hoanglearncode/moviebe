@@ -11,27 +11,43 @@ import {
 import { Services } from "../model/model";
 import { ErrCategoryNameTooShort } from "../model/error";
 import { ZodError } from "zod";
-import { v7 } from "uuid";
 
 export class ServicePartnerUser implements IPartnerServicesUseCase {
   constructor(private readonly partnerRepo: IPartnerServiceRepository) {}
 
-  async list(cond: any, paging: PagingDTO): Promise<any> {
+  async list(
+    partnerId: string,
+    cond: any,
+    paging: PagingDTO,
+  ): Promise<{
+    items: Services[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const parsedCond = ServiceCondDTOSchema.parse(cond);
+    const data = await this.partnerRepo.list(partnerId, parsedCond, paging);
+
+    return {
+      items: data.items,
+      total: data.total,
+      page: paging.page,
+      limit: paging.limit,
+      totalPages: Math.ceil(data.total / paging.limit),
+    };
+  }
+
+  async findByCond(partnerId: string, cond: any): Promise<Services[]> {
     const parsedCond = ServiceCondDTOSchema.parse(cond);
 
-    const data = await this.partnerRepo.list(parsedCond, paging);
+    const data = await this.partnerRepo.findByCond(partnerId, parsedCond);
     return data;
   }
-  async findByCond(cond: any): Promise<any> {
-    const parsedCond = ServiceCondDTOSchema.parse(cond);
 
-    const data = await this.partnerRepo.findByCond(parsedCond);
-    return data;
-  }
-  async insert(data: CreateServiceDTO): Promise<boolean> {
+  async insert(partnerId: string, data: CreateServiceDTO): Promise<Services> {
     const { success, data: parsedData, error } = CreateServicePayloadDTO.safeParse(data);
-
-    if (error) {
+    if (!success || error) {
       // TODO: process error
       const issues = (error as ZodError).issues;
 
@@ -44,34 +60,29 @@ export class ServicePartnerUser implements IPartnerServicesUseCase {
       throw error;
     }
 
-    const newId = v7();
-
-    const category: Services = {
-      id: newId,
-      name: parsedData!.name,
-      price: parsedData!.price,
-      category: parsedData!.category,
-      icon: parsedData.icon,
-    };
-
-    await this.partnerRepo.insert(category);
-
-    return !newId;
+    return await this.partnerRepo.insert(partnerId, parsedData);
   }
-  async update(id: string, data: UpdateServiceDTO): Promise<boolean> {
-    const category = await this.partnerRepo.get(id);
-    if (!category) {
+
+  async update(partnerId: string, id: number, data: UpdateServiceDTO): Promise<Services | null> {
+    const service = await this.partnerRepo.get(partnerId, id);
+    if (!service) {
+      return null;
+    }
+
+    const updateData = UpdateServicePayloadDTO.parse(data);
+    return await this.partnerRepo.update(partnerId, id, updateData);
+  }
+
+  async delete(partnerId: string, id: number, isHard: boolean): Promise<boolean> {
+    const service = await this.partnerRepo.get(partnerId, id);
+    if (!service) {
       return false;
     }
-    const updateData = UpdateServicePayloadDTO.parse(data);
-    return await this.partnerRepo.update(id, updateData);
-  }
-  async delete(id: string, isHard: boolean): Promise<boolean> {
-    const category = await this.partnerRepo.get(id);
-    return await this.partnerRepo.delete(id, false);
+
+    return await this.partnerRepo.delete(partnerId, id, isHard);
   }
 
-  async findById(id: string): Promise<Services | null> {
-    return await this.partnerRepo.get(id);
+  async findById(partnerId: string, id: number): Promise<Services | null> {
+    return await this.partnerRepo.get(partnerId, id);
   }
 }

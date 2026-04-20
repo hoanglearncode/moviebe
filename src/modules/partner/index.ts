@@ -10,6 +10,7 @@ import {
   createPartnerRepository,
   createMovieRepository,
   createShowtimeRepository,
+  createRoomRepository,
   createSeatRepository,
   createTicketRepository,
   createTransactionRepository,
@@ -34,6 +35,7 @@ import { ServicePartnerUser } from "./usecase/service.usecase";
 import { PartnerProfileHttpService } from "./infras/transport/profile.http-service";
 import { MovieManagementHttpService } from "./infras/transport/movie.http-service";
 import { ShowtimeManagementHttpService } from "./infras/transport/showtime.http-service";
+import { RoomManagementHttpService } from "./infras/transport/room.http-services";
 import { SeatManagementHttpService } from "./infras/transport/seat.http-services";
 import { TicketCheckInHttpService } from "./infras/transport/ticket.http-service";
 import { PartnerFinanceHttpService } from "./infras/transport/finance.http-service";
@@ -113,6 +115,7 @@ export default function buildPartnerRouter(prisma: PrismaClient): Router {
   const partnerRepo = createPartnerRepository(prisma);
   const movieRepo = createMovieRepository(prisma);
   const showtimeRepo = createShowtimeRepository(prisma);
+  const roomRepo = createRoomRepository(prisma);
   const seatRepo = createSeatRepository(prisma);
   const ticketRepo = createTicketRepository(prisma);
   const transactionRepo = createTransactionRepository(prisma);
@@ -155,6 +158,7 @@ export default function buildPartnerRouter(prisma: PrismaClient): Router {
   const profileSvc = new PartnerProfileHttpService(profileUC);
   const movieSvc = new MovieManagementHttpService(movieUC);
   const showtimeSvc = new ShowtimeManagementHttpService(showtimeUC);
+  const roomSvc = new RoomManagementHttpService(roomRepo);
   const seatSvc = new SeatManagementHttpService(seatUC);
   const ticketSvc = new TicketCheckInHttpService(ticketUC);
   const financeSvc = new PartnerFinanceHttpService(financeUC);
@@ -196,11 +200,13 @@ export default function buildPartnerRouter(prisma: PrismaClient): Router {
   router.get("/dashboard", ...guard, (req, res) => dashboardSvc.getDashboard(req, res)); 
   router.get("/stats/top-movies", ...guard, (req, res) => dashboardSvc.getTopMovies(req, res)); 
   router.get("/stats/occupancy", ...guard, (req, res) => dashboardSvc.getOccupancy(req, res)); 
-  router.get("/rooms", ...guard, (req, res) => ticketSvc.getTickets(req, res)); 
-  router.post("/rooms", ...guard, (req, res) => ticketSvc.getTickets(req, res)); 
-  router.get("/rooms/:ticketId", ...guard, (req, res) => ticketSvc.getTicketDetail(req, res)); 
-  router.put("/rooms/:ticketId", ...guard, (req, res) => ticketSvc.getTicketDetail(req, res)); 
-  router.delete("/rooms/:ticketId", ...guard, (req, res) => ticketSvc.getTicketDetail(req, res)); 
+  
+  router.post("/rooms", ...guard, (req, res) => roomSvc.createRoom(req, res));
+  router.get("/rooms", ...guard, (req, res) => roomSvc.getRooms(req, res)); 
+  router.get("/rooms/:roomId", ...guard, (req, res) => roomSvc.getRoomDetail(req, res)); 
+  router.put("/rooms/:roomId", ...guard, (req, res) => roomSvc.updateRoom(req, res)); 
+  router.delete("/rooms/:roomId", ...guard, (req, res) => roomSvc.deleteRoom(req, res)); 
+  
   router.get("/services", ...guard, (req, res) => serviceSvc.list(req, res)); 
   router.get("/services/search", ...guard, (req, res) => serviceSvc.findByCond(req, res)); 
   router.get("/services/:id", ...guard, (req, res) => serviceSvc.findById(req, res)); 

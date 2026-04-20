@@ -493,22 +493,30 @@ model Room {
 
   rows          Int
   seatsPerRow   Int
-  capacity      Int
-
-  vipRows       Int[]
-  coupleRow     Int?
 
   tech          String[]
 
   screenWidth   Float
   screenHeight  Float
+  screenPos     String
   aspectRatio   String
 
-  screenPos     String
   entrancePos   String
   aislePos      String?
 
-  description   String?
+  layoutSeat    Json     // 2D array: number[][]
+
+  allowOnlineBooking     Boolean @default(true)
+  allowSeatSelection     Boolean @default(true)
+  
+  maxBookingDays         Int     @default(14)
+  maxSeatsPerTransaction Int     @default(10)
+
+  buildYear              Int?
+  lastRenovated          Int?
+
+  description            String?
+  internalNotes          String?
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -516,7 +524,7 @@ model Room {
   partner       Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   showtimes     Showtime[]
   seatTemplates SeatTemplate[]
-  services RoomService[]
+  services      RoomService[]
 
   @@unique([partnerId, name])
   @@index([partnerId])
@@ -525,14 +533,15 @@ model Room {
 
 
 model Service {
-  id       Int @id @default(autoincrement())
-  name     String
-  price    Int
-  category String
-  icon     String?
-  partnerId String
-  partner   Partner @relation(fields: [partnerId], references: [id])
-  rooms RoomService[]
+  id          Int @id @default(autoincrement())
+  name        String
+  price       Int
+  category    String
+  icon        String?
+  partnerId   String
+  partner     Partner @relation(fields: [partnerId], references: [id])
+  description String?
+  rooms       RoomService[]
 
   @@index([id])
 }
