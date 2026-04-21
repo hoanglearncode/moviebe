@@ -397,12 +397,33 @@ model Movie {
   showtimes   Showtime[]
   tickets     Ticket[]
   reviews     Review[]
+  altTitle      String? 
+  country       String? 
+  year          Int? 
+  tags          String[]  @default([])
+  allowComments Boolean   @default(true)
+  backdropUrl   String?
+  cast          Cast[] 
   
 
   @@index([partnerId])
   @@index([status])
   @@index([releaseDate])
   @@index([createdAt])
+}
+
+
+model Cast {
+  id      String  @id @default(cuid())
+  movieId String
+  name    String
+  role    String
+  photo   String?
+  order   Int     @default(0)
+
+  movie   Movie   @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@index([movieId])
 }
 
 model Showtime {
@@ -414,6 +435,7 @@ model Showtime {
   startTime      DateTime
   endTime        DateTime
   basePrice      Int
+  priceConfig    Json
   status         ShowtimeStatus @default(SCHEDULED)
 
   totalSeats     Int
@@ -552,8 +574,8 @@ model RoomService {
   serviceId Int 
   assignedAt DateTime @default(now())
 
-  room    Room    @relation(fields: [roomId], references: [id])
-  service Service @relation(fields: [serviceId], references: [id])
+  room    Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
   @@unique([roomId, serviceId])
 }

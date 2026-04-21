@@ -155,6 +155,7 @@ export class RoomRepository implements IRoomRepository {
       lastRenovated: room.lastRenovated,
       description: room.description,
       internalNotes: room.internalNotes,
+      services: (room.services ?? []).map((item: any) => item.serviceId),
       createdAt: room.createdAt,
       updatedAt: room.updatedAt,
     };

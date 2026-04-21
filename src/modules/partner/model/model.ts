@@ -127,6 +127,7 @@ export type Room = {
   lastRenovated?: number | null;
   description?: string | null;
   internalNotes?: string | null;
+  services: number[];
   createdAt: Date;
   updatedAt: Date;
 };
