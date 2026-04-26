@@ -1,11 +1,16 @@
 import { Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
 import { logger } from "../../../system/log/logger";
 import { AppError, errorResponse, successResponse } from "../../../../share/transport/http-server";
 import { IPartnerRequestUseCase } from "../../interface/partner-request.interface";
 import { RequestCondDTOSchema } from "../../model/dto";
+import { writeAuditLog } from "../../../admin-audit-logs/helper";
 
 export class PartnerRequestHttpService {
-  constructor(private readonly requestUseCase: IPartnerRequestUseCase) {}
+  constructor(
+    private readonly requestUseCase: IPartnerRequestUseCase,
+    private readonly prisma?: PrismaClient,
+  ) {}
 
   private handleError(res: Response, error: unknown, fallbackStatus: number = 500): void {
     if (error instanceof AppError) {
@@ -97,6 +102,21 @@ export class PartnerRequestHttpService {
     try {
       const id = req.params.id as string;
       const insert = await this.requestUseCase.adminApprove(id);
+      if (this.prisma) {
+        await writeAuditLog(this.prisma, req, {
+          action: "approve_partner_request",
+          description: `Approved partner request ${id}`,
+          category: "partner",
+          severity: "high",
+          targetType: "partner_request",
+          targetId: id,
+          targetLabel: String((insert as any)?.cinemaName ?? id),
+          meta: {
+            status: (insert as any)?.status,
+            approvedPartnerId: (insert as any)?.approvedPartnerId,
+          },
+        });
+      }
       successResponse(res, insert, "Partner request approved");
     } catch (error: any) {
       logger.error("[PartnerRequest] approve error", { error: error.message });
@@ -109,6 +129,21 @@ export class PartnerRequestHttpService {
       const id = req.params.id as string;
       const reason = req.body.reason as string;
       const insert = await this.requestUseCase.adminReject(id, reason);
+      if (this.prisma) {
+        await writeAuditLog(this.prisma, req, {
+          action: "reject_partner_request",
+          description: `Rejected partner request ${id}`,
+          category: "partner",
+          severity: "high",
+          targetType: "partner_request",
+          targetId: id,
+          targetLabel: String((insert as any)?.cinemaName ?? id),
+          meta: {
+            status: (insert as any)?.status,
+            reason,
+          },
+        });
+      }
       successResponse(res, insert, "Partner request rejected");
     } catch (error: any) {
       logger.error("[PartnerRequest] reject error", { error: error.message });

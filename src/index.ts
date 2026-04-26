@@ -16,6 +16,7 @@ import { requestLogger } from "./modules/system/log/request-logger";
 import { initializeQueueInfrastructure, shutdownQueueInfrastructure } from "./queue";
 
 import { createUploadRouter } from "./share/transport/upload.router";
+import { pusherAuthRouter } from "./share/transport/pusher-auth.router";
 import { defaultSettings } from "./share/common/seed-setting";
 import { seedEmailTemplates } from "./modules/notification/shared/seed";
 import adminEmailRouter from "./modules/notification/infras/transport/admin-endpoints";
@@ -63,6 +64,7 @@ config();
 
 
   app.use("/v1", createUploadRouter());
+  app.use("/v1", pusherAuthRouter);
 
   app.use("/v1", setupCategoryHexagon(createCategoryRepository(prisma)));
   app.use("/v1", setupAuthHexagon(prisma));

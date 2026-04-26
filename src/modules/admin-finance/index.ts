@@ -3,12 +3,15 @@ import { PrismaClient } from "@prisma/client";
 import { protect, requireRole } from "../../share/middleware/auth";
 import { successResponse, errorResponse } from "../../share/transport/http-server";
 import { AdminFinanceUseCase } from "./usecase";
+import { writeAuditLog } from "../admin-audit-logs/helper";
 
 const adminGuard = [...protect(requireRole("ADMIN"))];
 
 export function buildAdminFinanceRouter(prisma: PrismaClient): Router {
   const router = Router();
   const useCase = new AdminFinanceUseCase(prisma);
+  const paramId = (value: string | string[] | undefined): string =>
+    Array.isArray(value) ? value[0] ?? "" : (value ?? "");
 
   router.get("/summary", ...adminGuard, async (req: Request, res: Response) => {
     try {
@@ -63,7 +66,23 @@ export function buildAdminFinanceRouter(prisma: PrismaClient): Router {
 
   router.patch("/withdrawals/:id/approve", ...adminGuard, async (req: Request, res: Response) => {
     try {
-      const data = await useCase.approveWithdrawal(req.params.id, req.user!.id);
+      const withdrawalId = paramId(req.params.id);
+      const withdrawal = await prisma.withdrawal.findUnique({ where: { id: withdrawalId } });
+      const data = await useCase.approveWithdrawal(withdrawalId, req.user!.id);
+      await writeAuditLog(prisma, req, {
+        action: "approve_withdrawal",
+        description: `Approved withdrawal ${withdrawalId}`,
+        category: "finance",
+        severity: "high",
+        targetType: "withdrawal",
+        targetId: withdrawalId,
+        targetLabel: withdrawalId,
+        meta: {
+          partnerId: withdrawal?.partnerId,
+          amount: withdrawal?.amount,
+          statusTo: "PROCESSING",
+        },
+      });
       successResponse(res, data);
     } catch (err: any) {
       errorResponse(res, 400, err.message);
@@ -72,10 +91,27 @@ export function buildAdminFinanceRouter(prisma: PrismaClient): Router {
 
   router.patch("/withdrawals/:id/complete", ...adminGuard, async (req: Request, res: Response) => {
     try {
+      const withdrawalId = paramId(req.params.id);
+      const withdrawal = await prisma.withdrawal.findUnique({ where: { id: withdrawalId } });
       const data = await useCase.completeWithdrawal(
-        req.params.id,
+        withdrawalId,
         req.body.transactionReference,
       );
+      await writeAuditLog(prisma, req, {
+        action: "complete_withdrawal",
+        description: `Completed withdrawal ${withdrawalId}`,
+        category: "finance",
+        severity: "high",
+        targetType: "withdrawal",
+        targetId: withdrawalId,
+        targetLabel: withdrawalId,
+        meta: {
+          partnerId: withdrawal?.partnerId,
+          amount: withdrawal?.amount,
+          transactionReference: req.body.transactionReference ?? "",
+          statusTo: "COMPLETED",
+        },
+      });
       successResponse(res, data);
     } catch (err: any) {
       errorResponse(res, 400, err.message);
@@ -86,7 +122,24 @@ export function buildAdminFinanceRouter(prisma: PrismaClient): Router {
     try {
       const { reason } = req.body;
       if (!reason) return errorResponse(res, 400, "Rejection reason is required");
-      const data = await useCase.rejectWithdrawal(req.params.id, reason);
+      const withdrawalId = paramId(req.params.id);
+      const withdrawal = await prisma.withdrawal.findUnique({ where: { id: withdrawalId } });
+      const data = await useCase.rejectWithdrawal(withdrawalId, reason);
+      await writeAuditLog(prisma, req, {
+        action: "reject_withdrawal",
+        description: `Rejected withdrawal ${withdrawalId}`,
+        category: "finance",
+        severity: "high",
+        targetType: "withdrawal",
+        targetId: withdrawalId,
+        targetLabel: withdrawalId,
+        meta: {
+          partnerId: withdrawal?.partnerId,
+          amount: withdrawal?.amount,
+          reason,
+          statusTo: "FAILED",
+        },
+      });
       successResponse(res, data);
     } catch (err: any) {
       errorResponse(res, 400, err.message);

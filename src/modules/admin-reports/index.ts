@@ -2,11 +2,14 @@ import { Router, Request, Response } from "express";
 import { PrismaClient, ReportStatus, ReportAction } from "@prisma/client";
 import { protect, requireRole } from "../../share/middleware/auth";
 import { successResponse, errorResponse } from "../../share/transport/http-server";
+import { writeAuditLog } from "../admin-audit-logs/helper";
 
 const adminGuard = [...protect(requireRole("ADMIN"))];
 
 export function buildAdminReportsRouter(prisma: PrismaClient): Router {
   const router = Router();
+  const paramId = (value: string | string[] | undefined): string =>
+    Array.isArray(value) ? value[0] ?? "" : (value ?? "");
 
   // GET /v1/admin/reports — list with filter/pagination
   router.get("/", ...adminGuard, async (req: Request, res: Response) => {
@@ -47,6 +50,7 @@ export function buildAdminReportsRouter(prisma: PrismaClient): Router {
   router.patch("/:id/resolve", ...adminGuard, async (req: Request, res: Response) => {
     try {
       const { action, adminNote } = req.body;
+      const reportId = paramId(req.params.id);
 
       const validActions: ReportAction[] = [
         "NONE", "WARN_USER", "DELETE_CONTENT", "BAN_USER", "BAN_OWNER", "FLAG_CONTENT", "ESCALATE",
@@ -55,11 +59,11 @@ export function buildAdminReportsRouter(prisma: PrismaClient): Router {
         return errorResponse(res, 400, `action must be one of: ${validActions.join(", ")}`);
       }
 
-      const existing = await prisma.report.findUnique({ where: { id: req.params.id } });
+      const existing = await prisma.report.findUnique({ where: { id: reportId } });
       if (!existing) return errorResponse(res, 404, "Report not found");
 
       const updated = await prisma.report.update({
-        where: { id: req.params.id },
+        where: { id: reportId },
         data: {
           status: "RESOLVED",
           actionTaken: (action as ReportAction) ?? "NONE",
@@ -73,6 +77,20 @@ export function buildAdminReportsRouter(prisma: PrismaClient): Router {
         },
       });
 
+      await writeAuditLog(prisma, req, {
+        action: "resolve_report_content",
+        description: `Resolved report ${reportId}`,
+        category: "moderation",
+        severity: "medium",
+        targetType: "report",
+        targetId: updated.id,
+        targetLabel: `${updated.target}:${updated.targetId}`,
+        meta: {
+          actionTaken: updated.actionTaken,
+          status: updated.status,
+        },
+      });
+
       successResponse(res, updated, "Report resolved");
     } catch (err: any) {
       errorResponse(res, 500, err.message);
@@ -83,12 +101,13 @@ export function buildAdminReportsRouter(prisma: PrismaClient): Router {
   router.patch("/:id/dismiss", ...adminGuard, async (req: Request, res: Response) => {
     try {
       const { adminNote } = req.body;
+      const reportId = paramId(req.params.id);
 
-      const existing = await prisma.report.findUnique({ where: { id: req.params.id } });
+      const existing = await prisma.report.findUnique({ where: { id: reportId } });
       if (!existing) return errorResponse(res, 404, "Report not found");
 
       const updated = await prisma.report.update({
-        where: { id: req.params.id },
+        where: { id: reportId },
         data: {
           status: "DISMISSED",
           actionTaken: "NONE",
@@ -102,6 +121,19 @@ export function buildAdminReportsRouter(prisma: PrismaClient): Router {
         },
       });
 
+      await writeAuditLog(prisma, req, {
+        action: "dismiss_report_content",
+        description: `Dismissed report ${reportId}`,
+        category: "moderation",
+        severity: "low",
+        targetType: "report",
+        targetId: updated.id,
+        targetLabel: `${updated.target}:${updated.targetId}`,
+        meta: {
+          status: updated.status,
+        },
+      });
+
       successResponse(res, updated, "Report dismissed");
     } catch (err: any) {
       errorResponse(res, 500, err.message);
@@ -112,16 +144,17 @@ export function buildAdminReportsRouter(prisma: PrismaClient): Router {
   router.patch("/:id/status", ...adminGuard, async (req: Request, res: Response) => {
     try {
       const { status } = req.body;
+      const reportId = paramId(req.params.id);
       const validStatuses: ReportStatus[] = ["PENDING", "REVIEWING", "RESOLVED", "DISMISSED"];
       if (!status || !validStatuses.includes(status)) {
         return errorResponse(res, 400, `status must be one of: ${validStatuses.join(", ")}`);
       }
 
-      const existing = await prisma.report.findUnique({ where: { id: req.params.id } });
+      const existing = await prisma.report.findUnique({ where: { id: reportId } });
       if (!existing) return errorResponse(res, 404, "Report not found");
 
       const updated = await prisma.report.update({
-        where: { id: req.params.id },
+        where: { id: reportId },
         data: { status: status as ReportStatus },
       });
 

@@ -66,7 +66,7 @@ export const buildPartnerRequestUserRouter = (prisma: PrismaClient): Router => {
     staffRepo,
   );
 
-  const service = new PartnerRequestHttpService(requestUseCase);
+  const service = new PartnerRequestHttpService(requestUseCase, prisma);
 
   const guard = [authMiddleware, requireActiveUser];
 
@@ -100,9 +100,9 @@ export const buildPartnerRequestAdminRouter = (prisma: PrismaClient): Router => 
   const profileUC = new PartnerProfileUseCase(partnerRepo);
   const movieUC = new MovieManagementUseCase(partnerRepo, movieRepo);
 
-  const requestSvc = new PartnerRequestHttpService(requestUseCase);
+  const requestSvc = new PartnerRequestHttpService(requestUseCase, prisma);
   const profileSvc = new PartnerProfileHttpService(profileUC);
-  const movieSvc = new MovieManagementHttpService(movieUC);
+  const movieSvc = new MovieManagementHttpService(movieUC, prisma);
 
   const adminGuard = [authMiddleware, requireRole("ADMIN")];
 
@@ -211,7 +211,7 @@ export default function buildPartnerRouter(prisma: PrismaClient): Router {
   );
 
   const profileSvc = new PartnerProfileHttpService(profileUC);
-  const movieSvc = new MovieManagementHttpService(movieUC);
+  const movieSvc = new MovieManagementHttpService(movieUC, prisma);
   const showtimeSvc = new ShowtimeManagementHttpService(showtimeUC);
   const roomSvc = new RoomManagementHttpService(roomRepo);
   const seatSvc = new SeatManagementHttpService(seatUC);

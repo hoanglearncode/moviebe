@@ -2,11 +2,14 @@ import { Router, Request, Response } from "express";
 import { PrismaClient, FlagType, FlagEnv } from "@prisma/client";
 import { protect, requireRole } from "../../share/middleware/auth";
 import { successResponse, errorResponse } from "../../share/transport/http-server";
+import { writeAuditLog } from "../admin-audit-logs/helper";
 
 const adminGuard = [...protect(requireRole("ADMIN"))];
 
 export function buildAdminFeatureFlagsRouter(prisma: PrismaClient): Router {
   const router = Router();
+  const paramId = (value: string | string[] | undefined): string =>
+    Array.isArray(value) ? value[0] ?? "" : (value ?? "");
 
   // GET /v1/admin/feature-flags
   router.get("/", ...adminGuard, async (req: Request, res: Response) => {
@@ -89,12 +92,13 @@ export function buildAdminFeatureFlagsRouter(prisma: PrismaClient): Router {
   router.patch("/:id", ...adminGuard, async (req: Request, res: Response) => {
     try {
       const { name, description, type, env, rollout, targets, tags, enabled } = req.body;
+      const flagId = paramId(req.params.id);
 
-      const existing = await prisma.featureFlag.findUnique({ where: { id: req.params.id } });
+      const existing = await prisma.featureFlag.findUnique({ where: { id: flagId } });
       if (!existing) return errorResponse(res, 404, "Feature flag not found");
 
       const updated = await prisma.featureFlag.update({
-        where: { id: req.params.id },
+        where: { id: flagId },
         data: {
           ...(name !== undefined && { name }),
           ...(description !== undefined && { description }),
@@ -112,6 +116,23 @@ export function buildAdminFeatureFlagsRouter(prisma: PrismaClient): Router {
         },
       });
 
+      if (enabled !== undefined && enabled !== existing.enabled) {
+        await writeAuditLog(prisma, req, {
+          action: "toggle_feature_flag",
+          description: `Set feature flag ${existing.key} to ${enabled ? "enabled" : "disabled"}`,
+          category: "system",
+          severity: "medium",
+          targetType: "feature_flag",
+          targetId: existing.id,
+          targetLabel: existing.key,
+          meta: {
+            fromEnabled: existing.enabled,
+            toEnabled: enabled,
+            env: existing.env,
+          },
+        });
+      }
+
       successResponse(res, updated);
     } catch (err: any) {
       errorResponse(res, 500, err.message);
@@ -121,12 +142,28 @@ export function buildAdminFeatureFlagsRouter(prisma: PrismaClient): Router {
   // PATCH /v1/admin/feature-flags/:id/toggle
   router.patch("/:id/toggle", ...adminGuard, async (req: Request, res: Response) => {
     try {
-      const existing = await prisma.featureFlag.findUnique({ where: { id: req.params.id } });
+      const flagId = paramId(req.params.id);
+      const existing = await prisma.featureFlag.findUnique({ where: { id: flagId } });
       if (!existing) return errorResponse(res, 404, "Feature flag not found");
 
       const updated = await prisma.featureFlag.update({
-        where: { id: req.params.id },
+        where: { id: flagId },
         data: { enabled: !existing.enabled, updatedById: req.user!.id },
+      });
+
+      await writeAuditLog(prisma, req, {
+        action: "toggle_feature_flag",
+        description: `${updated.enabled ? "Enabled" : "Disabled"} feature flag ${existing.key}`,
+        category: "system",
+        severity: "medium",
+        targetType: "feature_flag",
+        targetId: existing.id,
+        targetLabel: existing.key,
+        meta: {
+          fromEnabled: existing.enabled,
+          toEnabled: updated.enabled,
+          env: existing.env,
+        },
       });
 
       successResponse(res, updated, `Flag ${updated.enabled ? "enabled" : "disabled"}`);
@@ -138,10 +175,11 @@ export function buildAdminFeatureFlagsRouter(prisma: PrismaClient): Router {
   // DELETE /v1/admin/feature-flags/:id
   router.delete("/:id", ...adminGuard, async (req: Request, res: Response) => {
     try {
-      const existing = await prisma.featureFlag.findUnique({ where: { id: req.params.id } });
+      const flagId = paramId(req.params.id);
+      const existing = await prisma.featureFlag.findUnique({ where: { id: flagId } });
       if (!existing) return errorResponse(res, 404, "Feature flag not found");
 
-      await prisma.featureFlag.delete({ where: { id: req.params.id } });
+      await prisma.featureFlag.delete({ where: { id: flagId } });
       successResponse(res, null, "Feature flag deleted");
     } catch (err: any) {
       errorResponse(res, 500, err.message);

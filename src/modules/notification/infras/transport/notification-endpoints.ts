@@ -39,20 +39,6 @@ router.get("/unread-count", ...guard, async (req: Request, res: Response) => {
   }
 });
 
-router.post("/send", ...guard, async (req: Request, res: Response) => {
-  try {
-    const result = await pushNotificationService.send({
-      userId: "019d8a77-54d8-739d-a47e-3a8950702cc5",
-      type: "SYSTEM",
-      title: "demo",
-      message: "demo",
-      data: {},
-    });
-    res.json(result);
-  } catch (err: any) {
-    errorResponse(res, 500, err.message);
-  }
-});
 /**
  * PUT /v1/notifications/read-all
  * Mark all of the current user's notifications as read.

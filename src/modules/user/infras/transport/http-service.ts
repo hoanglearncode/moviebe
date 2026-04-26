@@ -13,6 +13,8 @@ import {
   SeedUsersDTO,
   SeedUsersPayloadSchema,
 } from "../../model/dto";
+import { prisma } from "../../../../share/component/prisma";
+import { writeAuditLog } from "../../../admin-audit-logs/helper";
 
 type AuthenticatedRequest = Request & {
   user?: {
@@ -138,7 +140,43 @@ export class AdminUserHttpService extends BaseHttpService<any, any, any, any> {
 
   async changeUserStatus(req: Request<any, any, ChangeUserStatusDTO>, res: Response) {
     await this.handleRequest(res, async () => {
-      return this.adminUserUseCase.changeUserStatus(String(req.params.id || ""), req.body);
+      const userId = String(req.params.id || "");
+      const before = await this.adminUserUseCase.getDetail(userId);
+      const result = await this.adminUserUseCase.changeUserStatus(userId, req.body);
+      const after = await this.adminUserUseCase.getDetail(userId);
+      if (!before || !after) return result;
+
+      const isPartner = String(after.role) === "PARTNER";
+      const targetLabel = after.email ?? after.username ?? after.id;
+      const statusTo = String(req.body.status ?? after.status);
+
+      let action = isPartner ? "change_partner_status" : "change_user_status";
+      let severity: "low" | "medium" | "high" | "critical" = "medium";
+
+      if (statusTo === "BANNED") {
+        action = isPartner ? "ban_partner" : "ban_user";
+        severity = "high";
+      } else if (String(before.status) === "BANNED" && statusTo === "ACTIVE") {
+        action = isPartner ? "unban_partner" : "unban_user";
+        severity = "medium";
+      }
+
+      await writeAuditLog(prisma, req, {
+        action,
+        description: `${action} for ${targetLabel}`,
+        category: isPartner ? "partner" : "user",
+        severity,
+        targetType: isPartner ? "partner_user" : "user",
+        targetId: after.id,
+        targetLabel,
+        meta: {
+          role: after.role,
+          fromStatus: before.status,
+          toStatus: statusTo,
+        },
+      });
+
+      return result;
     });
   }
 

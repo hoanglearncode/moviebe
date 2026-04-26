@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
 import { successResponse, errorResponse } from "../../../../share/transport/http-server";
 import { IMovieManagementUseCase } from "../../interface/movie.interface";
 import {
@@ -6,9 +7,13 @@ import {
   CreateMovieDTO,
   ListMoviesQueryDTO,
 } from "../../model/dto";
+import { writeAuditLog } from "../../../admin-audit-logs/helper";
 
 export class MovieManagementHttpService {
-  constructor(private useCase: IMovieManagementUseCase) {}
+  constructor(
+    private useCase: IMovieManagementUseCase,
+    private prisma?: PrismaClient,
+  ) {}
 
   async createMovie(req: Request, res: Response): Promise<void> {
     try {
@@ -146,6 +151,18 @@ export class MovieManagementHttpService {
       const { movieId } = req.params;
       const { note = "" } = req.body;
       const result = await this.useCase.adminApproveMovie(String(movieId), note);
+      if (this.prisma) {
+        await writeAuditLog(this.prisma, req, {
+          action: "approve_movie",
+          description: `Approved movie ${movieId}`,
+          category: "movie",
+          severity: "medium",
+          targetType: "movie",
+          targetId: String(movieId),
+          targetLabel: String((result as any)?.title ?? movieId),
+          meta: { note },
+        });
+      }
       successResponse(res, result, "Movie approved successfully");
     } catch (error: any) {
       errorResponse(res, error.statusCode || 400, error.message, error.code);
@@ -160,6 +177,18 @@ export class MovieManagementHttpService {
         return errorResponse(res, 400, "reason and note are required");
       }
       const result = await this.useCase.adminRejectMovie(String(movieId), reason, note);
+      if (this.prisma) {
+        await writeAuditLog(this.prisma, req, {
+          action: "reject_movie",
+          description: `Rejected movie ${movieId}`,
+          category: "movie",
+          severity: "medium",
+          targetType: "movie",
+          targetId: String(movieId),
+          targetLabel: String((result as any)?.title ?? movieId),
+          meta: { reason, note },
+        });
+      }
       successResponse(res, result, "Movie rejected successfully");
     } catch (error: any) {
       errorResponse(res, error.statusCode || 400, error.message, error.code);

@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { protect, requireRole } from "../../share/middleware/auth";
 import { successResponse, errorResponse } from "../../share/transport/http-server";
+import { writeAuditLog } from "../admin-audit-logs/helper";
 
 const adminGuard = [...protect(requireRole("ADMIN"))];
 
@@ -62,6 +63,17 @@ export function buildAdminSystemSettingsRouter(prisma: PrismaClient): Router {
       );
 
       const settings = await getSettings(prisma);
+      await writeAuditLog(prisma, req, {
+        action: "update_system_settings",
+        description: `Updated system settings (${Object.keys(updates).length} keys)`,
+        category: "system",
+        severity: "high",
+        targetType: "system_settings",
+        targetLabel: "global",
+        meta: {
+          keys: Object.keys(updates).join(","),
+        },
+      });
       successResponse(res, settings, "Settings updated");
     } catch (err: any) {
       errorResponse(res, 500, err.message);
