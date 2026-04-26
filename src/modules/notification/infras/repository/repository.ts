@@ -94,7 +94,6 @@ export class ScheduledEmailRepository implements IScheduledEmailRepository {
         templateId: data.templateId,
         subject: data.subject,
         body: data.body,
-        templateId: data.templateId,
         variables: (data.variables || undefined) as any,
         failedReason: data.failedReason || undefined,
         status: data.status || "PENDING",

@@ -33,7 +33,7 @@ const buildPartnerRequestUserRouter = (prisma) => {
     const staffRepo = (0, repo_1.createStaffRepository)(prisma);
     const requestRepo = (0, partner_request_repo_1.createPartnerRequestRepository)(prisma);
     const requestUseCase = new usecase_1.RequestUseCase(requestRepo, partnerRepo, userRepository, sessionRepository, walletRepo, staffRepo);
-    const service = new partner_request_http_service_1.PartnerRequestHttpService(requestUseCase);
+    const service = new partner_request_http_service_1.PartnerRequestHttpService(requestUseCase, prisma);
     const guard = [auth_1.authMiddleware, auth_1.requireActiveUser];
     router.post("/partner-request", ...guard, (req, res) => service.submit(req, res));
     router.patch("/partner-request", ...guard, (req, res) => service.editSubmit(req, res));
@@ -54,9 +54,9 @@ const buildPartnerRequestAdminRouter = (prisma) => {
     const requestUseCase = new usecase_1.RequestUseCase(requestRepo, partnerRepo, userRepository, sessionRepository, walletRepo, staffRepo);
     const profileUC = new usecase_1.PartnerProfileUseCase(partnerRepo);
     const movieUC = new usecase_1.MovieManagementUseCase(partnerRepo, movieRepo);
-    const requestSvc = new partner_request_http_service_1.PartnerRequestHttpService(requestUseCase);
+    const requestSvc = new partner_request_http_service_1.PartnerRequestHttpService(requestUseCase, prisma);
     const profileSvc = new profile_http_service_1.PartnerProfileHttpService(profileUC);
-    const movieSvc = new movie_http_service_1.MovieManagementHttpService(movieUC);
+    const movieSvc = new movie_http_service_1.MovieManagementHttpService(movieUC, prisma);
     const adminGuard = [auth_1.authMiddleware, (0, auth_1.requireRole)("ADMIN")];
     // ── Partner requests ──────────────────────────────────────────────────────
     router.get("/partner-requests", ...adminGuard, (req, res) => requestSvc.adminListRequests(req, res));
@@ -137,7 +137,7 @@ function buildPartnerRouter(prisma) {
     const financeUC = new usecase_1.PartnerFinanceUseCase(walletRepo, transactionRepo, withdrawalRepo, partnerRepo, notificationService);
     const dashboardUC = new usecase_1.PartnerDashboardUseCase(walletRepo, transactionRepo, showtimeRepo, withdrawalRepo, ticketRepo);
     const profileSvc = new profile_http_service_1.PartnerProfileHttpService(profileUC);
-    const movieSvc = new movie_http_service_1.MovieManagementHttpService(movieUC);
+    const movieSvc = new movie_http_service_1.MovieManagementHttpService(movieUC, prisma);
     const showtimeSvc = new showtime_http_service_1.ShowtimeManagementHttpService(showtimeUC);
     const roomSvc = new room_http_services_1.RoomManagementHttpService(roomRepo);
     const seatSvc = new seat_http_services_1.SeatManagementHttpService(seatUC);

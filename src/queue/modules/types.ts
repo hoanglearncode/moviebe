@@ -41,6 +41,8 @@ export type BroadcastJobData = {
   channel: string;
   title: string;
   message: string;
+  imageUrls?: string[];
+  broadcastType?: string;
   traceId?: string;
 };
 

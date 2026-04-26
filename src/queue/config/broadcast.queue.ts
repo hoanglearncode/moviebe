@@ -20,6 +20,16 @@ export const enqueueBroadcastJob = async (data: BroadcastJobData): Promise<void>
   await getBroadcastQueue().add("deliver-broadcast", data);
 };
 
+export const enqueueBroadcastJobWithDelay = async (
+  data: BroadcastJobData,
+  delayMs: number,
+): Promise<void> => {
+  if (!isQueueEnabled) return;
+  await getBroadcastQueue().add("deliver-broadcast", data, {
+    delay: Math.max(0, Math.floor(delayMs)),
+  });
+};
+
 export const closeBroadcastQueue = async (): Promise<void> => {
   if (!broadcastQueue) return;
   await broadcastQueue.close();

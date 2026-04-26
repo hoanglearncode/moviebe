@@ -1,6 +1,5 @@
 import { Job, Worker } from "bullmq";
 import { logger } from "../../modules/system/log/logger";
-import { prisma } from "../../share/component/prisma";
 import { PusherService } from "../../socket/services";
 import {
   areQueueWorkersEnabled,
@@ -17,7 +16,6 @@ const processNotificationJob = async (
 ): Promise<void> => {
   const { notificationId, userId, type, title, message, data } = job.data;
 
-  // 1. Push real-time event via Pusher to the user's private channel
   await PusherService.trigger(`private-user-${userId}`, "notification.new", {
     id: notificationId,
     type,
@@ -26,16 +24,6 @@ const processNotificationJob = async (
     data: data ?? {},
     createdAt: new Date().toISOString(),
   });
-
-  // 2. Mark the DB record as delivered (optional field; skipped if column not present)
-  try {
-    await (prisma.notification as any).update({
-      where: { id: notificationId },
-      data: { deliveredAt: new Date() },
-    });
-  } catch {
-    // deliveredAt column is optional — ignore if not migrated yet
-  }
 
   logger.info("[NotificationWorker] Pushed", {
     jobId: job.id,
@@ -71,15 +59,12 @@ export const startNotificationWorker = (): Worker<
   );
 
   notificationWorker.on("ready", () => logger.info("[NotificationWorker] Ready"));
-
   notificationWorker.on("completed", (job) =>
     logger.debug("[NotificationWorker] Completed", { jobId: job.id }),
   );
-
   notificationWorker.on("failed", (job, err) =>
     logger.error("[NotificationWorker] Failed", { jobId: job?.id, error: err.message }),
   );
-
   notificationWorker.on("error", (err) =>
     logger.error("[NotificationWorker] Error", { error: err.message }),
   );

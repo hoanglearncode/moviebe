@@ -1,6 +1,13 @@
 import { Job, Worker } from "bullmq";
 import { randomUUID } from "crypto";
-import { NotificationType, BroadcastTarget, BroadcastChannel, Role } from "@prisma/client";
+import {
+  NotificationType,
+  BroadcastTarget,
+  BroadcastChannel,
+  BroadcastStatus,
+  Role,
+  UserStatus,
+} from "@prisma/client";
 import { prisma } from "../../share/component/prisma";
 import { logger } from "../../modules/system/log/logger";
 import {
@@ -17,25 +24,58 @@ let broadcastWorker: Worker<BroadcastJobData, void, BroadcastJobName> | null = n
 
 const BATCH_SIZE = 100;
 
-const buildUserWhere = (target: string) => {
-  if (target === BroadcastTarget.ALL) return {};
-  if (target === BroadcastTarget.OWNERS) return { role: Role.PARTNER };
-  return { role: Role.USER };
-};
+/**
+ * Returns Prisma `where` clause scoped to the correct recipient segment.
+ *
+ * NOTE: VIP / PREMIUM / FREE require a subscription relation on User (not yet migrated).
+ * Until then they deliver to all active USER-role accounts.
+ * TODO(subscription): add User.planSlug filter once schema is updated.
+ */
+function buildUserWhere(target: string) {
+  const activeOnly = { status: UserStatus.ACTIVE };
+  switch (target) {
+    case BroadcastTarget.ALL:
+      return activeOnly;
+    case BroadcastTarget.OWNERS:
+      return { ...activeOnly, role: Role.PARTNER };
+    case BroadcastTarget.USERS:
+      return { ...activeOnly, role: Role.USER };
+    case BroadcastTarget.VIP:
+    case BroadcastTarget.PREMIUM:
+    case BroadcastTarget.FREE:
+      logger.warn("[BroadcastWorker] Segment target has no subscription filter yet", { target });
+      return { ...activeOnly, role: Role.USER };
+    default:
+      logger.warn("[BroadcastWorker] Unknown target, falling back to USERS", { target });
+      return { ...activeOnly, role: Role.USER };
+  }
+}
 
 const processBroadcastJob = async (
   job: Job<BroadcastJobData, void, BroadcastJobName>,
 ): Promise<void> => {
-  const { broadcastId, target, channel, title, message } = job.data;
+  const { broadcastId, target, channel, title, message, imageUrls = [], broadcastType } = job.data;
 
   const userWhere = buildUserWhere(target);
+
+  // Channel → delivery mode flags
   const shouldPushWebsite =
     channel === BroadcastChannel.ALL ||
     channel === BroadcastChannel.WEBSITE ||
     channel === BroadcastChannel.DESKTOP ||
     channel === BroadcastChannel.MOBILE;
+
   const shouldSendEmail =
     channel === BroadcastChannel.ALL || channel === BroadcastChannel.EMAIL;
+
+  // Notification data embedded in each user notification record
+  // imageUrls and broadcastType let the FE render rich content and correct styling
+  const notifData = {
+    broadcastId,
+    imageUrls,
+    broadcastType: broadcastType ?? "INFO",
+  };
+
   let cursor: string | undefined;
   let totalSent = 0;
 
@@ -59,7 +99,7 @@ const processBroadcastJob = async (
         type: NotificationType.SYSTEM,
         title,
         message,
-        data: { broadcastId } as object,
+        data: notifData as object,
         isRead: false,
       }));
 
@@ -70,10 +110,10 @@ const processBroadcastJob = async (
           enqueueNotificationJob({
             notificationId: n.id,
             userId: n.userId,
-            type: n.type,
+            type: broadcastType ?? String(n.type),
             title: n.title,
             message: n.message,
-            data: { broadcastId },
+            data: notifData,
             traceId: randomUUID(),
           }).catch((err: Error) => {
             logger.warn("[BroadcastWorker] Enqueue push failed for user", {
@@ -91,7 +131,7 @@ const processBroadcastJob = async (
           enqueueEmailJob({
             to: u.email,
             subject: title,
-            html: `<p>${message}</p>`,
+            html: message,
             text: message.replace(/<[^>]+>/g, ""),
             traceId: randomUUID(),
           }).catch((err: Error) => {
@@ -107,16 +147,13 @@ const processBroadcastJob = async (
     totalSent += users.length;
     cursor = users[users.length - 1].id;
 
-    logger.debug("[BroadcastWorker] Batch delivered", {
-      broadcastId,
-      batchSize: users.length,
-      totalSent,
-    });
+    logger.debug("[BroadcastWorker] Batch delivered", { broadcastId, batchSize: users.length, totalSent });
   }
 
+  // Update final delivery count on the broadcast record
   await prisma.broadcastNotification.update({
     where: { id: broadcastId },
-    data: { totalSent, sentAt: new Date() },
+    data: { totalSent, sentAt: new Date(), status: BroadcastStatus.SENT },
   });
 
   logger.info("[BroadcastWorker] Delivery complete", { broadcastId, totalSent });

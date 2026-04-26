@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminUserHttpService = exports.UserHttpService = void 0;
 const http_server_1 = require("../../../../share/transport/http-server");
 const dto_1 = require("../../model/dto");
+const prisma_1 = require("../../../../share/component/prisma");
+const helper_1 = require("../../../admin-audit-logs/helper");
 class UserHttpService extends http_server_1.BaseHttpService {
     constructor(useCase) {
         super(useCase);
@@ -97,7 +99,40 @@ class AdminUserHttpService extends http_server_1.BaseHttpService {
     }
     async changeUserStatus(req, res) {
         await this.handleRequest(res, async () => {
-            return this.adminUserUseCase.changeUserStatus(String(req.params.id || ""), req.body);
+            const userId = String(req.params.id || "");
+            const before = await this.adminUserUseCase.getDetail(userId);
+            const result = await this.adminUserUseCase.changeUserStatus(userId, req.body);
+            const after = await this.adminUserUseCase.getDetail(userId);
+            if (!before || !after)
+                return result;
+            const isPartner = String(after.role) === "PARTNER";
+            const targetLabel = after.email ?? after.username ?? after.id;
+            const statusTo = String(req.body.status ?? after.status);
+            let action = isPartner ? "change_partner_status" : "change_user_status";
+            let severity = "medium";
+            if (statusTo === "BANNED") {
+                action = isPartner ? "ban_partner" : "ban_user";
+                severity = "high";
+            }
+            else if (String(before.status) === "BANNED" && statusTo === "ACTIVE") {
+                action = isPartner ? "unban_partner" : "unban_user";
+                severity = "medium";
+            }
+            await (0, helper_1.writeAuditLog)(prisma_1.prisma, req, {
+                action,
+                description: `${action} for ${targetLabel}`,
+                category: isPartner ? "partner" : "user",
+                severity,
+                targetType: isPartner ? "partner_user" : "user",
+                targetId: after.id,
+                targetLabel,
+                meta: {
+                    role: after.role,
+                    fromStatus: before.status,
+                    toStatus: statusTo,
+                },
+            });
+            return result;
         });
     }
     async resetUserPassword(req, res) {

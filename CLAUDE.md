@@ -1,194 +1,211 @@
-# CLAUDE.md — Backend (Express 5 + TypeScript)
+# CLAUDE.md - Backend (Express 5 + TypeScript)
 
-Stack: Express 5 · TypeScript 5.9 · Prisma 6 · BullMQ 5 · Redis · Winston · Zod 4
+Stack: Express 5, TypeScript 5.9, Prisma 6, BullMQ 5, Redis, Winston, Zod 4
 
-> Shared rules (security, naming, behavior): xem `../.claude/CLAUDE.md`
-
----
-
-## Architecture — phân tầng bắt buộc
-
-```
-Request → Router → Middleware (validate) → Controller → Service → Prisma/Queue
-```
-
-- **Controller**: chỉ handle HTTP request/response, delegate mọi logic xuống service
-- **Service**: chứa toàn bộ business logic, không biết về HTTP
-- **Middleware**: auth, validation, rate limiting
-- **Queue**: background tasks — không dùng `setTimeout`
+> Shared rules (security, naming, behavior): see `../.claude/CLAUDE.md`
 
 ---
 
-## Controller pattern
+## Core architecture (SOLID + Hexagonal)
 
-```typescript
-// src/modules/product/product.controller.ts
-import { Request, Response, NextFunction } from 'express';
-import { productService } from './product.service';
-import { asyncHandler } from '../../lib/asyncHandler';
+This backend is not Controller-Service in the classic layered style.
+Current codebase follows Hexagonal architecture with clear ports/adapters.
 
-export const createProduct = asyncHandler(async (req: Request, res: Response) => {
-  // req.body đã validated bởi validateMiddleware trước khi vào đây
-  const result = await productService.create(req.body, req.user!.id);
-  res.status(201).json({ success: true, data: result });
-});
+Runtime flow:
 
-export const getProduct = asyncHandler(async (req: Request, res: Response) => {
-  const product = await productService.getById(req.params.id);
-  res.json({ success: true, data: product });
-});
-```
+`HTTP Request -> Express Router -> Transport Adapter (HttpService) -> UseCase (application core) -> Port Interfaces -> Infrastructure Adapters (Prisma, token, mail, social, queue)`
 
-## Service pattern
+SOLID mapping in this codebase:
 
-```typescript
-// src/modules/product/product.service.ts
-import { prisma } from '../../lib/prisma';
-import { logger } from '../../lib/logger';
-import type { CreateProductDto } from './product.schema';
-
-export const productService = {
-  async create(dto: CreateProductDto, sellerId: string) {
-    const product = await prisma.product.create({
-      data: { ...dto, sellerId },
-      select: { id: true, name: true, price: true, slug: true },
-    });
-    logger.info('Product created', { productId: product.id, sellerId });
-    return product;
-  },
-
-  async getById(id: string) {
-    const product = await prisma.product.findUnique({
-      where: { id, deletedAt: null },
-      select: { id: true, name: true, price: true, slug: true, description: true },
-    });
-    if (!product) throw new NotFoundError('Product not found');
-    return product;
-  },
-};
-```
-
-## Validation middleware
-
-```typescript
-// src/middleware/validate.middleware.ts
-import { z } from 'zod';
-import { Request, Response, NextFunction } from 'express';
-
-export function validate(schema: z.ZodSchema) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const result = schema.safeParse(req.body);
-    if (!result.success) {
-      return res.status(400).json({
-        success: false,
-        error: 'Validation failed',
-        details: result.error.flatten(),
-      });
-    }
-    req.body = result.data;
-    next();
-  };
-}
-```
-
-## Response format — chuẩn cho mọi endpoint
-
-```typescript
-// Success
-{ success: true, data: T, message?: string }
-
-// Paginated
-{ success: true, data: T[], pagination: { page, limit, total, totalPages } }
-
-// Error
-{ success: false, error: string, code?: string }
-// Không return stack trace trong production
-```
-
-## Error handling
-
-```typescript
-// src/lib/asyncHandler.ts
-export const asyncHandler = (fn: Function) => (req: Request, res: Response, next: NextFunction) =>
-  Promise.resolve(fn(req, res, next)).catch(next);
-
-// src/middleware/error.middleware.ts
-export function globalErrorHandler(err: Error, req: Request, res: Response, next: NextFunction) {
-  logger.error('Unhandled error', { error: err.message, stack: err.stack, path: req.path });
-
-  if (err instanceof NotFoundError) return res.status(404).json({ success: false, error: err.message });
-  if (err instanceof ConflictError) return res.status(409).json({ success: false, error: err.message });
-  if (err instanceof UnauthorizedError) return res.status(401).json({ success: false, error: err.message });
-
-  const isProd = process.env.NODE_ENV === 'production';
-  res.status(500).json({
-    success: false,
-    error: isProd ? 'Internal server error' : err.message,
-  });
-}
-```
-
-## Logging — Winston (không console.log)
-
-```typescript
-// src/lib/logger.ts
-import winston from 'winston';
-
-export const logger = winston.createLogger({
-  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json(),
-  ),
-  transports: [new winston.transports.Console()],
-});
-
-// ✅ Structured logging
-logger.info('Order created', { orderId, userId, amount });
-logger.error('Payment failed', { orderId, error: err.message });
-
-// ❌ Không dùng
-console.log('order:', order);
-```
-
-## Auth middleware
-
-```typescript
-// src/middleware/auth.middleware.ts
-import jwt from 'jsonwebtoken';
-import { ROLES } from '../shared/constants/roles';
-
-export function authenticate(req: Request, res: Response, next: NextFunction) {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) return res.status(401).json({ success: false, error: 'No token' });
-
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload;
-    req.user = payload;
-    next();
-  } catch {
-    res.status(401).json({ success: false, error: 'Invalid token' });
-  }
-}
-
-export function authorize(...roles: Role[]) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (!roles.includes(req.user!.role)) {
-      return res.status(403).json({ success: false, error: 'Forbidden' });
-    }
-    next();
-  };
-}
-```
+1. `S` (Single Responsibility):
+   - `usecase/*`: business rules only.
+   - `infras/transport/*`: HTTP mapping only.
+   - `infras/repository/*`: persistence mapping only.
+2. `O` (Open/Closed):
+   - Add new adapters by implementing interfaces in `interface/index.ts` without rewriting use case core.
+3. `L` (Liskov):
+   - Adapters must satisfy contract of ports (`IAuthUserRepository`, `ITokenService`, ...).
+4. `I` (Interface Segregation):
+   - Small role-focused interfaces instead of one giant dependency contract.
+5. `D` (Dependency Inversion):
+   - Use case depends on interfaces; concrete implementations are wired in `setup*Hexagon`.
 
 ---
 
-## Non-negotiables BE
+## Module anatomy (standard in this project)
 
-1. Mọi route phải qua `validate(schema)` middleware trước controller
-2. Controller không chứa business logic — chỉ gọi service
-3. Không `console.log` — dùng `logger` từ Winston
-4. Không raw SQL — dùng Prisma (xem `.claude/rules/7-database/prisma.md`)
-5. Mọi background task qua BullMQ — không `setTimeout` (xem `.claude/rules/7-database/bullmq.md`)
-6. Rate limit cho auth endpoints
-7. Không return stack trace trong production responses
+Example: `src/modules/auth`
+
+```
+auth/
+|- index.ts                    # composition root (build hexagon + router)
+|- interface/                  # ports (input + output contracts)
+|- usecase/                    # application core
+|- model/                      # dto/schema/domain model
+|- infras/
+|  |- transport/               # HTTP adapter (Express handlers)
+|  `- repository/              # persistence adapter (Prisma)
+`- shared/                     # domain services/adapters (token, hash, social, notification)
+```
+
+Required responsibilities:
+
+- `index.ts`: wire dependencies and expose router (`setupAuthHexagon`, `setupAuthHexagonWithUseCase`).
+- `usecase`: validate input and orchestrate business flow.
+- `interface`: define all ports for dependency injection.
+- `infras/transport`: convert request metadata to use case input/output.
+- `infras/repository`: map between Prisma model and domain model.
+
+---
+
+## Composition root pattern
+
+Follow pattern used in:
+- `src/modules/auth/index.ts`
+- `src/modules/category/index.ts`
+
+Rules:
+
+1. Build concrete adapters in module root.
+2. Inject them into use case via dependency object.
+3. Bind HTTP handlers in one router factory.
+4. Export `setup*Hexagon(...)` for app bootstrap (`src/index.ts`).
+
+Do not instantiate infra dependencies directly inside use case methods.
+
+---
+
+## UseCase rules (application core)
+
+Use case is the only place for business logic:
+
+- Validate DTO with Zod payload schemas (`safeParse` or `parse`).
+- Throw domain/application errors from `share/transport/http-server.ts` (`ValidationError`, `UnauthorizedError`, `NotFoundError`, `ConflictError`).
+- Use ports from `interface/index.ts`, not Prisma client directly.
+- Keep id generation and business state transitions in use case.
+- Use `concurrentLockService` for race-sensitive actions (register/login/social login).
+
+Reference: `src/modules/auth/usecase/index.ts`.
+
+---
+
+## Transport adapter rules (HTTP)
+
+HTTP layer in this project is `*HttpService` classes, not standalone controllers.
+
+Rules:
+
+1. Transport reads request data (`body`, `params`, headers, client IP, user-agent).
+2. Transport calls use case methods.
+3. Transport never contains business decisions.
+4. Prefer `BaseHttpService.handleRequest(...)` for consistent success/error envelope.
+
+Reference:
+- `src/modules/auth/infras/transport/http-service.ts`
+- `src/share/transport/http-server.ts`
+
+---
+
+## Repository adapter rules (Prisma)
+
+Repository adapters implement module ports and convert data both ways:
+
+- Prisma row -> domain model (`toAuthUser`)
+- domain model -> Prisma input (`toCreateInput`, `toUpdateInput`)
+
+Rules:
+
+1. No business decisions in repository.
+2. Keep mapping logic explicit and typed.
+3. Return domain entity shape expected by use case.
+
+Reference: `src/modules/auth/infras/repository/repo.ts`.
+
+---
+
+## AuthN/AuthZ and guards
+
+Use shared auth middleware in `src/share/middleware/auth.ts`:
+
+- `protect(...)` for authenticated + active user.
+- `requireRole(...)`, `requirePermission(...)`, `requireAnyPermission(...)`.
+- `requireSelfOrPermission(...)` for ownership checks.
+
+Never duplicate JWT verification logic inside module transport/usecase.
+
+---
+
+## Validation strategy
+
+Validation is schema-first in module DTO files (`model/dto.ts`), then enforced in use case.
+
+Rules:
+
+1. Define payload DTO schemas with Zod in module `model`.
+2. Parse/validate at use case boundary.
+3. Surface validation errors through `ValidationError`.
+
+Do not rely on ad-hoc field checks scattered across transport/repository.
+
+---
+
+## Error and response contract
+
+Central error classes and base response helpers live in:
+- `src/share/transport/http-server.ts`
+
+Preferred contract:
+
+```ts
+// success
+{ success: true, data: T, paging?: PagingDTO | null, message?: string }
+
+// app error
+{ code: ErrorCode, message: string, details?: unknown }
+```
+
+Rules:
+
+1. Do not leak stack traces to clients.
+2. Convert unexpected errors to generic internal error.
+3. Keep module handlers aligned with `BaseHttpService` envelope.
+
+---
+
+## Logging
+
+Use Winston logger from:
+- `src/modules/system/log/logger.ts`
+
+Rules:
+
+1. Use structured logs (`logger.info/error/warn` with metadata object).
+2. Do not introduce `console.log` in new code.
+3. Include context fields (`userId`, `requestId`, `module`, `action`) where possible.
+
+---
+
+## Queue and async jobs
+
+Background tasks must run through BullMQ infrastructure:
+- `src/queue/*`
+
+Rules:
+
+1. No `setTimeout`/in-memory timers for business jobs.
+2. Use queue config in `src/queue/config/config.ts`.
+3. Keep queue side effects out of HTTP transport.
+
+---
+
+## Non-negotiables for this backend
+
+1. New modules must follow `model/interface/usecase/infras/shared/index.ts` hexagon layout.
+2. Use case depends on interfaces only (no direct Prisma in use case).
+3. HTTP code stays in transport adapters, not in use case.
+4. Data access stays in repository adapters, not in use case.
+5. Validate all use case inputs via Zod DTO schemas.
+6. Use shared app errors from `share/transport/http-server.ts`.
+7. Use Winston logger, avoid console output in production paths.
+8. Use BullMQ for background processing.
+9. Keep dependency wiring in module `index.ts` and app bootstrap `src/index.ts`.
