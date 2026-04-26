@@ -34,6 +34,7 @@ import {
 import { ServicePartnerUser } from "./usecase/service.usecase";
 import { PartnerProfileHttpService } from "./infras/transport/profile.http-service";
 import { MovieManagementHttpService } from "./infras/transport/movie.http-service";
+import { successResponse, errorResponse } from "../../share/transport/http-server";
 import { ShowtimeManagementHttpService } from "./infras/transport/showtime.http-service";
 import { RoomManagementHttpService } from "./infras/transport/room.http-services";
 import { SeatManagementHttpService } from "./infras/transport/seat.http-services";
@@ -80,6 +81,8 @@ export const buildPartnerRequestAdminRouter = (prisma: PrismaClient): Router => 
   const router = Router();
 
   const partnerRepo = createPartnerRepository(prisma);
+  const movieRepo = createMovieRepository(prisma);
+  const serviceRepo = createServerRepository(prisma);
   const userRepository = createUserRepository(prisma);
   const sessionRepository = createSessionRepository(prisma);
   const walletRepo = createWalletRepository(prisma);
@@ -94,17 +97,69 @@ export const buildPartnerRequestAdminRouter = (prisma: PrismaClient): Router => 
     walletRepo,
     staffRepo,
   );
+  const profileUC = new PartnerProfileUseCase(partnerRepo);
+  const movieUC = new MovieManagementUseCase(partnerRepo, movieRepo);
 
-  const service = new PartnerRequestHttpService(requestUseCase);
+  const requestSvc = new PartnerRequestHttpService(requestUseCase);
+  const profileSvc = new PartnerProfileHttpService(profileUC);
+  const movieSvc = new MovieManagementHttpService(movieUC);
 
   const adminGuard = [authMiddleware, requireRole("ADMIN")];
 
-  router.get("/partner-requests", ...adminGuard, (req, res) => service.adminListRequests(req, res));
-  router.get("/partner-requests/stats", ...adminGuard, (req, res) => service.stats(req, res));
-  router.get("/partner-requests/:id", ...adminGuard, (req, res) => service.adminGetRequest(req, res), );
-  router.put("/partner-requests/:id/approve", ...adminGuard, (req, res) => service.adminApprove(req, res), ); 
-  router.put("/partner-requests/:id/reject", ...adminGuard, (req, res) => service.adminReject(req, res), );
-  router.put("/partner-requests/:id/reset", ...adminGuard, (req, res) => service.adminReset(req, res), );
+  // ── Partner requests ──────────────────────────────────────────────────────
+  router.get("/partner-requests", ...adminGuard, (req, res) => requestSvc.adminListRequests(req, res));
+  router.get("/partner-requests/stats", ...adminGuard, (req, res) => requestSvc.stats(req, res));
+  router.get("/partner-requests/:id", ...adminGuard, (req, res) => requestSvc.adminGetRequest(req, res));
+  router.put("/partner-requests/:id/approve", ...adminGuard, (req, res) => requestSvc.adminApprove(req, res));
+  router.put("/partner-requests/:id/reject", ...adminGuard, (req, res) => requestSvc.adminReject(req, res));
+  router.put("/partner-requests/:id/reset", ...adminGuard, (req, res) => requestSvc.adminReset(req, res));
+
+  // ── Admin movies ──────────────────────────────────────────────────────────
+  router.get("/movies/stats", ...adminGuard, (req, res) => movieSvc.adminGetMovieStats(req, res));
+  router.get("/movies", ...adminGuard, (req, res) => movieSvc.adminListMovies(req, res));
+  router.put("/movies/:movieId/approve", ...adminGuard, (req, res) => movieSvc.adminApproveMovie(req, res));
+  router.put("/movies/:movieId/reject", ...adminGuard, (req, res) => movieSvc.adminRejectMovie(req, res));
+
+  // ── Admin partners (fee management) ───────────────────────────────────────
+  router.get("/partners", ...adminGuard, async (req, res) => {
+    try {
+      const page = req.query.page ? parseInt(req.query.page as string) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const partners = await partnerRepo.list({}, { page, limit });
+      successResponse(res, { items: partners, total: partners.length }, "Partners retrieved");
+    } catch (error: any) {
+      errorResponse(res, 500, error.message);
+    }
+  });
+
+  router.put("/partners/:partnerId/commission", ...adminGuard, async (req, res) => {
+    try {
+      const { partnerId } = req.params;
+      const { commissionRate } = req.body;
+      if (commissionRate === undefined || typeof commissionRate !== "number") {
+        return errorResponse(res, 400, "commissionRate (number) is required");
+      }
+      const updated = await profileUC.updateCommissionRate(String(partnerId), commissionRate);
+      successResponse(res, updated, "Commission rate updated");
+    } catch (error: any) {
+      errorResponse(res, error.statusCode || 400, error.message);
+    }
+  });
+
+  // ── Admin services ────────────────────────────────────────────────────────
+  router.get("/services", ...adminGuard, async (req, res) => {
+    try {
+      const result = await serviceRepo.listAll({
+        page: req.query.page ? parseInt(req.query.page as string) : 1,
+        limit: req.query.limit ? parseInt(req.query.limit as string) : 20,
+        keyword: req.query.keyword as string | undefined,
+        category: req.query.category as string | undefined,
+      });
+      successResponse(res, result, "Services retrieved");
+    } catch (error: any) {
+      errorResponse(res, 500, error.message);
+    }
+  });
 
   return router;
 };
@@ -128,7 +183,7 @@ export default function buildPartnerRouter(prisma: PrismaClient): Router {
 
   const profileUC = new PartnerProfileUseCase(partnerRepo);
   const serviceUC = new ServicePartnerUser(serviceRepo);
-  const movieUC = new MovieManagementUseCase(partnerRepo, movieRepo);
+  const movieUC = new MovieManagementUseCase(partnerRepo, movieRepo, showtimeRepo, seatRepo, roomRepo);
   const showtimeUC = new ShowtimeManagementUseCase(
     partnerRepo,
     movieRepo,
@@ -173,12 +228,14 @@ export default function buildPartnerRouter(prisma: PrismaClient): Router {
   router.get("/me", ...guard, (req, res) => profileSvc.getProfile(req, res)); 
   router.put("/me", ...guard, (req, res) => profileSvc.updateProfile(req, res)); 
   router.get("/status", ...guard, (req, res) => profileSvc.getStatus(req, res)); 
+
   router.post("/movies", ...guard, (req, res) => movieSvc.createMovie(req, res)); 
   router.get("/movies", ...guard, (req, res) => movieSvc.getMovies(req, res)); 
   router.get("/movies/:movieId", ...guard, (req, res) => movieSvc.getMovieDetail(req, res)); 
   router.put("/movies/:movieId", ...guard, (req, res) => movieSvc.updateMovie(req, res)); 
   router.delete("/movies/:movieId", ...guard, (req, res) => movieSvc.deleteMovie(req, res)); 
   router.post("/movies/:movieId/submit", ...guard, (req, res) => movieSvc.submitMovie(req, res)); 
+  
   router.post("/showtimes", ...guard, (req, res) => showtimeSvc.createShowtime(req, res)); 
   router.get("/showtimes", ...guard, (req, res) => showtimeSvc.getShowtimes(req, res)); 
   router.get("/showtimes/:showtimeId", ...guard, (req, res) => showtimeSvc.getShowtimeDetail(req, res)); 

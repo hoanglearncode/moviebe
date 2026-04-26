@@ -112,4 +112,57 @@ export class MovieManagementHttpService {
       errorResponse(res, error.statusCode || 400, error.message, error.code);
     }
   }
+
+  // ── Admin handlers ──────────────────────────────────────────────────────────
+
+  async adminListMovies(req: Request, res: Response): Promise<void> {
+    try {
+      const query: ListMoviesQueryDTO = {
+        page: req.query.page ? parseInt(req.query.page as string) : 1,
+        limit: req.query.limit ? parseInt(req.query.limit as string) : 20,
+        status: req.query.status as any,
+        keyword: req.query.keyword as string | undefined,
+        sortBy: (req.query.sortBy as any) || "createdAt",
+        sortOrder: (req.query.sortOrder as any) || "desc",
+      };
+      const result = await this.useCase.adminListMovies(query);
+      successResponse(res, result, "Movies retrieved successfully");
+    } catch (error: any) {
+      errorResponse(res, error.statusCode || 500, error.message, error.code);
+    }
+  }
+
+  async adminGetMovieStats(req: Request, res: Response): Promise<void> {
+    try {
+      const stats = await this.useCase.adminGetMovieStats();
+      successResponse(res, stats, "Movie stats retrieved");
+    } catch (error: any) {
+      errorResponse(res, 500, error.message, error.code);
+    }
+  }
+
+  async adminApproveMovie(req: Request, res: Response): Promise<void> {
+    try {
+      const { movieId } = req.params;
+      const { note = "" } = req.body;
+      const result = await this.useCase.adminApproveMovie(String(movieId), note);
+      successResponse(res, result, "Movie approved successfully");
+    } catch (error: any) {
+      errorResponse(res, error.statusCode || 400, error.message, error.code);
+    }
+  }
+
+  async adminRejectMovie(req: Request, res: Response): Promise<void> {
+    try {
+      const { movieId } = req.params;
+      const { reason, note } = req.body;
+      if (!reason || !note) {
+        return errorResponse(res, 400, "reason and note are required");
+      }
+      const result = await this.useCase.adminRejectMovie(String(movieId), reason, note);
+      successResponse(res, result, "Movie rejected successfully");
+    } catch (error: any) {
+      errorResponse(res, error.statusCode || 400, error.message, error.code);
+    }
+  }
 }

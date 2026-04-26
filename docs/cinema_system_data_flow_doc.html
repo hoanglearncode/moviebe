@@ -1,0 +1,847 @@
+
+<style>
+:root { --accent: #534AB7; --accent2: #0F6E56; --accent3: #993C1D; --accent4: #185FA5; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+
+.doc-wrap { padding: 0.5rem 0 2rem; }
+.section-nav { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1.5rem; }
+.nav-btn { font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-secondary); cursor: pointer; transition: all .15s; }
+.nav-btn:hover, .nav-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.section { display: none; }
+.section.active { display: block; }
+
+.section-title { font-size: 18px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+.section-sub { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 1.25rem; }
+
+.flow-container { overflow-x: auto; }
+
+/* Flow row */
+.flow { display: flex; align-items: flex-start; gap: 0; margin-bottom: 1rem; flex-wrap: nowrap; min-width: max-content; }
+.flow-step { display: flex; flex-direction: column; align-items: center; }
+.step-box { padding: 6px 14px; border-radius: 8px; border: 0.5px solid; font-size: 12px; font-weight: 500; text-align: center; min-width: 110px; max-width: 140px; line-height: 1.4; }
+.step-label { font-size: 10px; color: var(--color-text-tertiary); margin-top: 3px; max-width: 120px; text-align: center; line-height: 1.3; }
+.arrow { display: flex; align-items: center; padding: 0 2px; align-self: flex-start; margin-top: 11px; }
+.arrow svg { flex-shrink: 0; }
+.arrow-label { font-size: 10px; color: var(--color-text-tertiary); writing-mode: horizontal-tb; white-space: nowrap; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); }
+.arrow-wrap { position: relative; display: flex; align-items: center; }
+
+/* Colors */
+.blue { background: #E6F1FB; border-color: #378ADD; color: #0C447C; }
+.purple { background: #EEEDFE; border-color: #7F77DD; color: #3C3489; }
+.teal { background: #E1F5EE; border-color: #1D9E75; color: #085041; }
+.amber { background: #FAEEDA; border-color: #BA7517; color: #633806; }
+.coral { background: #FAECE7; border-color: #D85A30; color: #711B13; }
+.gray { background: var(--color-background-secondary); border-color: var(--color-border-primary); color: var(--color-text-primary); }
+.green { background: #EAF3DE; border-color: #639922; color: #27500A; }
+.pink { background: #FBEAF0; border-color: #D4537E; color: #72243E; }
+.red { background: #FCEBEB; border-color: #E24B4A; color: #791F1F; }
+
+/* DB model pill */
+.models { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 0; }
+.model-tag { font-size: 10px; padding: 2px 7px; border-radius: 12px; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); color: var(--color-text-secondary); font-family: var(--font-mono); }
+
+.group-label { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); margin: 1rem 0 6px; text-transform: uppercase; letter-spacing: .05em; }
+
+/* card blocks */
+.info-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 14px 16px; margin-bottom: 10px; }
+.info-card h4 { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 6px; }
+.info-card ul { padding-left: 14px; }
+.info-card li { font-size: 12px; color: var(--color-text-secondary); line-height: 1.8; }
+.tag-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.tag { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-family: var(--font-mono); }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 540px) { .two-col { grid-template-columns: 1fr; } }
+
+/* money flow */
+.money-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 12px; }
+.money-from { min-width: 90px; font-weight: 500; }
+.money-line { flex: 1; height: 1px; background: var(--color-border-secondary); position: relative; }
+.money-line::after { content: '▶'; position: absolute; right: -6px; top: -8px; font-size: 10px; color: var(--color-text-secondary); }
+.money-to { min-width: 90px; font-size: 11px; color: var(--color-text-secondary); }
+.money-note { font-size: 10px; color: var(--color-text-tertiary); padding: 2px 6px; background: var(--color-background-secondary); border-radius: 4px; }
+
+.divider { border: none; border-top: 0.5px solid var(--color-border-tertiary); margin: 1rem 0; }
+
+/* notification types */
+.notif-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+.notif-item:last-child { border-bottom: none; }
+.notif-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.notif-content { flex: 1; }
+.notif-title { font-size: 12px; font-weight: 500; color: var(--color-text-primary); }
+.notif-desc { font-size: 11px; color: var(--color-text-secondary); line-height: 1.4; }
+</style>
+
+<div class="doc-wrap">
+<div class="section-nav" id="nav">
+  <button class="nav-btn active" onclick="show('visitor')">Visitor</button>
+  <button class="nav-btn" onclick="show('register')">Đăng ký</button>
+  <button class="nav-btn" onclick="show('user-active')">User hoạt động</button>
+  <button class="nav-btn" onclick="show('partner-req')">Partner request</button>
+  <button class="nav-btn" onclick="show('partner-init')">Partner khởi tạo</button>
+  <button class="nav-btn" onclick="show('partner-setup')">Partner setup</button>
+  <button class="nav-btn" onclick="show('booking')">Mua vé</button>
+  <button class="nav-btn" onclick="show('partner-admin')">Partner quản trị</button>
+  <button class="nav-btn" onclick="show('admin')">Admin</button>
+  <button class="nav-btn" onclick="show('money')">Dòng tiền</button>
+  <button class="nav-btn" onclick="show('notif')">Thông báo</button>
+  <button class="nav-btn" onclick="show('log')">Log & Audit</button>
+  <button class="nav-btn" onclick="show('ops')">Vận hành</button>
+</div>
+
+<!-- VISITOR -->
+<div class="section active" id="visitor">
+  <div class="section-title">Khách ghé thăm — Public API</div>
+  <div class="section-sub">Các API công khai không yêu cầu xác thực, phục vụ người dùng chưa đăng nhập</div>
+
+  <div class="group-label">Luồng truy cập</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">Browser / App</div><div class="step-label">Client</div></div>
+    <div class="arrow"><svg width="28" height="2"><line x1="0" y1="1" x2="20" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="20,0 28,1 20,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">Public API Gateway</div><div class="step-label">No auth required</div></div>
+    <div class="arrow"><svg width="28" height="2"><line x1="0" y1="1" x2="20" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="20,0 28,1 20,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box teal">Data Layer</div><div class="step-label">PostgreSQL</div></div>
+  </div></div>
+
+  <div class="two-col">
+    <div class="info-card">
+      <h4>Endpoints công khai</h4>
+      <ul>
+        <li>GET /movies — Danh sách phim đang chiếu</li>
+        <li>GET /movies/:id — Chi tiết phim + cast + review</li>
+        <li>GET /showtimes — Lịch chiếu theo phim/ngày</li>
+        <li>GET /partners — Danh sách rạp</li>
+        <li>GET /categories — Danh mục thể loại</li>
+        <li>GET /movies/:id/reviews — Review công khai</li>
+      </ul>
+      <div class="models"><span class="model-tag">Movie</span><span class="model-tag">Showtime</span><span class="model-tag">Partner</span><span class="model-tag">Category</span><span class="model-tag">Review</span><span class="model-tag">Cast</span></div>
+    </div>
+    <div class="info-card">
+      <h4>Filter &amp; query được hỗ trợ</h4>
+      <ul>
+        <li>Lọc phim theo: status=ACTIVE, category, genre</li>
+        <li>Lọc showtime theo: movieId, partnerId, date</li>
+        <li>Showtime chỉ trả status=SCHEDULED</li>
+        <li>Review chỉ trả status=APPROVED</li>
+        <li>Partner chỉ trả status=ACTIVE</li>
+        <li>Movie chỉ trả status=ACTIVE</li>
+      </ul>
+      <div class="models"><span class="model-tag">MovieStatus.ACTIVE</span><span class="model-tag">ReviewStatus.APPROVED</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div class="section" id="register">
+  <div class="section-title">User mới đăng ký</div>
+  <div class="section-sub">Luồng tạo tài khoản mới — local email hoặc social login</div>
+
+  <div class="group-label">Đăng ký local (email + password)</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">POST /auth/register</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box purple">Hash password<br/>bcrypt</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">Create User<br/>status=ACTIVE</div><div class="step-label">emailVerified=false</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box teal">Create UserSetting<br/>defaults</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box amber">EmailVerification<br/>Token</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box coral">Send Email<br/>VERIFY_EMAIL</div></div>
+  </div></div>
+
+  <div class="group-label">Xác minh email</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">Click link email</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">Validate token<br/>chưa hết hạn</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box teal">User.emailVerified<br/>= true</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box coral">Send Email<br/>WELCOME_NEW_ACCOUNT</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box green">Delete token<br/>đã dùng</div></div>
+  </div></div>
+
+  <div class="group-label">Social login (Google, Facebook...)</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">OAuth Callback</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">Upsert User<br/>provider=google</div><div class="step-label">emailVerified=true<br/>password=null</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box teal">Create UserSetting<br/>(nếu chưa có)</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box coral">WELCOME_SOCIAL_LOGIN<br/>email</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box amber">Create Session<br/>+ JWT</div></div>
+  </div></div>
+
+  <div class="two-col" style="margin-top:10px">
+    <div class="info-card">
+      <h4>Models được tạo khi đăng ký</h4>
+      <div class="tag-row">
+        <span class="tag blue">User</span>
+        <span class="tag teal">UserSetting</span>
+        <span class="tag amber">EmailVerificationToken</span>
+        <span class="tag coral">ScheduledEmailNotification</span>
+      </div>
+    </div>
+    <div class="info-card">
+      <h4>Session được tạo khi login</h4>
+      <ul>
+        <li>Session: refreshToken, deviceId, ipAddress</li>
+        <li>JWT access token (short-lived)</li>
+        <li>User.lastLoginAt cập nhật</li>
+        <li>LOGIN_WARNING email nếu IP lạ</li>
+      </ul>
+      <div class="models"><span class="model-tag">Session</span><span class="model-tag">PasswordResetToken</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- USER ACTIVE -->
+<div class="section" id="user-active">
+  <div class="section-title">User hoạt động trong hệ thống</div>
+  <div class="section-sub">Các hành động của user đã đăng nhập</div>
+  <div class="two-col">
+    <div class="info-card">
+      <h4>Hồ sơ &amp; cài đặt</h4>
+      <ul>
+        <li>Cập nhật avatar, tên, bio, phone, location</li>
+        <li>Thay đổi mật khẩu → email PASSWORD_CHANGED</li>
+        <li>Bật/tắt notifications, marketingEmails</li>
+        <li>Xem danh sách Session đang hoạt động</li>
+        <li>Đăng xuất thiết bị cụ thể hoặc tất cả</li>
+      </ul>
+      <div class="models"><span class="model-tag">User</span><span class="model-tag">UserSetting</span><span class="model-tag">Session</span></div>
+    </div>
+    <div class="info-card">
+      <h4>Xem phim &amp; đặt vé</h4>
+      <ul>
+        <li>Browse phim, tìm kiếm theo thể loại</li>
+        <li>Xem lịch chiếu theo rạp/ngày</li>
+        <li>Chọn ghế và đặt vé (xem luồng Mua vé)</li>
+        <li>Xem lịch sử đơn hàng và vé đã mua</li>
+        <li>Download/show QR code vé</li>
+      </ul>
+      <div class="models"><span class="model-tag">Order</span><span class="model-tag">Ticket</span><span class="model-tag">Seat</span></div>
+    </div>
+    <div class="info-card">
+      <h4>Review &amp; đánh giá</h4>
+      <ul>
+        <li>Viết review phim (sau khi đã xem)</li>
+        <li>Review.verifiedPurchase = true nếu có ticket USED</li>
+        <li>Review cần duyệt: status=PENDING → APPROVED</li>
+        <li>Helpful count tăng khi user vote</li>
+        <li>Báo cáo review/nội dung vi phạm → Report</li>
+      </ul>
+      <div class="models"><span class="model-tag">Review</span><span class="model-tag">Report</span></div>
+    </div>
+    <div class="info-card">
+      <h4>Pass vé cho người khác</h4>
+      <ul>
+        <li>Transfer ticket sang user khác</li>
+        <li>Tạo PassHistory (fromUser → toUser)</li>
+        <li>Ticket.userId được cập nhật</li>
+        <li>Chỉ áp dụng với vé status=CONFIRMED</li>
+        <li>Lưu lịch sử tất cả lần transfer</li>
+      </ul>
+      <div class="models"><span class="model-tag">PassHistory</span><span class="model-tag">Ticket</span></div>
+    </div>
+  </div>
+  <div class="info-card" style="margin-top:0">
+    <h4>Nhận thông báo</h4>
+    <ul style="columns:2; gap:20px;">
+      <li>BOOKING_CONFIRMED khi đặt vé thành công</li>
+      <li>BOOKING_CANCELLED khi suất chiếu bị huỷ</li>
+      <li>TICKET_REFUNDED khi hoàn tiền xong</li>
+      <li>SHOWTIME_CANCELLED nếu rạp huỷ suất</li>
+      <li>In-app Notification + Email song song</li>
+    </ul>
+    <div class="models"><span class="model-tag">Notification</span><span class="model-tag">ScheduledEmailNotification</span></div>
+  </div>
+</div>
+
+<!-- PARTNER REQUEST -->
+<div class="section" id="partner-req">
+  <div class="section-title">User gửi yêu cầu làm Partner</div>
+  <div class="section-sub">Luồng từ lúc nộp hồ sơ đến khi được duyệt hoặc từ chối</div>
+
+  <div class="group-label">Nộp hồ sơ</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">User POST<br/>/partner-requests</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">Validate hồ sơ<br/>giấy tờ đủ</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box purple">Create PartnerRequest<br/>status=PENDING</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box amber">AuditLog<br/>ghi nhận</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box coral">Notify Admin<br/>duyệt hồ sơ</div></div>
+  </div></div>
+
+  <div class="group-label">Admin duyệt hồ sơ</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">Admin review<br/>hồ sơ</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">PartnerRequest<br/>reviewedBy, reviewedAt</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box teal">APPROVED?<br/>Tạo Partner</div><div class="step-label">Xem luồng kế tiếp</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box red">REJECTED?<br/>rejectionReason</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box coral">Email thông báo<br/>kết quả</div></div>
+  </div></div>
+
+  <div class="info-card" style="margin-top:10px">
+    <h4>Dữ liệu hồ sơ PartnerRequest</h4>
+    <div class="two-col" style="margin-top:6px">
+      <ul>
+        <li>cinemaName, address, city, phone, email</li>
+        <li>taxCode, businessLicense, businessLicenseFile</li>
+        <li>representativeName, representativeIdNumber</li>
+      </ul>
+      <ul>
+        <li>representativeIdFile, taxCertificateFile</li>
+        <li>bankAccountName, bankAccountNumber, bankName</li>
+        <li>logo (optional)</li>
+      </ul>
+    </div>
+    <div class="models" style="margin-top:8px"><span class="model-tag">PartnerRequest</span><span class="model-tag">AuditLog</span></div>
+  </div>
+</div>
+
+<!-- PARTNER INIT -->
+<div class="section" id="partner-init">
+  <div class="section-title">Dữ liệu khởi tạo khi Partner được duyệt</div>
+  <div class="section-sub">Admin APPROVE → hệ thống tự động tạo các record liên quan</div>
+
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">Admin APPROVE<br/>PartnerRequest</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box purple">Create Partner<br/>từ dữ liệu request</div><div class="step-label">status=ACTIVE<br/>approvedAt=now</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">User.role<br/>= PARTNER</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box teal">Create PartnerWallet<br/>balance=0</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box amber">PartnerRequest<br/>status=APPROVED<br/>approvedPartnerId</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box coral">Email thông báo<br/>ACCOUNT_UPDATED<br/>BY_ADMIN</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box green">AuditLog<br/>ghi nhận</div></div>
+  </div></div>
+
+  <div class="info-card" style="margin-top:10px">
+    <h4>Các record được tạo tự động</h4>
+    <div class="tag-row">
+      <span class="tag purple">Partner (từ PartnerRequest)</span>
+      <span class="tag teal">PartnerWallet (balance=0, totalEarned=0)</span>
+      <span class="tag blue">User.role → PARTNER</span>
+      <span class="tag amber">PartnerRequest.status → APPROVED</span>
+      <span class="tag coral">ScheduledEmailNotification</span>
+      <span class="tag green">AuditLog</span>
+    </div>
+    <div style="margin-top:10px; font-size:12px; color:var(--color-text-secondary);">
+      <strong>commissionRate mặc định: 10%</strong> — Admin có thể thay đổi sau khi duyệt.<br/>
+      Partner.approvedBy = adminId, Partner.approvedAt = timestamp.
+    </div>
+  </div>
+</div>
+
+<!-- PARTNER SETUP -->
+<div class="section" id="partner-setup">
+  <div class="section-title">Partner lần đầu setup hệ thống</div>
+  <div class="section-sub">Các bước cần thực hiện sau khi tài khoản partner được kích hoạt</div>
+
+  <div class="group-label">Bước 1 — Cấu hình thông tin rạp</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">Partner đăng nhập<br/>lần đầu</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box purple">Update Partner<br/>logo, desc, lat/lng</div><div class="step-label">facilities, website</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">Partner profile<br/>hoàn chỉnh</div></div>
+  </div></div>
+
+  <div class="group-label">Bước 2 — Tạo phòng chiếu (Room)</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">POST /rooms</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box teal">Create Room<br/>type, rows, seats</div><div class="step-label">layoutSeat: JSON 2D array</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box purple">Create SeatTemplate<br/>mỗi ghế 1 row</div><div class="step-label">row, col, seatType, version</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box amber">Assign Services<br/>RoomService</div><div class="step-label">popcorn, drinks...</div></div>
+  </div></div>
+
+  <div class="group-label">Bước 3 — Tạo dịch vụ (Service)</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">POST /services</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">Create Service<br/>name, price, category</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box teal">Link vào Room<br/>RoomService</div></div>
+  </div></div>
+
+  <div class="group-label">Bước 4 — Thêm nhân viên (Staff)</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">Partner mời<br/>user theo email</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box coral">Create PartnerStaff<br/>role=CASHIER/SCANNER</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">Staff có quyền<br/>theo role</div><div class="step-label">OWNER/MANAGER/CASHIER<br/>SCANNER/STAFF</div></div>
+  </div></div>
+
+  <div class="group-label">Bước 5 — Đăng phim đầu tiên (Movie)</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">POST /movies</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box purple">Create Movie<br/>status=DRAFT</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">SUBMITTED<br/>→ Admin review</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box teal">APPROVED → ACTIVE<br/>Tạo Showtime</div></div>
+  </div></div>
+
+  <div class="info-card" style="margin-top:8px">
+    <h4>Checklist setup partner mới</h4>
+    <div class="models">
+      <span class="model-tag">Partner (update profile)</span>
+      <span class="model-tag">Room × N</span>
+      <span class="model-tag">SeatTemplate × N</span>
+      <span class="model-tag">Service × N</span>
+      <span class="model-tag">RoomService</span>
+      <span class="model-tag">PartnerStaff × N</span>
+      <span class="model-tag">Movie</span>
+      <span class="model-tag">Showtime</span>
+    </div>
+  </div>
+</div>
+
+<!-- BOOKING -->
+<div class="section" id="booking">
+  <div class="section-title">Luồng User mua vé</div>
+  <div class="section-sub">Từ khi chọn ghế đến khi có vé QR code trong tay</div>
+
+  <div class="group-label">Phase 1 — Lock ghế (tạm giữ)</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">User chọn ghế</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box red">Check Seat<br/>status=AVAILABLE</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box amber">Seat.status=LOCKED<br/>lockedUntil=+10min<br/>lockedBy=userId</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box purple">Create Order<br/>status=PENDING<br/>expiresAt=+10min</div></div>
+  </div></div>
+
+  <div class="group-label">Phase 2 — Thanh toán</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">User confirm<br/>thanh toán</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">Order status<br/>= PAYMENT_PROCESSING</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box coral">Payment Gateway<br/>Stripe/VNPay...</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box teal">Webhook callback<br/>SUCCESS</div></div>
+  </div></div>
+
+  <div class="group-label">Phase 3 — Tạo vé sau thanh toán thành công</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box teal">Payment SUCCESS</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box purple">Create Ticket(s)<br/>per seat</div><div class="step-label">qrCode unique<br/>status=CONFIRMED</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">Seat.status<br/>= BOOKED</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box amber">Order.status<br/>= COMPLETED</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box teal">Create Transaction<br/>TICKET_SALE<br/>+ COMMISSION_DEDUCTED</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box green">Notify user<br/>BOOKING_CONFIRMED</div></div>
+  </div></div>
+
+  <div class="group-label">Phase 4 — Check-in tại rạp</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">Staff quét QR</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">Validate ticket<br/>status=CONFIRMED<br/>đúng showtime</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box teal">Create CheckIn<br/>scannedAt, scannedBy</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box purple">Ticket.status<br/>= USED<br/>usedAt=now</div></div>
+  </div></div>
+
+  <div class="info-card" style="margin-top:8px">
+    <h4>Ticket price breakdown</h4>
+    <div style="font-size:12px;color:var(--color-text-secondary);line-height:2;">
+      <strong>purchasePrice</strong> = giá người dùng trả &nbsp;|&nbsp;
+      <strong>partnerAmount</strong> = purchasePrice × (1 - commissionRate) &nbsp;|&nbsp;
+      <strong>platformFee</strong> = purchasePrice × commissionRate
+    </div>
+    <div class="models"><span class="model-tag">Order</span><span class="model-tag">Ticket</span><span class="model-tag">Seat</span><span class="model-tag">Transaction</span><span class="model-tag">CheckIn</span><span class="model-tag">Notification</span></div>
+  </div>
+</div>
+
+<!-- PARTNER ADMIN -->
+<div class="section" id="partner-admin">
+  <div class="section-title">Partner quản trị hệ thống</div>
+  <div class="section-sub">Các tác vụ vận hành hằng ngày của chủ rạp / manager</div>
+  <div class="two-col">
+    <div class="info-card">
+      <h4>Quản lý phim &amp; suất chiếu</h4>
+      <ul>
+        <li>Tạo Movie (DRAFT → SUBMITTED → APPROVED)</li>
+        <li>Tạo Showtime: chọn Room, giờ, priceConfig</li>
+        <li>Showtime.availableSeats tự động cập nhật</li>
+        <li>Huỷ suất chiếu → Notify tất cả user đã mua</li>
+        <li>Update thông tin phim khi trạng thái DRAFT</li>
+      </ul>
+      <div class="models"><span class="model-tag">Movie</span><span class="model-tag">Showtime</span><span class="model-tag">Seat</span></div>
+    </div>
+    <div class="info-card">
+      <h4>Quản lý phòng &amp; ghế</h4>
+      <ul>
+        <li>Thêm/sửa Room: tên, loại, kích thước màn hình</li>
+        <li>Update SeatTemplate: đổi loại ghế, block ghế</li>
+        <li>SeatTemplate.version tăng khi thay đổi layout</li>
+        <li>Room.status: ACTIVE/INACTIVE/MAINTENANCE</li>
+        <li>Gán dịch vụ vào phòng (RoomService)</li>
+      </ul>
+      <div class="models"><span class="model-tag">Room</span><span class="model-tag">SeatTemplate</span><span class="model-tag">RoomService</span></div>
+    </div>
+    <div class="info-card">
+      <h4>Quản lý doanh thu &amp; rút tiền</h4>
+      <ul>
+        <li>Xem PartnerWallet: balance, totalEarned</li>
+        <li>Tạo Withdrawal request với số tiền cụ thể</li>
+        <li>Admin duyệt → status=PROCESSING → COMPLETED</li>
+        <li>Nhận notify PARTNER_WITHDRAWAL_COMPLETED</li>
+        <li>Xem lịch sử Transaction theo tháng/tuần</li>
+      </ul>
+      <div class="models"><span class="model-tag">PartnerWallet</span><span class="model-tag">Withdrawal</span><span class="model-tag">Transaction</span></div>
+    </div>
+    <div class="info-card">
+      <h4>Quản lý nhân viên</h4>
+      <ul>
+        <li>Thêm/xoá PartnerStaff theo userId</li>
+        <li>Phân quyền: OWNER/MANAGER/CASHIER/SCANNER</li>
+        <li>SCANNER: chỉ được quét QR check-in</li>
+        <li>CASHIER: xem đơn hàng, tạo order offline</li>
+        <li>MANAGER: full access trừ financial</li>
+      </ul>
+      <div class="models"><span class="model-tag">PartnerStaff</span></div>
+    </div>
+  </div>
+  <div class="info-card">
+    <h4>Báo cáo &amp; thống kê partner</h4>
+    <ul style="columns:2">
+      <li>Doanh thu theo ngày/tuần/tháng</li>
+      <li>Số vé bán theo phim/phòng</li>
+      <li>Tỉ lệ lấp đầy ghế (occupancy rate)</li>
+      <li>Lịch sử check-in theo suất chiếu</li>
+      <li>Top phim bán chạy</li>
+      <li>PARTNER_DAILY_REVENUE notification</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="section" id="admin">
+  <div class="section-title">Admin vận hành nội dung hệ thống</div>
+  <div class="section-sub">Các tác vụ quản trị nền tảng của admin/superadmin</div>
+  <div class="two-col">
+    <div class="info-card">
+      <h4>Duyệt nội dung</h4>
+      <ul>
+        <li>Duyệt Partner requests (PENDING → APPROVED/REJECTED)</li>
+        <li>Duyệt Movie (SUBMITTED → APPROVED/REJECTED)</li>
+        <li>Duyệt Review (PENDING → APPROVED/HIDDEN/REMOVED)</li>
+        <li>Xử lý Report: PENDING → REVIEWING → RESOLVED</li>
+        <li>Ghi actionTaken: WARN/DELETE/BAN/ESCALATE</li>
+      </ul>
+      <div class="models"><span class="model-tag">PartnerRequest</span><span class="model-tag">Movie</span><span class="model-tag">Review</span><span class="model-tag">Report</span></div>
+    </div>
+    <div class="info-card">
+      <h4>Quản lý User</h4>
+      <ul>
+        <li>Xem danh sách user, lọc theo status/role</li>
+        <li>BANNED/INACTIVE user khi vi phạm</li>
+        <li>Reset mật khẩu cho user (mustChangePassword)</li>
+        <li>Xem session đang hoạt động của user</li>
+        <li>permissionsOverride: ghi đè quyền đặc biệt</li>
+      </ul>
+      <div class="models"><span class="model-tag">User</span><span class="model-tag">Session</span></div>
+    </div>
+    <div class="info-card">
+      <h4>Cấu hình hệ thống</h4>
+      <ul>
+        <li>SystemSetting: key-value config toàn hệ thống</li>
+        <li>FeatureFlag: bật/tắt tính năng theo env/rollout</li>
+        <li>EmailTemplate: soạn nội dung email event</li>
+        <li>Plan: quản lý gói subscription</li>
+        <li>Category: quản lý danh mục phim</li>
+      </ul>
+      <div class="models"><span class="model-tag">SystemSetting</span><span class="model-tag">FeatureFlag</span><span class="model-tag">EmailTemplate</span><span class="model-tag">Plan</span><span class="model-tag">Category</span></div>
+    </div>
+    <div class="info-card">
+      <h4>Duyệt rút tiền Partner</h4>
+      <ul>
+        <li>Xem Withdrawal requests theo status</li>
+        <li>PENDING → PROCESSING: xác nhận chuyển khoản</li>
+        <li>PROCESSING → COMPLETED: đã chuyển thành công</li>
+        <li>Tạo Transaction WITHDRAWAL + cập nhật Wallet</li>
+        <li>Notify partner kết quả rút tiền</li>
+      </ul>
+      <div class="models"><span class="model-tag">Withdrawal</span><span class="model-tag">PartnerWallet</span><span class="model-tag">Transaction</span></div>
+    </div>
+  </div>
+  <div class="info-card">
+    <h4>Broadcast Notification — Admin gửi thông báo hàng loạt</h4>
+    <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.8;">
+      Target: ALL / USERS / OWNERS / VIP / PREMIUM / FREE &nbsp;|&nbsp; Type: INFO / SUCCESS / WARNING / ERROR<br/>
+      Status: DRAFT → SCHEDULED (scheduledAt) → SENT &nbsp;|&nbsp; Theo dõi totalSent, readCount
+    </div>
+    <div class="models"><span class="model-tag">BroadcastNotification</span><span class="model-tag">AuditLog</span></div>
+  </div>
+</div>
+
+<!-- MONEY -->
+<div class="section" id="money">
+  <div class="section-title">Dòng chảy của tiền</div>
+  <div class="section-sub">Từ khi user thanh toán đến khi tiền về ví partner</div>
+
+  <div class="group-label">Luồng tiền khi bán vé</div>
+  <div class="info-card">
+    <div class="money-row"><span class="money-from blue" style="padding:3px 8px;border-radius:6px;font-size:11px;">User</span><div class="money-line"></div><span class="money-to">Payment Gateway</span><span class="money-note">purchasePrice × N vé</span></div>
+    <div class="money-row"><span class="money-from coral" style="padding:3px 8px;border-radius:6px;font-size:11px;">Gateway</span><div class="money-line"></div><span class="money-to">Platform wallet</span><span class="money-note">Sau khi trừ phí gateway</span></div>
+    <div class="money-row"><span class="money-from purple" style="padding:3px 8px;border-radius:6px;font-size:11px;">Platform</span><div class="money-line"></div><span class="money-to">PartnerWallet.balance</span><span class="money-note">partnerAmount = price × (1 - commissionRate)</span></div>
+    <div class="money-row"><span class="money-from purple" style="padding:3px 8px;border-radius:6px;font-size:11px;">Platform</span><div class="money-line"></div><span class="money-to">Platform revenue</span><span class="money-note">platformFee = price × commissionRate (default 10%)</span></div>
+    <div class="models" style="margin-top:8px"><span class="model-tag">Transaction.type=TICKET_SALE</span><span class="model-tag">Transaction.type=COMMISSION_DEDUCTED</span><span class="model-tag">PartnerWallet.totalEarned +=</span></div>
+  </div>
+
+  <div class="group-label">Luồng tiền khi hoàn vé (Refund)</div>
+  <div class="info-card">
+    <div class="money-row"><span class="money-from amber" style="padding:3px 8px;border-radius:6px;font-size:11px;">User yêu cầu</span><div class="money-line"></div><span class="money-to">Order.status=REFUND_REQUESTED</span></div>
+    <div class="money-row"><span class="money-from blue" style="padding:3px 8px;border-radius:6px;font-size:11px;">Admin duyệt</span><div class="money-line"></div><span class="money-to">Ticket.status=REFUNDED</span><span class="money-note">cancelledAt=now</span></div>
+    <div class="money-row"><span class="money-from teal" style="padding:3px 8px;border-radius:6px;font-size:11px;">Platform</span><div class="money-line"></div><span class="money-to">User (qua gateway)</span><span class="money-note">Hoàn tiền đầy đủ hoặc một phần</span></div>
+    <div class="money-row"><span class="money-from coral" style="padding:3px 8px;border-radius:6px;font-size:11px;">PartnerWallet</span><div class="money-line"></div><span class="money-to">Platform (trừ lại)</span><span class="money-note">balance -= partnerAmount</span></div>
+    <div class="models" style="margin-top:8px"><span class="model-tag">Transaction.type=REFUND</span><span class="model-tag">PartnerWallet.totalRefunded +=</span><span class="model-tag">Order.status=REFUNDED</span></div>
+  </div>
+
+  <div class="group-label">Luồng tiền khi Partner rút tiền</div>
+  <div class="info-card">
+    <div class="money-row"><span class="money-from purple" style="padding:3px 8px;border-radius:6px;font-size:11px;">Partner request</span><div class="money-line"></div><span class="money-to">Withdrawal PENDING</span><span class="money-note">bankAccountNumber, bankName</span></div>
+    <div class="money-row"><span class="money-from blue" style="padding:3px 8px;border-radius:6px;font-size:11px;">Admin duyệt</span><div class="money-line"></div><span class="money-to">Withdrawal PROCESSING</span><span class="money-note">processedAt, approvedBy</span></div>
+    <div class="money-row"><span class="money-from teal" style="padding:3px 8px;border-radius:6px;font-size:11px;">Bank transfer</span><div class="money-line"></div><span class="money-to">Withdrawal COMPLETED</span><span class="money-note">transactionReference</span></div>
+    <div class="money-row"><span class="money-from coral" style="padding:3px 8px;border-radius:6px;font-size:11px;">PartnerWallet</span><div class="money-line"></div><span class="money-to">balance -= amount</span><span class="money-note">totalWithdrawn += amount</span></div>
+    <div class="models" style="margin-top:8px"><span class="model-tag">Withdrawal</span><span class="model-tag">Transaction.type=WITHDRAWAL</span><span class="model-tag">PartnerWallet</span></div>
+  </div>
+</div>
+
+<!-- NOTIF -->
+<div class="section" id="notif">
+  <div class="section-title">Dòng chảy thông báo</div>
+  <div class="section-sub">3 kênh thông báo hoạt động song song: In-App, Email, Broadcast</div>
+
+  <div class="group-label">In-App Notification (real-time)</div>
+  <div class="info-card">
+    <div class="notif-item"><div class="notif-icon" style="background:#E1F5EE;color:#085041;">✓</div><div class="notif-content"><div class="notif-title">BOOKING_CONFIRMED</div><div class="notif-desc">Sau khi payment thành công → tạo Notification cho user</div></div></div>
+    <div class="notif-item"><div class="notif-icon" style="background:#FCEBEB;color:#791F1F;">✕</div><div class="notif-content"><div class="notif-title">BOOKING_CANCELLED / SHOWTIME_CANCELLED</div><div class="notif-desc">Partner huỷ suất → fan-out notify tất cả user đã đặt</div></div></div>
+    <div class="notif-item"><div class="notif-icon" style="background:#FAEEDA;color:#633806;">↩</div><div class="notif-content"><div class="notif-title">TICKET_REFUNDED</div><div class="notif-desc">Admin xử lý hoàn tiền xong → notify user</div></div></div>
+    <div class="notif-item"><div class="notif-icon" style="background:#EEEDFE;color:#3C3489;">$</div><div class="notif-content"><div class="notif-title">PARTNER_WITHDRAWAL_* / PARTNER_DAILY_REVENUE</div><div class="notif-desc">Notify riêng cho partner: rút tiền, doanh thu hằng ngày, phim được duyệt/từ chối</div></div></div>
+    <div class="models" style="margin-top:8px"><span class="model-tag">Notification.isRead</span><span class="model-tag">Notification.readAt</span><span class="model-tag">userId</span></div>
+  </div>
+
+  <div class="group-label">Email Notification (scheduled/async)</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">Trigger event<br/>(register, pay...)</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">Lookup EmailTemplate<br/>theo event</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box purple">Create Scheduled<br/>EmailNotification</div><div class="step-label">Replace variables<br/>{{name}}, {{link}}...</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box amber">Queue worker<br/>gửi email</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box teal">status=SENT<br/>sentAt=now</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box red">FAILED?<br/>failedReason<br/>retry</div></div>
+  </div></div>
+  <div class="info-card" style="margin-top:6px">
+    <h4>Email events</h4>
+    <div class="tag-row">
+      <span class="tag blue">VERIFY_EMAIL</span><span class="tag blue">RESET_PASSWORD</span><span class="tag teal">WELCOME_NEW_ACCOUNT</span><span class="tag teal">WELCOME_SOCIAL_LOGIN</span><span class="tag amber">PASSWORD_CHANGED</span><span class="tag amber">LOGIN_WARNING</span><span class="tag coral">ACCOUNT_UPDATED_BY_ADMIN</span><span class="tag coral">ACCOUNT_DELETED</span><span class="tag purple">PROMO_CAMPAIGN</span>
+    </div>
+  </div>
+
+  <div class="group-label">Broadcast Notification (Admin → Segments)</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">Admin tạo<br/>Broadcast DRAFT</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">Chọn target<br/>ALL/USERS/VIP...</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box purple">SCHEDULED<br/>scheduledAt</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box teal">Job trigger<br/>Fan-out</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box amber">status=SENT<br/>totalSent, readCount</div></div>
+  </div></div>
+</div>
+
+<!-- LOG -->
+<div class="section" id="log">
+  <div class="section-title">Dòng chảy Log &amp; Audit</div>
+  <div class="section-sub">Hệ thống ghi nhận hành động admin và các sự kiện quan trọng</div>
+
+  <div class="group-label">AuditLog — ghi nhận tác vụ admin</div>
+  <div class="flow-container"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">Admin/System<br/>thực hiện action</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">Create AuditLog<br/>entry</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box teal">Lưu vào DB<br/>immutable</div></div>
+  </div></div>
+
+  <div class="two-col">
+    <div class="info-card">
+      <h4>Cấu trúc AuditLog</h4>
+      <ul>
+        <li><strong>action</strong>: tên hành động (approve_partner, ban_user...)</li>
+        <li><strong>description</strong>: mô tả chi tiết</li>
+        <li><strong>category</strong>: nhóm (user, partner, movie, system...)</li>
+        <li><strong>severity</strong>: low / medium / high / critical</li>
+        <li><strong>actorId/actorEmail</strong>: ai thực hiện</li>
+        <li><strong>targetType/targetId</strong>: đối tượng bị tác động</li>
+        <li><strong>ip, device, location</strong>: context thiết bị</li>
+        <li><strong>meta</strong>: JSON extra data</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h4>Các action được audit</h4>
+      <ul>
+        <li>Duyệt/từ chối Partner request</li>
+        <li>Duyệt/từ chối Movie</li>
+        <li>Ban/unban User/Partner</li>
+        <li>Duyệt Withdrawal requests</li>
+        <li>Thay đổi SystemSetting</li>
+        <li>Bật/tắt FeatureFlag</li>
+        <li>Xử lý Report content</li>
+        <li>Broadcast notification gửi</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="info-card">
+    <h4>Session Log — tracking user login</h4>
+    <ul style="columns:2">
+      <li>Mỗi login tạo 1 Session record</li>
+      <li>deviceId, deviceName, deviceType</li>
+      <li>userAgent, ipAddress</li>
+      <li>lastActivityAt cập nhật khi dùng refresh token</li>
+      <li>isActive=false khi logout</li>
+      <li>Tự expire khi quá expiresAt</li>
+    </ul>
+    <div class="models"><span class="model-tag">Session</span><span class="model-tag">AuditLog</span></div>
+  </div>
+</div>
+
+<!-- OPS -->
+<div class="section" id="ops">
+  <div class="section-title">Luồng vận hành hệ thống</div>
+  <div class="section-sub">Background jobs, cleanup tasks và các tác vụ tự động</div>
+  <div class="two-col">
+    <div class="info-card">
+      <h4>Job: Expire Order &amp; Release Seat</h4>
+      <ul>
+        <li>Scan Order WHERE status=PENDING AND expiresAt &lt; now</li>
+        <li>Order.status → EXPIRED</li>
+        <li>Seat.status → AVAILABLE (giải phóng lock)</li>
+        <li>Ticket nếu có → status=CANCELLED</li>
+        <li>Chạy mỗi 1-2 phút</li>
+      </ul>
+      <div class="models"><span class="model-tag">Order</span><span class="model-tag">Seat</span><span class="model-tag">Ticket</span></div>
+    </div>
+    <div class="info-card">
+      <h4>Job: Showtime Status Update</h4>
+      <ul>
+        <li>Showtime.startTime &lt;= now → status=STARTED</li>
+        <li>Showtime.endTime &lt;= now → status=ENDED</li>
+        <li>Ticket CONFIRMED nhưng showtime ENDED → PASSED</li>
+        <li>Cập nhật bookedSeats / availableSeats</li>
+        <li>Chạy mỗi 5 phút</li>
+      </ul>
+      <div class="models"><span class="model-tag">Showtime</span><span class="model-tag">Ticket</span></div>
+    </div>
+    <div class="info-card">
+      <h4>Job: Cleanup Tokens</h4>
+      <ul>
+        <li>Delete PasswordResetToken WHERE expiresAt &lt; now</li>
+        <li>Delete EmailVerificationToken WHERE expiresAt &lt; now</li>
+        <li>Delete Session WHERE isActive=false AND expiresAt &lt; now</li>
+        <li>Chạy hằng ngày (cron daily)</li>
+      </ul>
+      <div class="models"><span class="model-tag">PasswordResetToken</span><span class="model-tag">EmailVerificationToken</span><span class="model-tag">Session</span></div>
+    </div>
+    <div class="info-card">
+      <h4>Job: Daily Partner Revenue Report</h4>
+      <ul>
+        <li>Tính doanh thu ngày cho mỗi Partner</li>
+        <li>Tạo Notification: PARTNER_DAILY_REVENUE</li>
+        <li>Cập nhật PartnerWallet.totalEarned</li>
+        <li>Chạy cuối ngày (23:59)</li>
+      </ul>
+      <div class="models"><span class="model-tag">Transaction</span><span class="model-tag">PartnerWallet</span><span class="model-tag">Notification</span></div>
+    </div>
+    <div class="info-card">
+      <h4>Job: Email Queue Worker</h4>
+      <ul>
+        <li>Scan ScheduledEmailNotification WHERE status=PENDING</li>
+        <li>scheduledFor &lt;= now → send email</li>
+        <li>status=SENT với sentAt, hoặc FAILED + failedReason</li>
+        <li>Retry FAILED tối đa N lần</li>
+      </ul>
+      <div class="models"><span class="model-tag">ScheduledEmailNotification</span><span class="model-tag">EmailTemplate</span></div>
+    </div>
+    <div class="info-card">
+      <h4>FeatureFlag &amp; SystemSetting</h4>
+      <ul>
+        <li>FeatureFlag.rollout: % user nhận tính năng mới</li>
+        <li>FeatureFlag.env: PRODUCTION/STAGING/DEV</li>
+        <li>FeatureFlag.targets: user IDs whitelist</li>
+        <li>SystemSetting: commission default, max seats, timeouts</li>
+        <li>Thay đổi được audit vào AuditLog</li>
+      </ul>
+      <div class="models"><span class="model-tag">FeatureFlag</span><span class="model-tag">SystemSetting</span><span class="model-tag">AuditLog</span></div>
+    </div>
+  </div>
+
+  <div class="flow-container" style="margin-top:4px"><div class="flow">
+    <div class="flow-step"><div class="step-box gray">Cron scheduler</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box blue">Expire Orders<br/>every 1-2min</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box teal">Showtime Update<br/>every 5min</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box amber">Email Queue<br/>every 30s</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box purple">Daily Revenue<br/>23:59 daily</div></div>
+    <div class="arrow"><svg width="24" height="2"><line x1="0" y1="1" x2="16" y2="1" stroke="var(--color-border-secondary)" stroke-width="1"/><polygon points="16,0 24,1 16,2" fill="var(--color-text-secondary)"/></svg></div>
+    <div class="flow-step"><div class="step-box coral">Token cleanup<br/>daily 00:00</div></div>
+  </div></div>
+</div>
+
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const btns = document.querySelectorAll('.nav-btn');
+  const sections = ['visitor','register','user-active','partner-req','partner-init','partner-setup','booking','partner-admin','admin','money','notif','log','ops'];
+  const idx = sections.indexOf(id);
+  if (idx >= 0 && btns[idx]) btns[idx].classList.add('active');
+}
+</script>

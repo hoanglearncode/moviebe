@@ -198,8 +198,13 @@ model User {
   ownedCheckIns      CheckIn[]
   sentPasses         PassHistory[]            @relation("PassHistoryFromUser")
   receivedPasses     PassHistory[]            @relation("PassHistoryToUser")
-  notifications      Notification[]
-  staffPartners      PartnerStaff[]
+  notifications            Notification[]
+  staffPartners            PartnerStaff[]
+  broadcastsCreated        BroadcastNotification[] @relation("BroadcastCreatedBy")
+  reportsSubmitted         Report[]                @relation("ReportedBy")
+  reportsResolved          Report[]                @relation("ResolvedBy")
+  featureFlagsCreated      FeatureFlag[]           @relation("FlagCreatedBy")
+  featureFlagsUpdated      FeatureFlag[]           @relation("FlagUpdatedBy")
 
   @@index([email])
   @@index([username])
@@ -326,8 +331,14 @@ model Partner {
 
   taxCertificateFile String?
 
+  lat Float?
+  lng Float?
+  description String?
+  facilities  String[] @default([])
+
   @@index([status])
   @@index([createdAt])
+  @@index([city])
 }
 
 model PartnerRequest {
@@ -400,6 +411,7 @@ model Movie {
   altTitle      String? 
   country       String? 
   year          Int? 
+  director      String?
   tags          String[]  @default([])
   allowComments Boolean   @default(true)
   backdropUrl   String?
@@ -845,4 +857,228 @@ model ScheduledEmailNotification {
   @@index([status])
   @@index([scheduledFor])
   @@index([createdAt])
+}
+
+// ─── Broadcast Notifications (admin → user segments) ─────────────────────────
+
+enum BroadcastTarget {
+  ALL
+  USERS
+  OWNERS
+  VIP
+  PREMIUM
+  FREE
+}
+
+enum BroadcastStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+  FAILED
+}
+
+enum BroadcastType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+
+enum BroadcastChannel {
+  ALL
+  WEBSITE
+  EMAIL
+  DESKTOP
+  MOBILE
+}
+
+model BroadcastNotification {
+  id          String          @id @default(cuid())
+  title       String
+  content     String          @db.Text
+  type        BroadcastType   @default(INFO)
+  target      BroadcastTarget @default(ALL)
+  status      BroadcastStatus @default(DRAFT)
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  totalSent   Int             @default(0)
+  readCount   Int             @default(0)
+  createdById String
+  createdBy   User            @relation("BroadcastCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @default(now()) @updatedAt
+  channel     BroadcastChannel @default(ALL)
+  imageUrls   String[]
+
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ─── System Settings (platform-wide key-value config) ────────────────────────
+
+model SystemSetting {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+// ─── Content Reports ─────────────────────────────────────────────────────────
+
+enum ReportTargetType {
+  COMMENT
+  USER
+  MOVIE
+  OWNER
+  REVIEW
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  HATE_SPEECH
+  MISINFORMATION
+  ADULT_CONTENT
+  VIOLENCE
+  COPYRIGHT
+  SCAM
+  IMPERSONATION
+  OTHER
+}
+
+enum ReportAction {
+  NONE
+  WARN_USER
+  DELETE_CONTENT
+  BAN_USER
+  BAN_OWNER
+  FLAG_CONTENT
+  ESCALATE
+}
+
+model Report {
+  id               String          @id @default(cuid())
+  target           ReportTargetType
+  targetId         String
+  targetPreview    String          @db.Text
+  targetAuthor     String
+  targetAuthorRole String          @default("user")
+  reason           ReportReason
+  description      String          @db.Text
+  status           ReportStatus    @default(PENDING)
+  priority         String          @default("medium")
+  autoFlagged      Boolean         @default(false)
+  reportedById     String
+  reportedBy       User            @relation("ReportedBy", fields: [reportedById], references: [id])
+  reportCount      Int             @default(1)
+  resolvedById     String?
+  resolvedBy       User?           @relation("ResolvedBy", fields: [resolvedById], references: [id])
+  resolvedAt       DateTime?
+  actionTaken      ReportAction    @default(NONE)
+  adminNote        String?         @db.Text
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @default(now()) @updatedAt
+
+  @@index([status])
+  @@index([target])
+  @@index([createdAt])
+}
+
+// ─── Feature Flags ────────────────────────────────────────────────────────────
+
+enum FlagType {
+  RELEASE
+  EXPERIMENT
+  BETA
+  OPS
+  EXPERIMENTAL
+}
+
+enum FlagEnv {
+  PRODUCTION
+  STAGING
+  DEVELOPMENT
+}
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  name        String
+  key         String   @unique
+  description String   @db.Text
+  enabled     Boolean  @default(false)
+  type        FlagType @default(RELEASE)
+  env         FlagEnv  @default(DEVELOPMENT)
+  rollout     Int      @default(0)
+  targets     String[] @default([])
+  tags        String[] @default([])
+  createdById String
+  createdBy   User     @relation("FlagCreatedBy", fields: [createdById], references: [id])
+  updatedById String
+  updatedBy   User     @relation("FlagUpdatedBy", fields: [updatedById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@index([key])
+  @@index([env])
+  @@index([enabled])
+}
+
+// ─── Audit Logs ───────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String
+  description String   @db.Text
+  category    String
+  severity    String
+  actorId     String?
+  actorEmail  String
+  actorRole   String   @default("admin")
+  targetType  String?
+  targetLabel String?
+  targetId    String?
+  meta        Json?
+  ip          String   @default("")
+  device      String   @default("desktop")
+  location    String   @default("")
+  createdAt   DateTime @default(now())
+
+  @@index([category])
+  @@index([severity])
+  @@index([createdAt])
+}
+
+// ─── Subscription Plans ───────────────────────────────────────────────────────
+
+model Plan {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  price       Int      @default(0)
+  yearlyPrice Int?
+  description String
+  maxDevices  Int      @default(1)
+  quality     String   @default("HD")
+  isActive    Boolean  @default(true)
+  isPopular   Boolean  @default(false)
+  color       String   @default("zinc")
+  icon        String   @default("star")
+  features    Json     @default("[]")
+  userCount   Int      @default(0)
+  revenue     Int      @default(0)
+  churnRate   Float    @default(0)
+  growthRate  Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@index([isActive])
+  @@index([slug])
 }

@@ -1,5 +1,5 @@
 import { IRepository } from "../../../share/interface";
-import { Movie } from "../model/model";
+import { Movie, CastMember, AdminMovieRow, AdminMovieStats } from "../model/model";
 import { CreateMovieDTO, UpdateMovieDTO, ListMoviesQueryDTO } from "../model/dto";
 
 // ─── Repository Port ──────────────────────────────────────────────────────────
@@ -12,6 +12,10 @@ export interface IMovieRepository extends IRepository<Movie, Partial<Movie>, Par
   ): Promise<{ items: Movie[]; total: number }>;
   findByIdAndPartnerId(movieId: string, partnerId: string): Promise<Movie | null>;
   updateStatus(movieId: string, status: string): Promise<boolean>;
+  replaceCast(movieId: string, cast: CastMember[]): Promise<void>;
+  // Admin
+  findAllForAdmin(query: ListMoviesQueryDTO): Promise<{ items: AdminMovieRow[]; total: number }>;
+  getMovieStats(): Promise<AdminMovieStats>;
 }
 
 // ─── Use-Case Port ────────────────────────────────────────────────────────────
@@ -26,4 +30,9 @@ export interface IMovieManagementUseCase {
   updateMovie(partnerId: string, movieId: string, data: UpdateMovieDTO): Promise<Movie>;
   deleteMovie(partnerId: string, movieId: string): Promise<{ message: string }>;
   submitMovieForApproval(partnerId: string, movieId: string): Promise<{ message: string }>;
+  // Admin
+  adminListMovies(query: ListMoviesQueryDTO): Promise<{ items: AdminMovieRow[]; total: number }>;
+  adminGetMovieStats(): Promise<AdminMovieStats>;
+  adminApproveMovie(movieId: string, note: string): Promise<{ message: string }>;
+  adminRejectMovie(movieId: string, reason: string, note: string): Promise<{ message: string }>;
 }

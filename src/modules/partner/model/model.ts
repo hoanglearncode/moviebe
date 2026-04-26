@@ -4,6 +4,44 @@
  * ==========================================
  */
 
+export type MovieStatus = "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "ACTIVE" | "INACTIVE";
+
+export interface CastMember {
+  id?: string;
+  movieId?: string;
+  name: string;
+  role: string;
+  photo?: string | null;
+  order?: number;
+}
+
+export interface Movie {
+  id: string;
+  partnerId: string;
+  title: string;
+  description?: string | null;
+  genre: string[];
+  language: string;
+  duration: number;
+  releaseDate: Date;
+  endDate: Date;
+  rating?: string | null;
+  status: MovieStatus;
+  posterUrl?: string | null;
+  backdropUrl?: string | null;
+  trailerUrl?: string | null;
+  altTitle?: string | null;
+  director?: string | null; 
+  year?: number | null;
+  country?: string | null;
+  tags: string[];
+  cast?: CastMember[];
+  allowComments: boolean;
+  publishedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export type PartnerProfile = {
   id: string;
   userId: string;
@@ -38,31 +76,6 @@ export type PartnerProfile = {
 
 /**
  * ==========================================
- * MOVIE MODEL
- * ==========================================
- */
-
-export type Movie = {
-  id: string;
-  partnerId: string;
-  title: string;
-  description?: string | null;
-  genre: string[];
-  language: string;
-  duration: number;
-  releaseDate: Date;
-  endDate: Date;
-  posterUrl?: string | null;
-  trailerUrl?: string | null;
-  rating?: string | null;
-  status: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "ACTIVE" | "INACTIVE";
-  publishedAt?: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-/**
- * ==========================================
  * SHOWTIME MODEL
  * ==========================================
  */
@@ -75,6 +88,7 @@ export type Showtime = {
   startTime: Date;
   endTime: Date;
   basePrice: number;
+  priceConfig: Record<string, number>; // { standard?, vip?, couple?, premium? }
   status: "SCHEDULED" | "STARTED" | "ENDED" | "CANCELLED";
   totalSeats: number;
   availableSeats: number;
@@ -493,6 +507,31 @@ export interface PartnerRequest {
   reviewedAt: Date | null;
   approvedPartnerId?: string | null;
   createdAt: Date;
+}
+
+// ─── Admin Movie View ─────────────────────────────────────────────────────────
+
+export interface AdminMovieRow extends Movie {
+  partner?: {
+    id: string;
+    cinemaName: string;
+    logo: string | null;
+    email: string;
+    city: string;
+  };
+}
+
+export interface AdminServiceRow extends Services {
+  partnerName?: string;
+  partnerLogo?: string | null;
+}
+
+export interface AdminMovieStats {
+  submitted: number;
+  approved: number;
+  rejected: number;
+  active: number;
+  total: number;
 }
 
 export type MyPartnerStatusResponse = {

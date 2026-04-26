@@ -44,8 +44,8 @@ export class ShowtimeManagementUseCase implements IShowtimeManagementUseCase {
 
     const movie = await this.movieRepo.findByIdAndPartnerId(data.movieId, partnerId);
     if (!movie) throw new Error("Movie not found");
-    if (movie.status !== "APPROVED" && movie.status !== "ACTIVE")
-      throw new Error("Movie must be APPROVED or ACTIVE to create a showtime");
+    if (movie.status === "REJECTED" || movie.status === "INACTIVE")
+      throw new Error(`Cannot create a showtime for a movie with status: ${movie.status}`);
 
     const startTime = new Date(data.startTime);
     const endTime = new Date(startTime.getTime() + (movie.duration + 15) * 60 * 1000);
@@ -79,6 +79,7 @@ export class ShowtimeManagementUseCase implements IShowtimeManagementUseCase {
       startTime,
       endTime,
       basePrice: data.basePrice,
+      priceConfig: {},
       status: "SCHEDULED",
       totalSeats: data.totalSeats,
       availableSeats: data.totalSeats,
@@ -98,14 +99,14 @@ export class ShowtimeManagementUseCase implements IShowtimeManagementUseCase {
     totalSeats: number,
     basePrice: number,
   ): Promise<void> {
-    const rows = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const ROWS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const seatsPerRow = 10;
     const now = new Date();
 
     for (let i = 0; i < totalSeats; i++) {
       const rowIndex = Math.floor(i / seatsPerRow);
       const colIndex = (i % seatsPerRow) + 1;
-      const rowLabel = rows[rowIndex] ?? `R${rowIndex + 1}`;
+      const rowLabel = ROWS[rowIndex] ?? `R${rowIndex + 1}`;
       const seat: Seat = {
         id: randomUUID(),
         showtimeId,

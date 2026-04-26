@@ -1,97 +1,67 @@
-import { Router, Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { Router, Request, Response } from "express";
+import { UserTicketRepository } from "./infras/repository/repo";
+import { UserTicketUseCase } from "./usecase/index";
+import { UserTicketHttpService } from "./infras/transport/http-service";
+import { authMiddleware, requireActiveUser } from "../../share/middleware/auth";
 import { successResponse, errorResponse } from "../../share/transport/http-server";
-import { protect } from "../../share/middleware/auth";
-import { logger } from "../system/log/logger";
 
-export function setupTicketRoutes(prisma: PrismaClient): Router {
+export const buildTicketRouter = (prisma: PrismaClient): Router => {
+  const repo = new UserTicketRepository(prisma);
+  const useCase = new UserTicketUseCase(repo);
+  const controller = new UserTicketHttpService(useCase);
+
   const router = Router();
+  const guard = [authMiddleware, requireActiveUser];
 
-  // All ticket routes require auth
-  router.use(...protect());
+  // List user's own tickets
+  router.get("/", ...guard, (req: any, res: any) => controller.getMyTickets(req, res));
 
-  // ── GET /tickets ───────────────────────────────────────────────────────────
-  router.get("/tickets", async (req: Request, res: Response) => {
+  // Pass history - must come before /:ticketId to avoid route conflict
+  router.get("/pass-history", ...guard, async (req: Request, res: Response) => {
     try {
-      const userId = (req as any).user?.id;
-      if (!userId) return errorResponse(res, 401, "Unauthorized");
-
-      const page = Math.max(1, parseInt(String(req.query.page || "1"), 10));
-      const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || "10"), 10)));
+      const userId = req.user!.id;
+      const page = req.query.page ? parseInt(req.query.page as string) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
       const skip = (page - 1) * limit;
-      const status = req.query.status as string | undefined;
+      const direction = req.query.direction as string; // "sent" | "received"
 
-      const where: any = { userId };
-      if (status && status !== "all") where.status = status;
+      const where: any = {};
+      if (direction === "sent") where.fromUserId = userId;
+      else if (direction === "received") where.toUserId = userId;
+      else where.OR = [{ fromUserId: userId }, { toUserId: userId }];
 
-      const [tickets, total] = await Promise.all([
-        (prisma.ticket as any).findMany({
+      const [total, items] = await Promise.all([
+        prisma.passHistory.count({ where }),
+        prisma.passHistory.findMany({
           where,
           skip,
           take: limit,
-          orderBy: { purchasedAt: "desc" },
+          orderBy: { transferredAt: "desc" },
           include: {
-            showtime: {
-              include: {
-                movie: {
-                  select: { id: true, title: true, posterUrl: true, genre: true, duration: true },
-                },
-                partner: { select: { cinemaName: true, city: true, address: true } },
+            ticket: {
+              select: {
+                id: true,
+                seatNumber: true,
+                qrCode: true,
+                movie: { select: { id: true, title: true, posterUrl: true } },
+                showtime: { select: { id: true, startTime: true, endTime: true } },
               },
             },
-            seat: { select: { seatNumber: true, rowLabel: true, seatType: true } },
+            fromUser: { select: { id: true, name: true, email: true, avatar: true } },
+            toUser: { select: { id: true, name: true, email: true, avatar: true } },
           },
         }),
-        (prisma.ticket as any).count({ where }),
       ]);
 
-      successResponse(res, { items: tickets, total, page, limit }, "Danh sách vé");
-    } catch (err: any) {
-      logger.error("[Ticket] list error", { error: err.message });
-      errorResponse(res, 500, err.message);
-    }
-  });
-
-  // ── GET /tickets/:ticketId ─────────────────────────────────────────────────
-  router.get("/tickets/:ticketId", async (req: Request, res: Response) => {
-    try {
-      const userId = (req as any).user?.id;
-      const { ticketId } = req.params;
-
-      const ticket = await (prisma.ticket as any).findUnique({
-        where: { id: ticketId },
-        include: {
-          showtime: {
-            include: {
-              movie: {
-                select: {
-                  id: true,
-                  title: true,
-                  posterUrl: true,
-                  genre: true,
-                  duration: true,
-                  rating: true,
-                  language: true,
-                },
-              },
-              partner: { select: { cinemaName: true, city: true, address: true, phone: true } },
-            },
-          },
-          seat: {
-            select: { seatNumber: true, rowLabel: true, columnNumber: true, seatType: true },
-          },
-          checkIn: { select: { scannedAt: true, scannedBy: true } },
-        },
-      });
-
-      if (!ticket) return errorResponse(res, 404, "Vé không tồn tại");
-      if (ticket.userId !== userId) return errorResponse(res, 403, "Bạn không có quyền xem vé này");
-
-      successResponse(res, ticket, "Chi tiết vé");
+      successResponse(res, { items, total, page, limit, totalPages: Math.ceil(total / limit) });
     } catch (err: any) {
       errorResponse(res, 500, err.message);
     }
   });
+
+  // Get single ticket detail
+  router.get("/:ticketId", ...guard, (req: any, res: any) => controller.getTicketDetail(req, res));
 
   return router;
-}
+};

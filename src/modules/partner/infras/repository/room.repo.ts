@@ -162,5 +162,4 @@ export class RoomRepository implements IRoomRepository {
   }
 }
 
-export const createRoomRepository = (prisma: PrismaClient): IRoomRepository =>
-  new RoomRepository(prisma);
+export const createRoomRepository = (prisma: PrismaClient): IRoomRepository => new RoomRepository(prisma);

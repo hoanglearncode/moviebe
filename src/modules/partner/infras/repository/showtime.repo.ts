@@ -62,7 +62,24 @@ export class ShowtimeRepository implements IShowtimeRepository {
   }
 
   async insert(data: Showtime): Promise<boolean> {
-    await this.prisma.showtime.create({ data: data as any });
+    await this.prisma.showtime.create({
+      data: {
+        id: data.id,
+        movieId: data.movieId,
+        partnerId: data.partnerId,
+        roomId: data.roomId,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        basePrice: data.basePrice,
+        priceConfig: (data.priceConfig ?? {}) as any,
+        status: data.status as any,
+        totalSeats: data.totalSeats,
+        availableSeats: data.availableSeats,
+        bookedSeats: data.bookedSeats,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
+      },
+    });
     return true;
   }
 

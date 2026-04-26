@@ -78,7 +78,7 @@ export class PartnerRepository implements IPartnerRepository {
     return true;
   }
 
-  async update(id: string, data: UpdatePartnerDTO & { updatedAt?: Date }): Promise<boolean> {
+  async update(id: string, data: UpdatePartnerDTO & { updatedAt?: Date; commissionRate?: number }): Promise<boolean> {
     await this.prisma.partner.update({
       where: { id },
       data: {
@@ -95,6 +95,7 @@ export class PartnerRepository implements IPartnerRepository {
         ...(data.bankAccountNumber && { bankAccountNumber: data.bankAccountNumber }),
         ...(data.bankName && { bankName: data.bankName }),
         ...(data.bankCode && { bankCode: data.bankCode }),
+        ...(data.commissionRate !== undefined && { commissionRate: data.commissionRate }),
         updatedAt: data.updatedAt ?? new Date(),
       },
     });

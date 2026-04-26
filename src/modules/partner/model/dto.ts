@@ -53,7 +53,26 @@ export const UpdatePartnerPayloadDTO = z.object({
  * ==========================================
  */
 
+const CastMemberDTOSchema = z.object({
+  name: z.string().trim().min(1),
+  role: z.string().trim().optional(),
+  photo: z.string().trim().url().optional(),
+});
+
+const ShowtimePlanDTOSchema = z.object({
+  date: z.string().min(1, "Date required"),   // "YYYY-MM-DD"
+  time: z.string().min(1, "Time required"),   // "HH:mm"
+  roomId: z.string().min(1, "Room ID required"),
+  prices: z.object({
+    standard: z.number().min(1000).optional(),
+    vip: z.number().min(1000).optional(),
+    premium: z.number().min(1000).optional(),
+    couple: z.number().min(1000).optional(),
+  }),
+});
+
 export const CreateMoviePayloadDTO = z.object({
+  // Core
   title: z.string().trim().min(1, "Title required").max(255),
   description: z.string().trim().optional(),
   genre: z.array(z.string().trim().min(1, "Genre required")).min(1, "Genre required"),
@@ -61,9 +80,26 @@ export const CreateMoviePayloadDTO = z.object({
   duration: z.number().int().min(30, "Duration at least 30 minutes"),
   releaseDate: z.string().datetime("Invalid date"),
   endDate: z.string().datetime("Invalid date"),
-  posterUrl: z.string().trim().url("Invalid poster URL").optional(),
-  trailerUrl: z.string().trim().url("Invalid trailer URL").optional(),
   rating: z.string().trim().optional(),
+
+  // Media
+  posterUrl: z.string().trim().url("Invalid poster URL").optional(),
+  backdropUrl: z.string().trim().url("Invalid backdrop URL").optional(),
+  trailerUrl: z.string().trim().url("Invalid trailer URL").optional(),
+
+  // Extended metadata
+  altTitle: z.string().trim().optional(),
+  director: z.string().trim().optional(),
+  year: z.number().int().optional(),
+  country: z.string().trim().optional(),
+  tags: z.array(z.string().trim()).optional(),
+  cast: z.array(CastMemberDTOSchema).optional(),
+
+  // Showtime plans (created atomically alongside the movie)
+  showtimes: z.array(ShowtimePlanDTOSchema).optional(),
+
+  // Settings
+  allowComments: z.boolean().optional(),
 });
 
 export const UpdateMoviePayloadDTO = z.object({
@@ -285,41 +321,95 @@ export const RequestCondDTOSchema = z.object({
   search: z.string().optional()
 });
 
-export type RequestCondDTO = z.infer<typeof RequestCondDTOSchema>;
+
+
+
+export interface CastMemberDTO {
+  name: string;
+  role?: string;
+  photo?: string;
+}
+
+export interface ShowtimePlanDTO {
+  date: string;   // "YYYY-MM-DD"
+  time: string;   // "HH:mm"
+  roomId: string;
+  prices: {
+    standard?: number;
+    vip?: number;
+    premium?: number;
+    couple?: number;
+  };
+}
+
+export interface CreateMovieDTO {
+  // Core
+  title: string;
+  description?: string;
+  genre: string[];
+  language: string;
+  duration: number;
+  releaseDate: string;
+  endDate: string;
+  rating?: string;
+
+  // Media
+  posterUrl?: string;
+  backdropUrl?: string;
+  trailerUrl?: string;
+
+  // Extended metadata
+  altTitle?: string;
+  director?: string;
+  year?: number;
+  country?: string;
+  tags?: string[];
+  cast?: CastMemberDTO[];
+
+  // Showtime plan (stored as planning data; actual showtimes created post-approval)
+  showtimes?: ShowtimePlanDTO[];
+
+  // Settings
+  allowComments?: boolean;
+}
+
+export type UpdateMovieDTO = Partial<CreateMovieDTO>;
+
+export interface ListMoviesQueryDTO {
+  page?: number;
+  limit?: number;
+  status?: string;
+  keyword?: string;
+  sortBy?: "createdAt" | "updatedAt" | "title" | "releaseDate" | "status";
+  sortOrder?: "asc" | "desc";
+}
 /**
  * ==========================================
  * TYPE EXPORTS
  * ==========================================
  */
-
+export type RequestCondDTO = z.infer<typeof RequestCondDTOSchema>;
 export type RegisterPartnerDTO = z.infer<typeof SubmitPartnerRequestSchema>;
 export type SubmitPartnerRequestInput = RegisterPartnerDTO & {
   userId: string;
 };
 export type UpdatePartnerDTO = z.infer<typeof UpdatePartnerPayloadDTO>;
 
-export type CreateMovieDTO = z.infer<typeof CreateMoviePayloadDTO>;
-export type UpdateMovieDTO = z.infer<typeof UpdateMoviePayloadDTO>;
+
 
 export type CreateShowtimeDTO = z.infer<typeof CreateShowtimePayloadDTO>;
 export type UpdateShowtimeDTO = z.infer<typeof UpdateShowtimePayloadDTO>;
 export type UpdateSeatDTO = z.infer<typeof UpdateSeatPayloadDTO>;
 export type LockSeatDTO = z.infer<typeof LockSeatPayloadDTO>;
 export type UnlockSeatDTO = z.infer<typeof UnlockSeatPayloadDTO>;
-
 export type CheckInDTO = z.infer<typeof CheckInPayloadDTO>;
-
 export type CreateWithdrawalDTO = z.infer<typeof CreateWithdrawalPayloadDTO>;
-
-export type ListMoviesQueryDTO = z.infer<typeof ListMoviesQueryPayloadDTO>;
 export type ListShowtimesQueryDTO = z.infer<typeof ListShowtimesQueryPayloadDTO>;
 export type ListTicketsQueryDTO = z.infer<typeof ListTicketsQueryPayloadDTO>;
 export type ListWithdrawalsQueryDTO = z.infer<typeof ListWithdrawalsQueryPayloadDTO>;
 export type RevenueQueryDTO = z.infer<typeof RevenueQueryPayloadDTO>;
-
 export type CreateServiceDTO = z.infer<typeof CreateServicePayloadDTO>;
 export type UpdateServiceDTO = z.infer<typeof UpdateServicePayloadDTO>;
 export type ServicesCondDTO = z.infer<typeof ServiceCondDTOSchema>;
-
 export type CreateRoomDTO = z.infer<typeof CreateRoomPayloadDTO>;
 export type UpdateRoomDTO = z.infer<typeof UpdateRoomPayloadDTO>;

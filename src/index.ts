@@ -2,10 +2,6 @@ import { setupCategoryHexagon } from "./modules/category";
 import { setupAuthHexagon } from "./modules/auth";
 import { setupUserHexagon } from "./modules/user";
 import { setupPartnerHexagon, setupAdminPartnerHexagon, setupUserPartnerHexagon } from "./modules/partner";
-import { setupPublicMovieRoutes } from "./modules/movie";
-import { setupBookingRoutes } from "./modules/booking";
-// import { setupPaymentRoutes } from "./modules/payment";
-import { setupTicketRoutes } from "./modules/ticket";
 
 import { createCategoryRepository } from "./modules/category/infras/repository/repo";
 import { prisma } from "./share/component/prisma";
@@ -24,6 +20,20 @@ import { defaultSettings } from "./share/common/seed-setting";
 import { seedEmailTemplates } from "./modules/notification/shared/seed";
 import adminEmailRouter from "./modules/notification/infras/transport/admin-endpoints";
 import { notificationRouter } from "./modules/notification";
+import { setupPublicMovieRoutes, setupPublicShowtimeRoutes } from "./modules/movie";
+import { buildBookingRouter } from "./modules/booking";
+import { buildPaymentRouter } from "./modules/payment";
+import { buildTicketRouter } from "./modules/ticket";
+import { buildAdminAnalyticsRouter } from "./modules/admin-analytics";
+import { buildAdminFinanceRouter } from "./modules/admin-finance";
+import { buildCinemaRouter } from "./modules/cinema";
+import { buildAdminReviewsRouter } from "./modules/admin-reviews";
+import { buildAdminNotificationsRouter } from "./modules/admin-notifications";
+import { buildAdminReportsRouter } from "./modules/admin-reports";
+import { buildAdminFeatureFlagsRouter } from "./modules/admin-feature-flags";
+import { buildAdminAuditLogsRouter } from "./modules/admin-audit-logs";
+import { buildAdminPlansRouter } from "./modules/admin-plans";
+import { buildAdminSystemSettingsRouter } from "./modules/admin-system-settings";
 
 config();
 
@@ -60,24 +70,27 @@ config();
   app.use("/v1/user", setupUserPartnerHexagon(prisma));
   app.use("/v1/admin", setupAdminPartnerHexagon(prisma));
   app.use("/v1/partner", setupPartnerHexagon(prisma));
-
-  // app.use("/v1", setupPublicMovieRoutes(prisma));
-
-  // Booking (auth required)
-  // app.use("/v1", setupBookingRoutes(prisma));
-
-  // Payment (auth required + public webhook)
-  // app.use("/v1", setupPaymentRoutes(prisma));
-
-  // User tickets (auth required)
-  // app.use("/v1", setupTicketRoutes(prisma));
-
-  // Partner portal (requires PARTNER role)
+  app.use("/v1/movies", setupPublicMovieRoutes(prisma));
+  app.use("/v1/showtimes", setupPublicShowtimeRoutes(prisma));
+  app.use("/v1/booking", buildBookingRouter(prisma));
+  app.use("/v1/payment", buildPaymentRouter(prisma));
+  app.use("/v1/tickets", buildTicketRouter(prisma));
 
   
   app.use("/v1/admin/email", adminEmailRouter);
+  app.use("/v1/admin/analytics", buildAdminAnalyticsRouter(prisma));
+  app.use("/v1/admin/finance", buildAdminFinanceRouter(prisma));
+  app.use("/v1/admin/reviews", buildAdminReviewsRouter(prisma));
 
-  // In-app push notifications
+  app.use("/v1/cinemas", buildCinemaRouter(prisma));
+
+  app.use("/v1/admin/broadcast-notifications", buildAdminNotificationsRouter(prisma));
+  app.use("/v1/admin/reports", buildAdminReportsRouter(prisma));
+  app.use("/v1/admin/feature-flags", buildAdminFeatureFlagsRouter(prisma));
+  app.use("/v1/admin/audit-logs", buildAdminAuditLogsRouter(prisma));
+  app.use("/v1/admin/plans", buildAdminPlansRouter(prisma));
+  app.use("/v1/admin/system-settings", buildAdminSystemSettingsRouter(prisma));
+
   app.use("/v1/notifications", notificationRouter);
 
   app.listen(port, () => {

@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import { PagingDTO } from "../../../../share";
-import { IPartnerServiceRepository } from "../../interface/services.interface";
+import { IPartnerServiceRepository, AdminServiceListQuery } from "../../interface/services.interface";
 import { CreateServiceDTO, UpdateServiceDTO } from "../../model/dto";
-import { Services } from "../../model/model";
+import { Services, AdminServiceRow } from "../../model/model";
 
 export class Service implements IPartnerServiceRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -171,6 +171,37 @@ export class Service implements IPartnerServiceRepository {
 
   async get(partnerId: string, id: number): Promise<Services | null> {
     return this.findById(partnerId, id);
+  }
+
+  async listAll(query: AdminServiceListQuery): Promise<{ items: AdminServiceRow[]; total: number }> {
+    const { page = 1, limit = 20, keyword, category } = query;
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (keyword) where.name = { contains: keyword, mode: "insensitive" };
+    if (category) where.category = category;
+
+    const [rows, total] = await Promise.all([
+      this.prisma.service.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { id: "desc" },
+        include: {
+          rooms: { include: { room: true } },
+          partner: { select: { cinemaName: true, logo: true } },
+        },
+      }),
+      this.prisma.service.count({ where }),
+    ]);
+
+    return {
+      items: rows.map((row) => ({
+        ...this.map(row),
+        partnerName: row.partner?.cinemaName,
+        partnerLogo: row.partner?.logo ?? null,
+      })),
+      total,
+    };
   }
 
   private buildWhere(partnerId: string, cond: any) {

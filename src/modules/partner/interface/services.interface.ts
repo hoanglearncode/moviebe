@@ -1,6 +1,13 @@
 import { CreateServiceDTO, UpdateServiceDTO } from "../model/dto";
 import { PagingDTO } from "../../../share";
-import { Services } from "../model/model";
+import { Services, AdminServiceRow } from "../model/model";
+
+export interface AdminServiceListQuery {
+  page?: number;
+  limit?: number;
+  keyword?: string;
+  category?: string;
+}
 
 export interface IPartnerServicesUseCase {
   list(partnerId: string, cond: any, paging: PagingDTO): Promise<{
@@ -28,4 +35,6 @@ export interface IPartnerServiceRepository {
   update(partnerId: string, id: number, data: UpdateServiceDTO): Promise<Services>;
   delete(partnerId: string, id: number, isHard: boolean): Promise<boolean>;
   findById(partnerId: string, id: number): Promise<Services | null>;
+  // Admin
+  listAll(query: AdminServiceListQuery): Promise<{ items: AdminServiceRow[]; total: number }>;
 }

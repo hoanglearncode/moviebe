@@ -1,69 +1,30 @@
 import { PrismaClient } from "@prisma/client";
+import { Router } from "express";
+import { PaymentRepository } from "./infras/repository/repo";
+import { PaymentUseCase } from "./usecase/index";
+import { PaymentHttpService } from "./infras/transport/http-service";
+import { authMiddleware, requireActiveUser } from "../../share/middleware/auth";
 
-import { Router, Request, Response, NextFunction } from "express";
+export const buildPaymentRouter = (prisma: PrismaClient): Router => {
+  const repo = new PaymentRepository(prisma);
+  const useCase = new PaymentUseCase(repo);
+  const controller = new PaymentHttpService(useCase);
 
-import { ENV, ErrorCode } from "../../share";
+  const router = Router();
+  const guard = [authMiddleware, requireActiveUser];
 
-const router = Router();
+  // Initiate payment for an order (requires auth)
+  router.post("/create", ...guard, (req: any, res: any) => controller.createPayment(req, res));
 
-import { PayOS } from "@payos/node";
+  // Get payment / order status (requires auth)
+  router.get("/status/:orderId", ...guard, (req: any, res: any) =>
+    controller.getPaymentStatus(req, res),
+  );
 
-const payOSIn = new PayOS({
-  clientId: process.env.PAY_IN_PAYOS_CLIENT_ID,
-  apiKey: process.env.PAY_IN_PAYOS_API_KEY,
-  checksumKey: process.env.PAY_IN_PAYOS_CHECKSUM_KEY,
-});
+  // Confirm mock payment (called from mock gateway callback, requires auth)
+  router.post("/confirm-mock", ...guard, (req: any, res: any) =>
+    controller.confirmMockPayment(req, res),
+  );
 
-const payOSOut = new PayOS({
-  clientId: process.env.PAY_OUT_PAYOS_CLIENT_ID,
-  apiKey: process.env.PAY_OUT_PAYOS_API_KEY,
-  checksumKey: process.env.PAY_OUT_PAYOS_CHECKSUM_KEY,
-});
-
-router.post("/create", async (req: Request, res: Response) => {
-  const type = req.query.type as string | undefined;
-
-  if (!type) {
-    return res.status(404).json({ code: ErrorCode.NOT_FOUND, message: "Type payment not found!" });
-  }
-
-  if (type.trim() === "checkout") {
-    const paymentData = {
-      orderCode: 123456,
-      amount: 50000,
-      description: "Thanh toán đơn hàng",
-      items: [
-        {
-          name: "Sản phẩm A",
-          quantity: 1,
-          price: 50000,
-        },
-      ],
-      cancelUrl: ENV.FRONTEND_URL,
-      returnUrl: ENV.FRONTEND_URL,
-    };
-
-    const paymentLink = await payOSOut.paymentRequests.create(paymentData);
-    console.log(paymentLink.checkoutUrl);
-  } else if (type.trim() === "checkin") {
-    const paymentData = {
-      orderCode: 123456,
-      amount: 50000,
-      description: "Thanh toán đơn hàng",
-      items: [
-        {
-          name: "Sản phẩm A",
-          quantity: 1,
-          price: 50000,
-        },
-      ],
-      cancelUrl: ENV.FRONTEND_URL,
-      returnUrl: ENV.FRONTEND_URL,
-    };
-
-    const paymentLink = await payOSIn.paymentRequests.create(paymentData);
-    console.log(paymentLink.checkoutUrl);
-  } else {
-    return res.status(403).json({ code: ErrorCode.UNAUTHORIZED, mesage: "Type incorrect format" });
-  }
-});
+  return router;
+};

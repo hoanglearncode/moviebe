@@ -20,4 +20,5 @@ export interface IPartnerProfileUseCase {
   getProfile(partnerId: string): Promise<PartnerProfile>;
   updateProfile(partnerId: string, data: UpdatePartnerDTO): Promise<PartnerProfile>;
   getStatus(partnerId: string): Promise<{ status: string; approvedAt?: Date }>;
+  updateCommissionRate(partnerId: string, rate: number): Promise<PartnerProfile>;
 }
