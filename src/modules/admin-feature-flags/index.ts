@@ -172,6 +172,66 @@ export function buildAdminFeatureFlagsRouter(prisma: PrismaClient): Router {
     }
   });
 
+  // POST /v1/admin/feature-flags/emergency-shutdown
+  router.post("/emergency-shutdown", ...adminGuard, async (req: Request, res: Response) => {
+    try {
+      const envInput = String(req.body?.env ?? "PRODUCTION").toUpperCase();
+      const allowedEnvs = new Set(["PRODUCTION", "STAGING", "DEVELOPMENT"]);
+      if (!allowedEnvs.has(envInput)) {
+        return errorResponse(res, 400, "Invalid env value");
+      }
+      const env = envInput as FlagEnv;
+
+      const activeFlags = await prisma.featureFlag.findMany({
+        where: { env, enabled: true },
+        select: { id: true, key: true },
+      });
+
+      if (activeFlags.length === 0) {
+        return successResponse(
+          res,
+          { env, affected: 0, affectedIds: [], affectedKeys: [] },
+          `No active flags found in ${env}`,
+        );
+      }
+
+      await prisma.$transaction([
+        prisma.featureFlag.updateMany({
+          where: {
+            id: { in: activeFlags.map((flag) => flag.id) },
+          },
+          data: {
+            enabled: false,
+            updatedById: req.user!.id,
+          },
+        }),
+      ]);
+
+      await writeAuditLog(prisma, req, {
+        action: "emergency_shutdown_feature_flags",
+        description: `Emergency shutdown disabled ${activeFlags.length} feature flags in ${env}`,
+        category: "system",
+        severity: "critical",
+        targetType: "feature_flag",
+        targetLabel: `${env.toLowerCase()}_kill_switch`,
+        meta: {
+          env,
+          affected: activeFlags.length,
+          affectedKeys: activeFlags.map((flag) => flag.key),
+        },
+      });
+
+      successResponse(res, {
+        env,
+        affected: activeFlags.length,
+        affectedIds: activeFlags.map((flag) => flag.id),
+        affectedKeys: activeFlags.map((flag) => flag.key),
+      }, `Emergency shutdown applied for ${env}`);
+    } catch (err: any) {
+      errorResponse(res, 500, err.message);
+    }
+  });
+
   // DELETE /v1/admin/feature-flags/:id
   router.delete("/:id", ...adminGuard, async (req: Request, res: Response) => {
     try {

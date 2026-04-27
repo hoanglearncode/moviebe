@@ -38,10 +38,12 @@ const admin_feature_flags_1 = require("./modules/admin-feature-flags");
 const admin_audit_logs_1 = require("./modules/admin-audit-logs");
 const admin_plans_1 = require("./modules/admin-plans");
 const admin_system_settings_1 = require("./modules/admin-system-settings");
+const maintenance_1 = require("./share/middleware/maintenance");
 (0, dotenv_1.config)();
 (async () => {
     await prisma_1.prisma.$connect();
     logger_1.logger.info("Database connected successfully");
+    (0, admin_system_settings_1.initSystemSettingsService)(prisma_1.prisma);
     await (0, queue_1.initializeQueueInfrastructure)();
     await (0, seed_1.seedEmailTemplates)(prisma_1.prisma);
     await ensureAdminUser();
@@ -55,6 +57,36 @@ const admin_system_settings_1 = require("./modules/admin-system-settings");
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
         allowedHeaders: ["Content-Type", "Authorization"],
     }));
+    // Public settings endpoint — accessible even in maintenance mode
+    app.get("/v1/settings", async (req, res) => {
+        try {
+            const svc = (0, admin_system_settings_1.getSystemSettingsService)();
+            const [siteName, defaultLanguage, timezone, maintenanceMode, registrationOpen] = await Promise.all([
+                svc.get("siteName"),
+                svc.get("defaultLanguage"),
+                svc.get("timezone"),
+                svc.get("maintenanceMode"),
+                svc.get("registrationOpen"),
+            ]);
+            res.json({
+                success: true,
+                data: {
+                    siteName,
+                    defaultLanguage,
+                    timezone,
+                    maintenanceMode: maintenanceMode === "true",
+                    registrationOpen: registrationOpen === "true",
+                },
+            });
+        }
+        catch {
+            res.json({
+                success: true,
+                data: { siteName: "CineMax", defaultLanguage: "vi", timezone: "Asia/Ho_Chi_Minh", maintenanceMode: false, registrationOpen: true },
+            });
+        }
+    });
+    app.use(maintenance_1.maintenanceModeGuard);
     app.use("/v1", (0, upload_router_1.createUploadRouter)());
     app.use("/v1", pusher_auth_router_1.pusherAuthRouter);
     app.use("/v1", (0, category_1.setupCategoryHexagon)((0, repo_1.createCategoryRepository)(prisma_1.prisma)));

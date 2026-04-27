@@ -34,13 +34,15 @@ import { buildAdminReportsRouter } from "./modules/admin-reports";
 import { buildAdminFeatureFlagsRouter } from "./modules/admin-feature-flags";
 import { buildAdminAuditLogsRouter } from "./modules/admin-audit-logs";
 import { buildAdminPlansRouter } from "./modules/admin-plans";
-import { buildAdminSystemSettingsRouter } from "./modules/admin-system-settings";
+import { buildAdminSystemSettingsRouter, initSystemSettingsService, getSystemSettingsService } from "./modules/admin-system-settings";
+import { maintenanceModeGuard } from "./share/middleware/maintenance";
 
 config();
 
 (async () => {
   await prisma.$connect();
   logger.info("Database connected successfully");
+  initSystemSettingsService(prisma);
   await initializeQueueInfrastructure();
 
   await seedEmailTemplates(prisma);
@@ -52,15 +54,44 @@ config();
 
   app.use(express.json());
   app.use(requestLogger);
-
   app.use(
     cors({
-      origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
+      origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:5173"],
       credentials: true,
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
       allowedHeaders: ["Content-Type", "Authorization"],
     }),
   );
+  // Public settings endpoint — accessible even in maintenance mode
+  app.get("/v1/settings", async (req, res) => {
+    try {
+      const svc = getSystemSettingsService();
+      const [siteName, defaultLanguage, timezone, maintenanceMode, registrationOpen] = await Promise.all([
+        svc.get("siteName"),
+        svc.get("defaultLanguage"),
+        svc.get("timezone"),
+        svc.get("maintenanceMode"),
+        svc.get("registrationOpen"),
+      ]);
+      res.json({
+        success: true,
+        data: {
+          siteName,
+          defaultLanguage,
+          timezone,
+          maintenanceMode: maintenanceMode === "true",
+          registrationOpen: registrationOpen === "true",
+        },
+      });
+    } catch {
+      res.json({
+        success: true,
+        data: { siteName: "CineMax", defaultLanguage: "vi", timezone: "Asia/Ho_Chi_Minh", maintenanceMode: false, registrationOpen: true },
+      });
+    }
+  });
+
+  app.use(maintenanceModeGuard);
 
 
   app.use("/v1", createUploadRouter());

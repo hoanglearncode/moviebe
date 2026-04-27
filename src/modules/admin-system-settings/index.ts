@@ -1,84 +1,24 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { protect, requireRole } from "../../share/middleware/auth";
-import { successResponse, errorResponse } from "../../share/transport/http-server";
-import { writeAuditLog } from "../admin-audit-logs/helper";
+import { SystemSettingsRepository } from "./infras/repository/repo";
+import { SystemSettingsUseCase } from "./usecase/system-settings.usecase";
+import { SystemSettingsHttpService } from "./infras/transport/http-service";
+
+export { SystemSettingsService, initSystemSettingsService, getSystemSettingsService } from "./shared/settings-service";
 
 const adminGuard = [...protect(requireRole("ADMIN"))];
 
-const DEFAULT_SETTINGS: Record<string, string> = {
-  siteName: "CineMax",
-  siteUrl: "https://cinemax.vn",
-  supportEmail: "support@cinemax.vn",
-  maxUploadSizeMB: "5120",
-  defaultQuality: "auto",
-  maintenanceMode: "false",
-  registrationOpen: "true",
-  ownerApprovalRequired: "true",
-  maxDevicesPerUser: "4",
-  sessionTimeoutHours: "720",
-  timezone: "Asia/Ho_Chi_Minh",
-  defaultLanguage: "vi",
-};
-
-async function getSettings(prisma: PrismaClient): Promise<Record<string, string>> {
-  const rows = await prisma.systemSetting.findMany();
-  const result: Record<string, string> = { ...DEFAULT_SETTINGS };
-  for (const row of rows) {
-    result[row.key] = row.value;
-  }
-  return result;
-}
-
 export function buildAdminSystemSettingsRouter(prisma: PrismaClient): Router {
+  const repo = new SystemSettingsRepository(prisma);
+  const useCase = new SystemSettingsUseCase(repo);
+  const httpService = new SystemSettingsHttpService(useCase, prisma);
+
   const router = Router();
 
-  // GET /v1/admin/system-settings — returns flat config object
-  router.get("/", ...adminGuard, async (req: Request, res: Response) => {
-    try {
-      const settings = await getSettings(prisma);
-      successResponse(res, settings);
-    } catch (err: any) {
-      errorResponse(res, 500, err.message);
-    }
-  });
-
-  // PATCH /v1/admin/system-settings — upsert key-value pairs
-  router.patch("/", ...adminGuard, async (req: Request, res: Response) => {
-    try {
-      const updates = req.body as Record<string, string>;
-
-      if (!updates || typeof updates !== "object") {
-        return errorResponse(res, 400, "Request body must be an object of key-value pairs");
-      }
-
-      await Promise.all(
-        Object.entries(updates).map(([key, value]) =>
-          prisma.systemSetting.upsert({
-            where: { key },
-            update: { value: String(value) },
-            create: { key, value: String(value) },
-          }),
-        ),
-      );
-
-      const settings = await getSettings(prisma);
-      await writeAuditLog(prisma, req, {
-        action: "update_system_settings",
-        description: `Updated system settings (${Object.keys(updates).length} keys)`,
-        category: "system",
-        severity: "high",
-        targetType: "system_settings",
-        targetLabel: "global",
-        meta: {
-          keys: Object.keys(updates).join(","),
-        },
-      });
-      successResponse(res, settings, "Settings updated");
-    } catch (err: any) {
-      errorResponse(res, 500, err.message);
-    }
-  });
+  router.get("/", ...adminGuard, (req, res) => httpService.getSettings(req, res));
+  router.patch("/", ...adminGuard, (req, res) => httpService.updateSettings(req, res));
+  router.get("/status", ...adminGuard, (req, res) => httpService.getSystemStatus(req, res));
 
   return router;
 }
