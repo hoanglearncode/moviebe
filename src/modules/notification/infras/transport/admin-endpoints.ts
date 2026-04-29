@@ -1,40 +1,33 @@
 import { Router, Request, Response } from "express";
-import {
-  EmailTemplateRepository,
-  ScheduledEmailRepository,
-  EmailNotificationService,
-} from "../../index";
-import { prisma } from "../../../../share/component/prisma";
 import { logger } from "../../../system/log/logger";
 import {
   authMiddleware,
   requireActiveUser,
   requirePermission,
 } from "../../../../share/middleware/auth";
+import { successResponse, errorResponse } from "../../../../share/transport/http-server";
 import { PERMISSIONS } from "../../../../share/security/permissions";
+import type { EmailNotificationService } from "../../usecase/service";
 
-const router = Router();
+export interface AdminEmailRouterDependencies {
+  emailNotificationService: EmailNotificationService;
+  findUserById(userId: string): Promise<{ id: string; email: string; name?: string | null } | null>;
+  findUsersByIds(userIds: string[]): Promise<Array<{ id: string; email: string; name?: string | null }>>;
+}
 
-const emailTemplateRepo = new EmailTemplateRepository(prisma);
-const scheduledEmailRepo = new ScheduledEmailRepository(prisma);
-const emailNotificationService = new EmailNotificationService(
-  emailTemplateRepo,
-  scheduledEmailRepo,
-);
+export function buildAdminEmailRouter(deps: AdminEmailRouterDependencies): Router {
+  const router = Router();
+  const { emailNotificationService, findUserById, findUsersByIds } = deps;
 
-router.get("/templates", async (req: Request, res: Response) => {
-  try {
-    const templates = await emailTemplateRepo.getActiveTemplates();
-    res.json({
-      status: "success",
-      data: templates,
-      count: templates.length,
-    });
-  } catch (error) {
-    logger.error("Failed to list email templates", { error });
-    res.status(500).json({ error: "Failed to fetch templates" });
-  }
-});
+  router.get("/templates", async (req: Request, res: Response) => {
+    try {
+      const templates = await emailNotificationService.listActiveTemplates();
+      successResponse(res, { items: templates, total: templates.length });
+    } catch (error: any) {
+      logger.error("Failed to list email templates", { error });
+      errorResponse(res, 500, "Failed to fetch templates");
+    }
+  });
 
 router.get(
   "/templates/:templateId",
@@ -44,19 +37,16 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const { templateId } = req.params as { templateId: string };
-      const template = await emailTemplateRepo.getTemplateById(templateId);
+      const template = await emailNotificationService.getTemplateById(templateId);
 
       if (!template) {
-        return res.status(404).json({ error: "Template not found" });
+        return errorResponse(res, 404, "Template not found");
       }
 
-      res.json({
-        status: "success",
-        data: template,
-      });
-    } catch (error) {
+      successResponse(res, template);
+    } catch (error: any) {
       logger.error("Failed to get email template", { error });
-      res.status(500).json({ error: "Failed to fetch template" });
+      errorResponse(res, 500, "Failed to fetch template");
     }
   },
 );
@@ -71,7 +61,7 @@ router.patch(
       const { templateId } = req.params as { templateId: string };
       const { subject, body, isActive, description } = req.body;
 
-      const updated = await emailTemplateRepo.updateTemplate(templateId, {
+      const updated = await emailNotificationService.updateTemplate(templateId, {
         subject,
         body,
         isActive,
@@ -80,14 +70,10 @@ router.patch(
 
       logger.info("Email template updated", { templateId, updatedBy: req.user?.id });
 
-      res.json({
-        status: "success",
-        message: "Template updated successfully",
-        data: updated,
-      });
-    } catch (error) {
+      successResponse(res, updated, "Template updated successfully");
+    } catch (error: any) {
       logger.error("Failed to update email template", { error });
-      res.status(500).json({ error: "Failed to update template" });
+      errorResponse(res, 500, "Failed to update template");
     }
   },
 );
@@ -104,16 +90,12 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const { userId } = req.params as { userId: string };
-      const emails = await scheduledEmailRepo.getScheduledEmails(userId);
+      const emails = await emailNotificationService.getScheduledEmails(userId);
 
-      res.json({
-        status: "success",
-        data: emails,
-        count: emails.length,
-      });
-    } catch (error) {
+      successResponse(res, { items: emails, total: emails.length });
+    } catch (error: any) {
       logger.error("Failed to get scheduled emails", { error });
-      res.status(500).json({ error: "Failed to fetch scheduled emails" });
+      errorResponse(res, 500, "Failed to fetch scheduled emails");
     }
   },
 );
@@ -133,12 +115,10 @@ router.post(
       const { email, subject, body, scheduledFor } = req.body;
 
       if (!email || !subject || !body) {
-        return res.status(400).json({
-          error: "Missing required fields: email, subject, body",
-        });
+        return errorResponse(res, 400, "Missing required fields: email, subject, body");
       }
 
-      const scheduled = await emailNotificationService.scheduleEmailForUser({
+      await emailNotificationService.scheduleEmailForUser({
         userId,
         email,
         subject,
@@ -148,13 +128,10 @@ router.post(
 
       logger.info("Email scheduled", { userId, email, scheduledBy: req.user?.id });
 
-      res.json({
-        status: "success",
-        message: "Email scheduled successfully",
-      });
-    } catch (error) {
+      successResponse(res, null, "Email scheduled successfully");
+    } catch (error: any) {
       logger.error("Failed to schedule email", { error });
-      res.status(500).json({ error: "Failed to schedule email" });
+      errorResponse(res, 500, "Failed to schedule email");
     }
   },
 );
@@ -171,10 +148,10 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const { userId } = req.params as { userId: string };
-      const user = await prisma.user.findUnique({ where: { id: userId } });
+      const user = await findUserById(userId);
 
       if (!user) {
-        return res.status(404).json({ error: "User not found" });
+        return errorResponse(res, 404, "User not found");
       }
 
       await emailNotificationService.sendWelcomeEmail({
@@ -184,13 +161,10 @@ router.post(
 
       logger.info("Welcome email sent", { userId, sentBy: req.user?.id });
 
-      res.json({
-        status: "success",
-        message: "Welcome email sent successfully",
-      });
-    } catch (error) {
+      successResponse(res, null, "Welcome email sent successfully");
+    } catch (error: any) {
       logger.error("Failed to send welcome email", { error });
-      res.status(500).json({ error: "Failed to send email" });
+      errorResponse(res, 500, "Failed to send email");
     }
   },
 );
@@ -209,23 +183,17 @@ router.post(
       const { userIds, subject, body, promotionDetail } = req.body;
 
       if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
-        return res.status(400).json({ error: "userIds must be a non-empty array" });
+        return errorResponse(res, 400, "userIds must be a non-empty array");
       }
 
       if (!subject || !body) {
-        return res.status(400).json({ error: "Missing required fields: subject, body" });
+        return errorResponse(res, 400, "Missing required fields: subject, body");
       }
 
-      // Get user emails
-      const users = await prisma.user.findMany({
-        where: { id: { in: userIds } },
-        select: { id: true, email: true, name: true },
-      });
-
+      const users = await findUsersByIds(userIds);
       let successCount = 0;
       let failureCount = 0;
 
-      // Schedule for each user
       for (const user of users) {
         try {
           await emailNotificationService.scheduleEmailForUser({
@@ -235,7 +203,7 @@ router.post(
             body,
           });
           successCount++;
-        } catch (error) {
+        } catch (error: any) {
           failureCount++;
           logger.error("Failed to schedule promo email", { userId: user.id, error });
         }
@@ -248,20 +216,21 @@ router.post(
         scheduledBy: req.user?.id,
       });
 
-      res.json({
-        status: "success",
-        message: `Promo campaign scheduled for ${successCount} users`,
-        data: {
+      successResponse(
+        res,
+        {
           totalUsers: users.length,
           successCount,
           failureCount,
         },
-      });
-    } catch (error) {
+        `Promo campaign scheduled for ${successCount} users`,
+      );
+    } catch (error: any) {
       logger.error("Failed to schedule promo campaign", { error });
-      res.status(500).json({ error: "Failed to schedule campaign" });
+      errorResponse(res, 500, "Failed to schedule campaign");
     }
   },
 );
 
-export default router;
+  return router;
+}

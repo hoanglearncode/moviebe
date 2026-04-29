@@ -1,8 +1,11 @@
 import { IPartnerNotificationService } from "../interface";
 import { logger } from "../../system/log/logger";
-import { pushNotificationService, NotificationFactory } from "../../notification";
+import { NotificationFactory } from "../../notification";
+import type { PushNotificationService } from "../../notification";
 
 export class PartnerNotificationService implements IPartnerNotificationService {
+  constructor(private readonly pushNotificationService: PushNotificationService) {}
+
   async sendWithdrawalPending(input: {
     userId?: string;
     email: string;
@@ -16,7 +19,7 @@ export class PartnerNotificationService implements IPartnerNotificationService {
     });
 
     if (input.userId) {
-      await pushNotificationService
+      await this.pushNotificationService
         .send(
           NotificationFactory.partnerWithdrawalPending(input.userId, input.reference, input.amount),
         )
@@ -37,7 +40,7 @@ export class PartnerNotificationService implements IPartnerNotificationService {
     });
 
     if (input.userId) {
-      await pushNotificationService
+      await this.pushNotificationService
         .send(
           NotificationFactory.partnerWithdrawalCompleted(
             input.userId,
@@ -62,7 +65,7 @@ export class PartnerNotificationService implements IPartnerNotificationService {
     });
 
     if (input.userId) {
-      await pushNotificationService
+      await this.pushNotificationService
         .send(
           NotificationFactory.partnerWithdrawalFailed(
             input.userId,
@@ -87,7 +90,7 @@ export class PartnerNotificationService implements IPartnerNotificationService {
     });
 
     if (input.userId) {
-      await pushNotificationService
+      await this.pushNotificationService
         .send(
           NotificationFactory.partnerMovieApproved(
             input.userId,
@@ -113,7 +116,7 @@ export class PartnerNotificationService implements IPartnerNotificationService {
     });
 
     if (input.userId) {
-      await pushNotificationService
+      await this.pushNotificationService
         .send(
           NotificationFactory.partnerMovieRejected(
             input.userId,
@@ -139,7 +142,7 @@ export class PartnerNotificationService implements IPartnerNotificationService {
     });
 
     if (input.userId) {
-      await pushNotificationService
+      await this.pushNotificationService
         .send(
           NotificationFactory.system(
             input.userId,

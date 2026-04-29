@@ -16,11 +16,25 @@ export class PrismaBroadcastRepository implements IBroadcastRepository {
     skip: number;
     take: number;
     where: { status?: BroadcastStatus; type?: BroadcastType };
+    search?: string;
   }): Promise<[number, BroadcastItem[]]> {
+    const searchClause = params.search
+      ? {
+          OR: [
+            { title: { contains: params.search, mode: 'insensitive' } },
+            { content: { contains: params.search, mode: 'insensitive' } },
+          ],
+        }
+      : undefined;
+
+    const where = searchClause
+      ? { ...params.where, ...searchClause }
+      : params.where;
+
     const [total, items] = await Promise.all([
-      this.prisma.broadcastNotification.count({ where: params.where }),
+      this.prisma.broadcastNotification.count({ where }),
       this.prisma.broadcastNotification.findMany({
-        where: params.where,
+        where,
         skip: params.skip,
         take: params.take,
         orderBy: { createdAt: "desc" },

@@ -1,4 +1,4 @@
-import { EmailNotificationEvent, EmailTemplate } from "@prisma/client";
+import { EmailNotificationEvent, EmailTemplate, ScheduledEmailNotification } from "@prisma/client";
 import { enqueueEmailJob } from "../../../queue/config/email.queue";
 import { logger } from "../../system/log/logger";
 import {
@@ -153,6 +153,22 @@ export class EmailNotificationService {
     if (!processed) return;
 
     await this.enqueueEmail(payload.email, processed.subject, processed.body);
+  }
+
+  async listActiveTemplates(): Promise<EmailTemplate[]> {
+    return this.templateRepo.getActiveTemplates();
+  }
+
+  async getTemplateById(templateId: string): Promise<EmailTemplate | null> {
+    return this.templateRepo.getTemplateById(templateId);
+  }
+
+  async updateTemplate(templateId: string, data: Partial<EmailTemplate>): Promise<EmailTemplate> {
+    return this.templateRepo.updateTemplate(templateId, data);
+  }
+
+  async getScheduledEmails(userId: string): Promise<ScheduledEmailNotification[]> {
+    return this.scheduledEmailRepo.getScheduledEmails(userId);
   }
 
   /**

@@ -38,6 +38,7 @@ export interface IBroadcastRepository {
     skip: number;
     take: number;
     where: { status?: BroadcastStatus; type?: BroadcastType };
+    search?: string;
   }): Promise<[number, BroadcastItem[]]>;
 
   create(data: {

@@ -1,31 +1,14 @@
 import { NotificationType } from "@prisma/client";
 import { randomUUID } from "crypto";
-import { prisma } from "../../../share/component/prisma";
-import { enqueueNotificationJob } from "../../../queue/config/notification.queue";
 import { logger } from "../../system/log/logger";
+import { NotificationJobData, IPushNotificationRepository, INotificationQueue, SendPushInput, ListNotificationsQuery, NotificationListItem, NotificationPayload, NotificationListResult } from "../interface";
 
-export type SendPushInput = {
-  userId: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-  data?: Record<string, unknown>;
-};
-
-export type ListNotificationsQuery = {
-  page?: number;
-  limit?: number;
-  onlyUnread?: boolean;
-};
-
-/**
- * PushNotificationService
- *
- * Flow:
- *   send() → insert DB record → enqueue BullMQ job
- *   notification.worker → PusherService.pushToUser() → FE receives 'notification.new'
- */
 export class PushNotificationService {
+  constructor(
+    private readonly notificationRepo: IPushNotificationRepository,
+    private readonly notificationQueue: INotificationQueue,
+  ) {}
+
   private resolveDisplayType(type: NotificationType, data: unknown): string {
     if (type !== NotificationType.SYSTEM) return type;
 
@@ -45,162 +28,95 @@ export class PushNotificationService {
     return type;
   }
 
-  /**
-   * Create a persistent notification and enqueue the Pusher push.
-   */
   async send(input: SendPushInput): Promise<void> {
-    const { userId, type, title, message, data } = input;
+    const notificationId = randomUUID();
 
-    const notification = await prisma.notification.create({
-      data: {
-        id: randomUUID(),
-        userId,
-        type,
-        title,
-        message,
-        data: (data ?? {}) as any,
-        isRead: false,
-      },
+    await this.notificationRepo.createNotification({
+      id: notificationId,
+      userId: input.userId,
+      type: input.type,
+      title: input.title,
+      message: input.message,
+      data: input.data,
     });
 
-    await enqueueNotificationJob({
-      notificationId: notification.id,
-      userId,
-      type,
-      title,
-      message,
-      data,
+    const jobPayload: NotificationJobData = {
+      notificationId,
+      userId: input.userId,
+      type: input.type,
+      title: input.title,
+      message: input.message,
+      data: input.data,
       traceId: randomUUID(),
-    }).catch((err) => {
+    };
+
+    await this.notificationQueue.enqueuePushNotification(jobPayload).catch((err) => {
       logger.warn("[PushNotification] Enqueue failed, notification saved but push delayed", {
-        notificationId: notification.id,
-        error: err.message,
+        notificationId,
+        error: err?.message ?? err,
       });
     });
   }
 
-  /**
-   * List a user's notifications with pagination.
-   */
-  async list(
-    userId: string,
-    query: ListNotificationsQuery = {},
-  ): Promise<{ items: any[]; total: number; unreadCount: number }> {
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 20;
-    const skip = (page - 1) * limit;
+  async list(userId: string, query: ListNotificationsQuery = {}): Promise<NotificationListResult> {
+    const result = await this.notificationRepo.listNotifications(userId, query);
 
-    const where: any = { userId };
-    if (query.onlyUnread) where.isRead = false;
-
-    const [items, total, unreadCount] = await Promise.all([
-      prisma.notification.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      prisma.notification.count({ where }),
-      prisma.notification.count({ where: { userId, isRead: false } }),
-    ]);
-
-    const normalizedItems = items.map((item) => ({
-      ...item,
-      rawType: item.type,
-      type: this.resolveDisplayType(item.type, item.data),
-    }));
-
-    return { items: normalizedItems, total, unreadCount };
+    return {
+      ...result,
+      items: result.items.map((item: NotificationListItem) => ({
+        ...item,
+        type: this.resolveDisplayType(item.rawType, item.data),
+      })),
+    };
   }
 
-  /**
-   * Mark a single notification as read and increment the parent broadcast's readCount.
-   */
   async markRead(notificationId: string, userId: string): Promise<void> {
-    const notification = await prisma.notification.findFirst({
-      where: { id: notificationId, userId },
-      select: { isRead: true, data: true },
-    });
-
-    // Nothing to do — either missing or already read
+    const notification = await this.notificationRepo.findNotificationWithData(notificationId, userId);
     if (!notification || notification.isRead) return;
 
-    await prisma.notification.updateMany({
-      where: { id: notificationId, userId },
-      data: { isRead: true, readAt: new Date() },
-    });
+    await this.notificationRepo.markNotificationRead(notificationId, userId);
 
-    // Increment readCount on the parent broadcast (non-fatal if broadcast was deleted)
-    const broadcastId = (notification.data as Record<string, unknown> | null)?.broadcastId as
-      | string
-      | undefined;
-    if (broadcastId) {
-      await prisma.broadcastNotification
-        .update({
-          where: { id: broadcastId },
-          data: { readCount: { increment: 1 } },
-        })
-        .catch(() => {});
-    }
+    const broadcastId = (notification.data as Record<string, unknown> | null)?.broadcastId as string | undefined;
+    if (!broadcastId) return;
+
+    await this.notificationRepo.incrementBroadcastReadCounts(new Map([[broadcastId, 1]]));
   }
 
-  /**
-   * Mark all of a user's notifications as read and bulk-update broadcast readCounts.
-   */
   async markAllRead(userId: string): Promise<{ updated: number }> {
-    // Collect unread notifications before updating (to know which broadcasts to increment)
-    const unread = await prisma.notification.findMany({
-      where: { userId, isRead: false },
-      select: { id: true, data: true },
-    });
+    const unreadNotifications = await this.notificationRepo.findUnreadNotificationsWithData(userId);
+    if (unreadNotifications.length === 0) return { updated: 0 };
 
-    if (unread.length === 0) return { updated: 0 };
+    const updated = await this.notificationRepo.markAllNotificationsRead(userId);
 
-    const result = await prisma.notification.updateMany({
-      where: { userId, isRead: false },
-      data: { isRead: true, readAt: new Date() },
-    });
-
-    // Aggregate per-broadcast increment counts
     const broadcastCounts = new Map<string, number>();
-    for (const n of unread) {
-      const bid = (n.data as Record<string, unknown> | null)?.broadcastId as string | undefined;
-      if (bid) broadcastCounts.set(bid, (broadcastCounts.get(bid) ?? 0) + 1);
+    for (const notification of unreadNotifications) {
+      const broadcastId = (notification.data as Record<string, unknown> | null)?.broadcastId as string | undefined;
+      if (broadcastId) {
+        broadcastCounts.set(broadcastId, (broadcastCounts.get(broadcastId) ?? 0) + 1);
+      }
     }
 
-    // Increment readCount on each affected broadcast (non-fatal)
-    await Promise.all(
-      Array.from(broadcastCounts.entries()).map(([broadcastId, count]) =>
-        prisma.broadcastNotification
-          .update({ where: { id: broadcastId }, data: { readCount: { increment: count } } })
-          .catch(() => {}),
-      ),
-    );
+    if (broadcastCounts.size > 0) {
+      await this.notificationRepo.incrementBroadcastReadCounts(broadcastCounts);
+    }
 
-    return { updated: result.count };
+    return { updated };
   }
 
-  /**
-   * Delete a single notification (owner only).
-   */
   async delete(notificationId: string, userId: string): Promise<void> {
-    await prisma.notification.deleteMany({
-      where: { id: notificationId, userId },
-    });
+    await this.notificationRepo.deleteNotification(notificationId, userId);
   }
 
-  /**
-   * Unread count only — lightweight for polling badges.
-   */
   async unreadCount(userId: string): Promise<{ count: number }> {
-    const count = await prisma.notification.count({ where: { userId, isRead: false } });
+    const count = await this.notificationRepo.getUnreadCount(userId);
     return { count };
   }
 }
 
-export const pushNotificationService = new PushNotificationService();
-
-// ── Domain helper factories ───────────────────────────────────────────────────
+export const createPushNotificationService = (
+  repository: IPushNotificationRepository,
+  queue: INotificationQueue,
+): PushNotificationService => new PushNotificationService(repository, queue);
 
 export const NotificationFactory = {
   partnerWithdrawalPending: (userId: string, withdrawalId: string, amount: number) => ({

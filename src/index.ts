@@ -19,8 +19,7 @@ import { createUploadRouter } from "./share/transport/upload.router";
 import { pusherAuthRouter } from "./share/transport/pusher-auth.router";
 import { defaultSettings } from "./share/common/seed-setting";
 import { seedEmailTemplates } from "./modules/notification/shared/seed";
-import adminEmailRouter from "./modules/notification/infras/transport/admin-endpoints";
-import { notificationRouter } from "./modules/notification";
+import { buildAdminEmailRouter, buildNotificationRouterFactory } from "./modules/notification";
 import { setupPublicMovieRoutes, setupPublicShowtimeRoutes } from "./modules/movie";
 import { buildBookingRouter } from "./modules/booking";
 import { buildPaymentRouter } from "./modules/payment";
@@ -110,21 +109,21 @@ config();
   app.use("/v1/tickets", buildTicketRouter(prisma));
 
   
-  app.use("/v1/admin/email", adminEmailRouter);
+  app.use("/v1/admin/email", buildAdminEmailRouter(prisma));
   app.use("/v1/admin/analytics", buildAdminAnalyticsRouter(prisma));
   app.use("/v1/admin/finance", buildAdminFinanceRouter(prisma));
   app.use("/v1/admin/reviews", buildAdminReviewsRouter(prisma));
 
   app.use("/v1/cinemas", buildCinemaRouter(prisma));
 
-  app.use("/v1/admin/broadcast-notifications", buildAdminNotificationsRouter(prisma));
   app.use("/v1/admin/reports", buildAdminReportsRouter(prisma));
   app.use("/v1/admin/feature-flags", buildAdminFeatureFlagsRouter(prisma));
   app.use("/v1/admin/audit-logs", buildAdminAuditLogsRouter(prisma));
   app.use("/v1/admin/plans", buildAdminPlansRouter(prisma));
   app.use("/v1/admin/system-settings", buildAdminSystemSettingsRouter(prisma));
 
-  app.use("/v1/notifications", notificationRouter);
+  app.use("/v1/notifications", buildNotificationRouterFactory(prisma));
+  app.use("/v1/admin/broadcast-notifications", buildAdminNotificationsRouter(prisma));
 
   app.listen(port, () => {
     logger.info(`Server is running on http://localhost:${port}`);

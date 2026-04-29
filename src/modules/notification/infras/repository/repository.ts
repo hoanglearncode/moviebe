@@ -3,7 +3,17 @@ import {
   EmailTemplate,
   ScheduledEmailNotification,
   EmailNotificationEvent,
+  Notification,
+  NotificationType,
 } from "@prisma/client";
+import {
+  CreateNotificationInput,
+  IPushNotificationRepository,
+  ListNotificationsQuery,
+  NotificationListResult,
+  NotificationListItem,
+  NotificationPayload,
+} from "../../interface";
 
 export interface IEmailTemplateRepository {
   getTemplateByEvent(event: EmailNotificationEvent): Promise<EmailTemplate | null>;
@@ -143,5 +153,130 @@ export class ScheduledEmailRepository implements IScheduledEmailRepository {
       where: { id },
     });
     return !!result.id;
+  }
+}
+
+export class PrismaPushNotificationRepository implements IPushNotificationRepository {
+  constructor(private prisma: PrismaClient) {}
+
+  private normalizeNotification(item: Notification): NotificationListItem {
+    return {
+      id: item.id,
+      userId: item.userId,
+      rawType: item.type,
+      type: item.type,
+      title: item.title,
+      message: item.message,
+      data: item.data as NotificationPayload | null,
+      isRead: item.isRead,
+      readAt: item.readAt,
+      createdAt: item.createdAt,
+    };
+  }
+
+  async createNotification(input: CreateNotificationInput): Promise<void> {
+    await this.prisma.notification.create({
+      data: {
+        id: input.id,
+        userId: input.userId,
+        type: input.type,
+        title: input.title,
+        message: input.message,
+        data: (input.data ?? {}) as any,
+        isRead: false,
+      },
+    });
+  }
+
+  async listNotifications(userId: string, query: ListNotificationsQuery): Promise<NotificationListResult> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const skip = (page - 1) * limit;
+    const where: Record<string, unknown> = { userId };
+
+    if (query.onlyUnread) {
+      (where as any).isRead = false;
+    }
+
+    const [items, total, unreadCount] = await Promise.all([
+      this.prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      this.prisma.notification.count({ where }),
+      this.prisma.notification.count({ where: { userId, isRead: false } }),
+    ]);
+
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    return {
+      items: items.map((item) => this.normalizeNotification(item)),
+      total,
+      page,
+      limit,
+      totalPages,
+      unreadCount,
+    };
+  }
+
+  async findNotificationWithData(
+    notificationId: string,
+    userId: string,
+  ): Promise<{ isRead: boolean; data: NotificationPayload | null } | null> {
+    const record = await this.prisma.notification.findFirst({
+      where: { id: notificationId, userId },
+      select: { isRead: true, data: true },
+    });
+
+    if (!record) return null;
+    return { isRead: record.isRead, data: record.data as NotificationPayload | null };
+  }
+
+  async findUnreadNotificationsWithData(userId: string): Promise<Array<{ data: NotificationPayload | null }>> {
+    const records = await this.prisma.notification.findMany({
+      where: { userId, isRead: false },
+      select: { data: true },
+    });
+
+    return records.map((record) => ({
+      data: record.data as NotificationPayload | null,
+    }));
+  }
+
+  async markNotificationRead(notificationId: string, userId: string): Promise<void> {
+    await this.prisma.notification.updateMany({
+      where: { id: notificationId, userId, isRead: false },
+      data: { isRead: true, readAt: new Date() },
+    });
+  }
+
+  async markAllNotificationsRead(userId: string): Promise<number> {
+    const result = await this.prisma.notification.updateMany({
+      where: { userId, isRead: false },
+      data: { isRead: true, readAt: new Date() },
+    });
+    return result.count;
+  }
+
+  async deleteNotification(notificationId: string, userId: string): Promise<void> {
+    await this.prisma.notification.deleteMany({
+      where: { id: notificationId, userId },
+    });
+  }
+
+  async getUnreadCount(userId: string): Promise<number> {
+    return this.prisma.notification.count({ where: { userId, isRead: false } });
+  }
+
+  async incrementBroadcastReadCounts(broadcastCounts: Map<string, number>): Promise<void> {
+    await Promise.all(
+      Array.from(broadcastCounts.entries()).map(([broadcastId, count]) =>
+        this.prisma.broadcastNotification
+          .update({ where: { id: broadcastId }, data: { readCount: { increment: count } } })
+          .catch(() => {}),
+      ),
+    );
   }
 }

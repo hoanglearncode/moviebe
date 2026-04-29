@@ -887,10 +887,8 @@ enum BroadcastType {
 
 enum BroadcastChannel {
   ALL
-  WEBSITE
+  APP
   EMAIL
-  DESKTOP
-  MOBILE
 }
 
 model BroadcastNotification {

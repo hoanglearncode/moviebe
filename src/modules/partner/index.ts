@@ -44,6 +44,9 @@ import { PartnerDashboardHttpService } from "./infras/transport/dashboard.http-s
 import { PartnerRequestHttpService } from "./infras/transport/partner-request.http-service";
 import { ServicesHttpService } from "./infras/transport/service-http-services";
 import { PartnerNotificationService } from "./shared/notification";
+import { createPushNotificationService } from "../notification";
+import { PrismaPushNotificationRepository } from "../notification/infras/repository/repository";
+import { NotificationQueueAdapter } from "../notification/infras/queue/notification-queue-adapter";
 import { createSessionRepository } from "../user/infras/repository/session-repo";
 import { createUserRepository } from "../user/infras/repository/user-repo";
 
@@ -179,7 +182,13 @@ export default function buildPartnerRouter(prisma: PrismaClient): Router {
   const walletRepo = createWalletRepository(prisma);
   const serviceRepo = createServerRepository(prisma);
 
-  const notificationService = new PartnerNotificationService();
+  const pushNotificationRepository = new PrismaPushNotificationRepository(prisma);
+  const notificationQueueAdapter = new NotificationQueueAdapter();
+  const pushNotificationService = createPushNotificationService(
+    pushNotificationRepository,
+    notificationQueueAdapter,
+  );
+  const notificationService = new PartnerNotificationService(pushNotificationService);
 
   const profileUC = new PartnerProfileUseCase(partnerRepo);
   const serviceUC = new ServicePartnerUser(serviceRepo);

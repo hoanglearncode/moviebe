@@ -16,6 +16,7 @@ export const ListBroadcastsSchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(20),
   status: z.enum(["DRAFT", "SCHEDULED", "SENT", "FAILED"]).optional(),
   type: z.enum(["INFO", "SUCCESS", "WARNING", "ERROR"]).optional(),
+  search: z.string().trim().optional(),
 });
 
 export type CreateBroadcastDto = z.infer<typeof CreateBroadcastSchema>;

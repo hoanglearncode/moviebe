@@ -30,6 +30,9 @@ export class BroadcastNotificationHttpService {
         limit: req.query.limit,
         status: req.query.status as BroadcastStatus | undefined,
         type: req.query.type as BroadcastType | undefined,
+        search: Array.isArray(req.query.search)
+          ? req.query.search[0]
+          : (req.query.search as string | undefined),
       });
       successResponse(res, result);
     } catch (err: any) {

@@ -55,7 +55,12 @@ export class BroadcastNotificationUseCase {
     if (query.status) where.status = query.status as BroadcastStatus;
     if (query.type) where.type = query.type as BroadcastType;
 
-    const [total, items] = await this.repo.findMany({ skip, take: query.limit, where });
+    const [total, items] = await this.repo.findMany({
+      skip,
+      take: query.limit,
+      where,
+      search: query.search,
+    });
 
     // Compute live readCount — backfills historical records stuck at 0
     const liveReadCounts = await Promise.all(
