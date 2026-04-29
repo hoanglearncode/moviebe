@@ -1,5 +1,5 @@
 import { v7 } from "uuid";
-import { UserStatus } from "@prisma/client";
+import { Role, UserStatus } from "@prisma/client";
 import { NotFoundError, UnauthorizedError, ValidationError } from "../../../share/transport/http-server";
 import { ErrorCode } from "../../../share/model/error-code";
 import { ENV } from "../../../share/common/value";
@@ -30,6 +30,10 @@ import { AuthResponse, AuthSocialProfile, AuthUser } from "../model/model";
 
 export class AuthUseCase implements IAuthUseCase {
   constructor(private readonly dependencies: AuthHexagonDependencies) {}
+
+  private isSessionAllowedStatus(status: UserStatus): boolean {
+    return status === UserStatus.ACTIVE || status === UserStatus.BANNED;
+  }
 
   async register(data: RegisterDTO): Promise<{ userId: string }> {
     const parsedData = RegisterPayloadDTO.safeParse(data);
@@ -67,9 +71,13 @@ export class AuthUseCase implements IAuthUseCase {
           username: parsedData.data.username ?? null,
           name: parsedData.data.name ?? null,
           password: passwordHash,
-          avatar: null,
-          avatarColor,
           provider: "local",
+          avatar: null,
+          phone: null,
+          bio: null,
+          location: null,
+          avatarColor,
+          role: Role.USER,
           emailVerified: false,
           mustChangePassword: false,
           status: UserStatus.ACTIVE,
@@ -120,7 +128,11 @@ export class AuthUseCase implements IAuthUseCase {
           throw new UnauthorizedError("Invalid credentials", ErrorCode.INVALID_CREDENTIALS);
         }
 
-        if (user.status !== UserStatus.ACTIVE) {
+        if (user.status === UserStatus.INACTIVE) {
+          throw new UnauthorizedError("Invalid credentials", ErrorCode.INVALID_CREDENTIALS);
+        }
+
+        if (!this.isSessionAllowedStatus(user.status)) {
           throw new UnauthorizedError("Account is unavailable", ErrorCode.ACCOUNT_INACTIVE);
         }
 
@@ -164,7 +176,7 @@ export class AuthUseCase implements IAuthUseCase {
       throw new NotFoundError("User");
     }
 
-    if (user.status !== UserStatus.ACTIVE) {
+    if (!this.isSessionAllowedStatus(user.status)) {
       throw new UnauthorizedError("Account is unavailable", ErrorCode.ACCOUNT_INACTIVE);
     }
 
@@ -336,9 +348,13 @@ export class AuthUseCase implements IAuthUseCase {
             name: profile.name ?? null,
             username: null,
             password: null,
-            avatar: profile.avatar ?? null,
-            avatarColor,
             provider: profile.provider,
+            avatar: profile.avatar ?? null,
+            phone: null,
+            bio: null,
+            location: null,
+            avatarColor,
+            role: Role.USER,
             emailVerified: profile.emailVerified,
             mustChangePassword: false,
             status: UserStatus.ACTIVE,
@@ -349,13 +365,13 @@ export class AuthUseCase implements IAuthUseCase {
 
           await userRepository.insert(user);
         } else {
-          if (user.status !== UserStatus.ACTIVE) {
+          if (!this.isSessionAllowedStatus(user.status)) {
             throw new UnauthorizedError("Account is unavailable", ErrorCode.ACCOUNT_INACTIVE);
           }
 
           await userRepository.update(user.id, {
             name: user.name ?? profile.name ?? null,
-            avatar: profile.avatar ?? null,
+            avatar: profile.avatar ?? user.avatar ?? null,
             provider: profile.provider,
             emailVerified: user.emailVerified || profile.emailVerified,
             lastLoginAt: new Date(),
@@ -410,7 +426,9 @@ export class AuthUseCase implements IAuthUseCase {
         email: user.email,
         username: user.username,
         role: user.role,
+        status: user.status,
         avatar: user.avatar,
+        avatarColor: user.avatarColor,
         name: user.name,
         emailVerified: user.emailVerified,
         mustChangePassword: user.mustChangePassword
