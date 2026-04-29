@@ -8,7 +8,6 @@ const adminGuard = [...protect(requireRole("ADMIN"))];
 export function buildAdminAuditLogsRouter(prisma: PrismaClient): Router {
   const router = Router();
 
-  // GET /v1/admin/audit-logs — paginated, filterable
   router.get("/", ...adminGuard, async (req: Request, res: Response) => {
     try {
       const page = req.query.page ? parseInt(req.query.page as string) : 1;
