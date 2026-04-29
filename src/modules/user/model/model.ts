@@ -1,5 +1,5 @@
-
 import { Role, UserStatus } from "@prisma/client";
+import { PermissionCode } from "../../../share/security/permissions";
 
 /**
  * ==========================================
@@ -18,8 +18,9 @@ export type UserProfile = {
   phone: string | null;
   bio: string | null;
   location: string | null;
-  avatarColor: string | null;
+  avatarColor: string | undefined;
   role: Role;
+  permissionsOverride?: PermissionCode[];
   status: UserStatus;
   emailVerified: boolean;
   mustChangePassword: boolean;
@@ -41,6 +42,8 @@ export type PublicUserProfile = Pick<
   | "location"
   | "avatarColor"
   | "createdAt"
+  | "provider"
+  | "permissionsOverride"
 >;
 
 /**
@@ -51,6 +54,9 @@ export type OwnUserProfile = PublicUserProfile & {
   phone: string | null;
   emailVerified: boolean;
   role: Role;
+  permissionsOverride?: PermissionCode[];
+  permissions?: string[];
+  provider: string;
   lastLoginAt: Date | null;
   status: UserStatus;
 };
@@ -91,23 +97,12 @@ export type SessionResponse = Omit<UserSession, "refreshToken">;
 export type UserSettings = {
   id: string;
   userId: string;
-  // Notifications
   notifications: boolean;
   marketingEmails: boolean;
   pushNotifications: boolean;
   smsNotifications: boolean;
-  // Playback
-  autoplay: boolean;
-  autoQuality: boolean;
-  alwaysSubtitle: boolean;
-  autoPreviews: boolean;
-  // Privacy
-  publicWatchlist: boolean;
   shareHistory: boolean;
   personalizedRecs: boolean;
-  // Referral
-  referralCode: string | null;
-  referrals: number;
   createdAt: Date;
   updatedAt: Date;
 };

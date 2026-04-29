@@ -20,12 +20,14 @@ type PrismaCommandModel = {
   delete(args: { where: { id: string } }): Promise<unknown>;
 };
 
-export abstract class BaseRepositoryPrisma<Entity, Cond, UpdateDTO>
-  implements IRepository<Entity, Cond, UpdateDTO>
-{
+export abstract class BaseRepositoryPrisma<Entity, Cond, UpdateDTO> implements IRepository<
+  Entity,
+  Cond,
+  UpdateDTO
+> {
   constructor(
     readonly queryRepo: IQueryRepository<Entity, Cond>,
-    readonly cmdRepo: ICommandRepository<Entity, UpdateDTO>
+    readonly cmdRepo: ICommandRepository<Entity, UpdateDTO>,
   ) {}
 
   async get(id: string): Promise<Entity | null> {
@@ -53,9 +55,10 @@ export abstract class BaseRepositoryPrisma<Entity, Cond, UpdateDTO>
   }
 }
 
-export abstract class BaseQueryRepositoryPrisma<Entity, Cond>
-  implements IQueryRepository<Entity, Cond>
-{
+export abstract class BaseQueryRepositoryPrisma<Entity, Cond> implements IQueryRepository<
+  Entity,
+  Cond
+> {
   constructor(protected readonly model: PrismaQueryModel) {}
 
   async get(id: string): Promise<Entity | null> {
@@ -100,9 +103,10 @@ export abstract class BaseQueryRepositoryPrisma<Entity, Cond>
   }
 }
 
-export abstract class BaseCommandRepositoryPrisma<Entity, UpdateDTO>
-  implements ICommandRepository<Entity, UpdateDTO>
-{
+export abstract class BaseCommandRepositoryPrisma<Entity, UpdateDTO> implements ICommandRepository<
+  Entity,
+  UpdateDTO
+> {
   constructor(protected readonly model: PrismaCommandModel) {}
 
   async insert(data: Entity): Promise<boolean> {

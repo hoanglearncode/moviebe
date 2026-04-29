@@ -5,27 +5,57 @@ import { UserUseCase } from "./usecase/user.usecase";
 import { UserHttpService, AdminUserHttpService } from "./infras/transport/http-service";
 import { createSessionRepository } from "./infras/repository/session-repo";
 import { createUserRepository } from "./infras/repository/user-repo";
-import { createUserSettingRepository } from "./infras/repository/setting-repo";
 import { HashService } from "./shared/hash";
 import { UserNotificationService } from "./shared/notification";
-import { AvatarColorService } from "./shared/avatar-color.service";
+import { AvatarColorService } from "./shared/avatar-color";
 import { IUserUseCase, IAdminUserUseCase } from "./interface";
 import { prisma } from "../../share/component/prisma";
-import { adminMiddleware, authenticate, protect } from "../../share/middleware/auth";
+import { mailService } from "../../share/component/mail";
+import { authenticate, protect, requirePermission } from "../../share/middleware/auth";
+import { setupSettingHexagon, createSettingUseCase } from "../system/setting";
+import { PERMISSIONS } from "../../share/security/permissions";
+import { AuthNotificationService } from "../auth/shared/notification";
+import { TokenService } from "../auth/shared/token";
 
 const buildUserRouter = (useCase: IUserUseCase) => {
   const httpService = new UserHttpService(useCase);
   const router = Router();
 
-  router.get("/me", ...authenticate(), httpService.getProfile.bind(httpService));
-  router.put("/me", ...protect(), httpService.updateProfile.bind(httpService));
-  router.delete("/me", ...protect(), httpService.deleteAccount.bind(httpService));
-  router.post("/change-password", ...protect(), httpService.changePassword.bind(httpService));
-  router.get("/sessions", ...protect(), httpService.getSessions.bind(httpService));
-  router.delete("/sessions/:sessionId", ...protect(), httpService.revokeSession.bind(httpService));
-  router.delete("/sessions", ...protect(), httpService.revokeAllSessions.bind(httpService));
-  router.get("/settings", ...protect(), httpService.getSettings.bind(httpService));
-  router.put("/settings", ...protect(), httpService.updateSettings.bind(httpService));
+  router.get(
+    "/me",
+    ...authenticate(requirePermission(PERMISSIONS.VIEW_OWN_PROFILE)),
+    httpService.getProfile.bind(httpService),
+  );
+  router.put(
+    "/me",
+    ...protect(requirePermission(PERMISSIONS.UPDATE_OWN_PROFILE)),
+    httpService.updateProfile.bind(httpService),
+  );
+  router.delete(
+    "/me",
+    ...protect(requirePermission(PERMISSIONS.DELETE_OWN_ACCOUNT)),
+    httpService.deleteAccount.bind(httpService),
+  );
+  router.post(
+    "/change-password",
+    ...protect(requirePermission(PERMISSIONS.CHANGE_OWN_PASSWORD)),
+    httpService.changePassword.bind(httpService),
+  );
+  router.get(
+    "/sessions",
+    ...protect(requirePermission(PERMISSIONS.VIEW_OWN_SESSIONS)),
+    httpService.getSessions.bind(httpService),
+  );
+  router.delete(
+    "/sessions/:sessionId",
+    ...protect(requirePermission(PERMISSIONS.REVOKE_OWN_SESSIONS)),
+    httpService.revokeSession.bind(httpService),
+  );
+  router.delete(
+    "/sessions",
+    ...protect(requirePermission(PERMISSIONS.REVOKE_OWN_SESSIONS)),
+    httpService.revokeAllSessions.bind(httpService),
+  );
 
   return router;
 };
@@ -33,25 +63,77 @@ const buildUserRouter = (useCase: IUserUseCase) => {
 const buildAdminUserRouter = (useCase: IAdminUserUseCase) => {
   const httpService = new AdminUserHttpService(useCase);
   const router = Router();
-  router.use(...protect(adminMiddleware));
+  router.use(...protect());
 
   // analytic
-  router.get("/users/stats", httpService.getStats.bind(httpService));
+  router.get(
+    "/users/stats",
+    requirePermission(PERMISSIONS.VIEW_USER_STATS),
+    httpService.getStats.bind(httpService),
+  );
 
-  router.get("/users", httpService.list.bind(httpService));
-  router.get("/users/:id", httpService.getUser.bind(httpService));
-  router.post("/users", httpService.createUser.bind(httpService));
-  router.put("/users/:id", httpService.updateUser.bind(httpService));
-  router.delete("/users/:id", httpService.deleteUser.bind(httpService));
-  router.patch("/users/:id/status", httpService.changeUserStatus.bind(httpService));
-  router.post("/users/:id/reset-password", httpService.resetUserPassword.bind(httpService));
-  router.post("/users/:id/verify-email", httpService.verifyUserEmail.bind(httpService));
-  router.delete("/users/:id/sessions", httpService.revokeAllUserSessions.bind(httpService));
+  router.get(
+    "/users",
+    requirePermission(PERMISSIONS.VIEW_USERS),
+    httpService.list.bind(httpService),
+  );
+  router.get(
+    "/users/:id",
+    requirePermission(PERMISSIONS.VIEW_USER_DETAIL),
+    httpService.getUser.bind(httpService),
+  );
+  router.post(
+    "/users",
+    requirePermission(PERMISSIONS.CREATE_USER),
+    httpService.createUser.bind(httpService),
+  );
+  router.put(
+    "/users/:id",
+    requirePermission(PERMISSIONS.UPDATE_USER),
+    httpService.updateUser.bind(httpService),
+  );
+  router.delete(
+    "/users/:id",
+    requirePermission(PERMISSIONS.DELETE_USER),
+    httpService.deleteUser.bind(httpService),
+  );
+  router.patch(
+    "/users/:id/status",
+    requirePermission(PERMISSIONS.CHANGE_USER_STATUS),
+    httpService.changeUserStatus.bind(httpService),
+  );
+  router.post(
+    "/users/:id/reset-password",
+    requirePermission(PERMISSIONS.RESET_USER_PASSWORD),
+    httpService.resetUserPassword.bind(httpService),
+  );
+  router.post(
+    "/users/:id/verify-email",
+    requirePermission(PERMISSIONS.VERIFY_USER_EMAIL),
+    httpService.verifyUserEmail.bind(httpService),
+  );
+  router.delete(
+    "/users/:id/sessions",
+    requirePermission(PERMISSIONS.REVOKE_USER_SESSIONS),
+    httpService.revokeAllUserSessions.bind(httpService),
+  );
 
   // Seed routes
-  router.post("/users/seed", httpService.seedUsers.bind(httpService));
-  router.get("/users/seed/stats", httpService.getSeedStatistics.bind(httpService));
-  router.delete("/users/seed", httpService.clearSeedUsers.bind(httpService));
+  router.post(
+    "/users/seed",
+    requirePermission(PERMISSIONS.SEED_USERS),
+    httpService.seedUsers.bind(httpService),
+  );
+  router.get(
+    "/users/seed/stats",
+    requirePermission(PERMISSIONS.SEED_USERS),
+    httpService.getSeedStatistics.bind(httpService),
+  );
+  router.delete(
+    "/users/seed",
+    requirePermission(PERMISSIONS.SEED_USERS),
+    httpService.clearSeedUsers.bind(httpService),
+  );
 
   return router;
 };
@@ -59,27 +141,37 @@ const buildAdminUserRouter = (useCase: IAdminUserUseCase) => {
 export const setupUserHexagon = (prismaClient: PrismaClient = prisma) => {
   const userRepository = createUserRepository(prismaClient);
   const sessionRepository = createSessionRepository(prismaClient);
-  const userSettingsRepository = createUserSettingRepository(prismaClient);
   const passwordHasher = new HashService();
-  const notificationService = new UserNotificationService();
+  const notificationService = new UserNotificationService(mailService);
+  const authNotificationService = new AuthNotificationService();
   const avatarColorService = new AvatarColorService();
+  const userSettingService = createSettingUseCase(prismaClient);
+  const tokenService = new TokenService(prismaClient);
 
   const dependencies = {
     userRepository,
     sessionRepository,
-    userSettingsRepository,
+    userSettingsRepository: {} as any,
     passwordHasher,
     notificationService,
     avatarColorService,
     prisma: prismaClient,
+    userSettingService,
   };
 
   const userUseCase = new UserUseCase(dependencies);
-  const adminUserUseCase = new AdminUserUseCase(dependencies as any);
+  const adminUserUseCase = new AdminUserUseCase(
+    dependencies as any,
+    authNotificationService,
+    tokenService,
+  );
 
   const router = Router();
   router.use("/user", buildUserRouter(userUseCase));
   router.use("/admin", buildAdminUserRouter(adminUserUseCase));
+
+  const { router: settingRouter } = setupSettingHexagon(prismaClient, userSettingService);
+  router.use("/user", settingRouter);
 
   return router;
 };

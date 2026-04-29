@@ -14,7 +14,7 @@ const toAuthUser = (raw) => ({
     phone: raw.phone ?? null,
     bio: raw.bio ?? null,
     location: raw.location ?? null,
-    avatarColor: raw.avatarColor ?? null,
+    avatarColor: raw.avatarColor ?? undefined,
     role: raw.role,
     lastLoginAt: raw.lastLoginAt ?? null,
     emailVerified: raw.emailVerified,
@@ -22,6 +22,7 @@ const toAuthUser = (raw) => ({
     status: raw.status,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
+    permissions_override: raw.permissionsOverride,
 });
 const toCreateInput = (data) => ({
     id: data.id,
@@ -123,7 +124,7 @@ class PrismaAuthUserRepository {
         else {
             await this.model.update({
                 where: { id },
-                data: { status: client_1.UserStatus.INACTIVE, updatedAt: new Date() }
+                data: { status: client_1.UserStatus.INACTIVE, updatedAt: new Date() },
             });
         }
         return true;
@@ -137,27 +138,25 @@ class PrismaAuthUserRepository {
         return raw ? toAuthUser(raw) : null;
     }
     async findByEmailOrUsername(identifier) {
+        const normalizedIdentifier = identifier.includes("@") ? identifier.toLowerCase() : identifier;
         const raw = await this.model.findFirst({
             where: {
-                OR: [
-                    { email: identifier },
-                    { username: identifier }
-                ]
-            }
+                OR: [{ email: normalizedIdentifier }, { username: identifier }],
+            },
         });
         return raw ? toAuthUser(raw) : null;
     }
     async markVerified(userId) {
         await this.model.update({
             where: { id: userId },
-            data: { emailVerified: true, updatedAt: new Date() }
+            data: { emailVerified: true, updatedAt: new Date() },
         });
         return true;
     }
     async updatePassword(userId, passwordHash) {
         await this.model.update({
             where: { id: userId },
-            data: { password: passwordHash, updatedAt: new Date() }
+            data: { password: passwordHash, updatedAt: new Date() },
         });
         return true;
     }

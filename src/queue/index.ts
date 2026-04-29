@@ -1,7 +1,13 @@
 import { logger } from "../modules/system/log/logger";
-import { areQueueWorkersEnabled, isQueueEnabled, queuePrefix } from "./config";
-import { closeEmailQueue } from "./email.queue";
-import { closeEmailWorker, startEmailWorker } from "./email.worker";
+import { areQueueWorkersEnabled, isQueueEnabled, queuePrefix } from "./config/config";
+import { closeBroadcastQueue } from "./config/broadcast.queue";
+import { closeEmailQueue } from "./config/email.queue";
+import { closeNotificationQueue } from "./config/notification.queue";
+import { closeBroadcastWorker, startBroadcastWorker } from "./worker/broadcast.worker";
+import { closeEmailWorker, startEmailWorker } from "./worker/email.worker";
+import { closeNotificationWorker, startNotificationWorker } from "./worker/notification.worker";
+import { closeScheduledEmailWorker, startScheduledEmailWorker } from "./worker/scheduled-email.worker";
+import { closeSeatCleanupWorker, startSeatCleanupWorker } from "./worker/seat-cleanup.worker";
 
 export const initializeQueueInfrastructure = async (): Promise<void> => {
   if (!isQueueEnabled) {
@@ -15,14 +21,31 @@ export const initializeQueueInfrastructure = async (): Promise<void> => {
   });
 
   startEmailWorker();
+  startNotificationWorker();
+  startBroadcastWorker();
+  startSeatCleanupWorker();
+  await startScheduledEmailWorker();
 };
 
 export const shutdownQueueInfrastructure = async (): Promise<void> => {
-  await Promise.allSettled([closeEmailWorker(), closeEmailQueue()]);
+  await Promise.allSettled([
+    closeEmailWorker(),
+    closeEmailQueue(),
+    closeNotificationWorker(),
+    closeNotificationQueue(),
+    closeBroadcastWorker(),
+    closeBroadcastQueue(),
+    closeScheduledEmailWorker(),
+    closeSeatCleanupWorker(),
+  ]);
   logger.info("Queue infrastructure shut down");
 };
 
-export * from "./config";
-export * from "./types";
-export * from "./email.queue";
-export * from "./email.worker";
+export * from "./config/config";
+export * from "./modules/types";
+export * from "./config/email.queue";
+export * from "./config/notification.queue";
+export * from "./config/broadcast.queue";
+export * from "./worker/email.worker";
+export * from "./worker/notification.worker";
+export * from "./worker/broadcast.worker";

@@ -14,23 +14,29 @@ exports.RegisterPayloadDTO = zod_1.default.object({
         .min(3, "username too short")
         .max(50, "username max 50 characters")
         .optional(),
-    name: zod_1.default.string().trim().min(1, "name is required").optional(),
+    name: zod_1.default.preprocess((value) => (typeof value === "string" && value.trim() === "" ? undefined : value), zod_1.default.string().trim().min(1, "name cannot be blank").optional()),
+    permissions_override: zod_1.default.json().nullable().optional(),
 });
 exports.LoginPayloadDTO = zod_1.default.object({
-    emailOrUsername: zod_1.default.string().trim().min(1, "email or username is required"),
+    emailOrUsername: zod_1.default
+        .string()
+        .trim()
+        .min(1, "email or username is required")
+        .transform((value) => (value.includes("@") ? value.toLowerCase() : value)),
     password: zod_1.default.string().min(8, "password must have at least 8 characters"),
+    remember: zod_1.default.boolean().optional().default(false),
 });
 exports.RefreshTokenPayloadDTO = zod_1.default.object({
-    refreshToken: zod_1.default.string().trim().min(1, "token is required")
+    refreshToken: zod_1.default.string().trim().min(1, "token is required"),
 });
 exports.GoogleLoginPayloadDTO = zod_1.default.object({
-    credential: zod_1.default.string().trim().min(1, "credential is required")
+    credential: zod_1.default.string().trim().min(1, "credential is required"),
 });
 exports.GoogleLoginTokenCallbackPayloadDTO = zod_1.default.object({
-    accessToken: zod_1.default.string().trim().min(1, "accessToken is required")
+    accessToken: zod_1.default.string().trim().min(1, "accessToken is required"),
 });
 exports.FacebookLoginPayloadDTO = zod_1.default.object({
-    accessToken: zod_1.default.string().trim().min(1, "accessToken is required")
+    accessToken: zod_1.default.string().trim().min(1, "accessToken is required"),
 });
 exports.VerifyEmailPayloadDTO = zod_1.default.object({
     token: zod_1.default.string().trim().min(1, "token is required"),
@@ -43,7 +49,5 @@ exports.ForgotPasswordPayloadDTO = zod_1.default.object({
 });
 exports.ChangePasswordPayloadDTO = zod_1.default.object({
     token: zod_1.default.string().trim().min(1, "token is required"),
-    newPassword: zod_1.default
-        .string()
-        .min(8, "new password must have at least 8 characters"),
+    newPassword: zod_1.default.string().min(8, "new password must have at least 8 characters"),
 });

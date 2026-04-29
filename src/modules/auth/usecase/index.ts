@@ -1,6 +1,10 @@
 import { v7 } from "uuid";
 import { Role, UserStatus } from "@prisma/client";
-import { NotFoundError, UnauthorizedError, ValidationError } from "../../../share/transport/http-server";
+import {
+  NotFoundError,
+  UnauthorizedError,
+  ValidationError,
+} from "../../../share/transport/http-server";
 import { ErrorCode } from "../../../share/model/error-code";
 import { ENV } from "../../../share/common/value";
 import { AuthHexagonDependencies, IAuthUseCase } from "../interface";
@@ -24,12 +28,15 @@ import {
   ResendVerificationPayloadDTO,
   VerifyEmailDTO,
   VerifyEmailPayloadDTO,
-  RefreshTokenPayloadDTO
+  RefreshTokenPayloadDTO,
 } from "../model/dto";
 import { AuthResponse, AuthSocialProfile, AuthUser } from "../model/model";
+import { AuthorizationUseCase } from "../../user/usecase/authorization.usecase";
 
 export class AuthUseCase implements IAuthUseCase {
   constructor(private readonly dependencies: AuthHexagonDependencies) {}
+
+  private readonly authorizationUseCase = new AuthorizationUseCase();
 
   private isSessionAllowedStatus(status: UserStatus): boolean {
     return status === UserStatus.ACTIVE || status === UserStatus.BANNED;
@@ -44,8 +51,13 @@ export class AuthUseCase implements IAuthUseCase {
     return this.dependencies.concurrentLockService.runExclusive(
       this.getRegisterLockKeys(parsedData.data.email, parsedData.data.username),
       async () => {
-        const { userRepository, passwordHasher, tokenService, notificationService, avatarColorService } =
-          this.dependencies;
+        const {
+          userRepository,
+          passwordHasher,
+          tokenService,
+          notificationService,
+          avatarColorService,
+        } = this.dependencies;
 
         const existingEmail = await userRepository.findByEmail(parsedData.data.email);
         if (existingEmail) {
@@ -53,12 +65,14 @@ export class AuthUseCase implements IAuthUseCase {
         }
 
         if (parsedData.data.username) {
-          const existingUsername = await userRepository.findByUsername(
-            parsedData.data.username
-          );
+          const existingUsername = await userRepository.findByUsername(parsedData.data.username);
 
           if (existingUsername) {
-            throw new ValidationError("Username already exists", undefined, ErrorCode.USERNAME_EXISTS);
+            throw new ValidationError(
+              "Username already exists",
+              undefined,
+              ErrorCode.USERNAME_EXISTS,
+            );
           }
         }
 
@@ -81,12 +95,21 @@ export class AuthUseCase implements IAuthUseCase {
           emailVerified: false,
           mustChangePassword: false,
           status: UserStatus.ACTIVE,
+          permissions_override: parsedData.data.permissions_override,
           lastLoginAt: new Date(),
           createdAt: new Date(),
           updatedAt: new Date(),
         };
 
         await userRepository.insert(user);
+
+        if (this.dependencies.userSettingService) {
+          try {
+            await this.dependencies.userSettingService.default(newUserId);
+          } catch (error) {
+            console.error(`Failed to create default settings for user ${newUserId}:`, error);
+          }
+        }
 
         const verifyToken = await tokenService.issueActionToken({
           userId: newUserId,
@@ -103,12 +126,13 @@ export class AuthUseCase implements IAuthUseCase {
       {
         ttlMs: ENV.AUTH_CONCURRENT_LOCK_TTL_MS,
         conflictMessage: "A registration request for this account is already being processed",
-      }
+      },
     );
   }
 
   async login(
-    data: LoginDTO
+    data: LoginDTO,
+    context?: { userAgent?: string; ipAddress?: string },
   ): Promise<AuthResponse> {
     const parsedData = LoginPayloadDTO.safeParse(data);
     if (!parsedData.success) {
@@ -120,9 +144,7 @@ export class AuthUseCase implements IAuthUseCase {
       async () => {
         const { userRepository, passwordHasher, tokenService } = this.dependencies;
 
-        const user = await userRepository.findByEmailOrUsername(
-          parsedData.data.emailOrUsername
-        );
+        const user = await userRepository.findByEmailOrUsername(parsedData.data.emailOrUsername);
 
         if (!user) {
           throw new UnauthorizedError("Invalid credentials", ErrorCode.INVALID_CREDENTIALS);
@@ -138,7 +160,7 @@ export class AuthUseCase implements IAuthUseCase {
 
         const isPasswordMatched = await passwordHasher.compare(
           parsedData.data.password,
-          user.password || ""
+          user.password || "",
         );
 
         if (!isPasswordMatched) {
@@ -149,7 +171,9 @@ export class AuthUseCase implements IAuthUseCase {
           throw new UnauthorizedError("Account is not verified", ErrorCode.ACCOUNT_NOT_VERIFIED);
         }
 
-        const session = await tokenService.issueAuthSession(user);
+        const session = await tokenService.issueAuthSession(user, context, {
+          remember: parsedData.data.remember,
+        });
         await userRepository.update(user.id, {
           lastLoginAt: new Date(),
         });
@@ -158,10 +182,10 @@ export class AuthUseCase implements IAuthUseCase {
       {
         ttlMs: ENV.AUTH_CONCURRENT_LOCK_TTL_MS,
         conflictMessage: "A login request for this account is already being processed",
-      }
+      },
     );
   }
-  
+
   async refreshToken(data: RefreshDTO): Promise<AuthResponse> {
     const parsedData = RefreshTokenPayloadDTO.safeParse(data);
     if (!parsedData.success) {
@@ -183,49 +207,56 @@ export class AuthUseCase implements IAuthUseCase {
     return this.buildAuthResponse(user, session);
   }
 
-  async loginGoogle(data: GoogleDTO): Promise<AuthResponse> {
+  async loginGoogle(
+    data: GoogleDTO,
+    context?: { userAgent?: string; ipAddress?: string },
+  ): Promise<AuthResponse> {
     const parsedData = GoogleLoginPayloadDTO.safeParse(data);
     if (!parsedData.success) {
       throw new ValidationError("Invalid Google login data", parsedData.error.issues);
     }
 
     const profile = await this.dependencies.socialAuthService.verifyGoogleCredential(
-      parsedData.data.credential
+      parsedData.data.credential,
     );
 
-    return this.loginWithSocialProfile(profile);
+    return this.loginWithSocialProfile(profile, context);
   }
 
-  async loginGoogleTokenCallback(data: GoogleTokenDTO): Promise<AuthResponse> {
+  async loginGoogleTokenCallback(
+    data: GoogleTokenDTO,
+    context?: { userAgent?: string; ipAddress?: string },
+  ): Promise<AuthResponse> {
     const parsedData = GoogleLoginTokenCallbackPayloadDTO.safeParse(data);
     if (!parsedData.success) {
-      throw new ValidationError(
-        "Invalid Google token callback data",
-        parsedData.error.issues
-      );
+      throw new ValidationError("Invalid Google token callback data", parsedData.error.issues);
     }
 
     const profile = await this.dependencies.socialAuthService.getGoogleProfile(
-      parsedData.data.accessToken
+      parsedData.data.accessToken,
     );
 
-    return this.loginWithSocialProfile(profile);
+    return this.loginWithSocialProfile(profile, context);
   }
 
-  async loginFacebook(data: FacebookTO): Promise<AuthResponse> {
+  async loginFacebook(
+    data: FacebookTO,
+    context?: { userAgent?: string; ipAddress?: string },
+  ): Promise<AuthResponse> {
     const parsedData = FacebookLoginPayloadDTO.safeParse(data);
     if (!parsedData.success) {
       throw new ValidationError("Invalid Facebook login data", parsedData.error.issues);
     }
 
     const profile = await this.dependencies.socialAuthService.getFacebookProfile(
-      parsedData.data.accessToken
+      parsedData.data.accessToken,
     );
 
-    return this.loginWithSocialProfile(profile);
+    return this.loginWithSocialProfile(profile, context);
   }
 
   async verifyEmail(data: VerifyEmailDTO): Promise<{ message: string }> {
+    const { notificationService } = this.dependencies;
     const parsedData = VerifyEmailPayloadDTO.safeParse(data);
     if (!parsedData.success) {
       throw new ValidationError("Invalid verification data", parsedData.error.issues);
@@ -233,10 +264,7 @@ export class AuthUseCase implements IAuthUseCase {
 
     const { tokenService, userRepository } = this.dependencies;
 
-    const { userId } = await tokenService.verifyActionToken(
-      parsedData.data.token,
-      "verify-email"
-    );
+    const { userId } = await tokenService.verifyActionToken(parsedData.data.token, "verify-email");
 
     const user = await userRepository.get(userId);
     if (!user) {
@@ -244,6 +272,7 @@ export class AuthUseCase implements IAuthUseCase {
     }
 
     await userRepository.markVerified(userId);
+    await notificationService.sendWellComeEmail(user.email);
 
     return { message: "Email verified successfully" };
   }
@@ -257,12 +286,8 @@ export class AuthUseCase implements IAuthUseCase {
     const { userRepository, tokenService, notificationService } = this.dependencies;
 
     const user = await userRepository.findByEmail(parsedData.data.email);
-    if (!user) {
-      throw new NotFoundError("User");
-    }
-
-    if (user.emailVerified) {
-      throw new ValidationError("Email is already verified");
+    if (!user || user.emailVerified) {
+      return { message: "If the email requires verification, a new email has been sent" };
     }
 
     const verifyToken = await tokenService.issueActionToken({
@@ -275,7 +300,7 @@ export class AuthUseCase implements IAuthUseCase {
       token: verifyToken,
     });
 
-    return { message: "Verification email sent" };
+    return { message: "If the email requires verification, a new email has been sent" };
   }
 
   async forgotPassword(data: ForgotPasswordDTO): Promise<{ message: string }> {
@@ -311,11 +336,11 @@ export class AuthUseCase implements IAuthUseCase {
       throw new ValidationError("Invalid change password data", parsedData.error.issues);
     }
 
-    const { tokenService, userRepository, passwordHasher } = this.dependencies;
+    const { tokenService, userRepository, passwordHasher, notificationService } = this.dependencies;
 
     const { userId } = await tokenService.verifyActionToken(
       parsedData.data.token,
-      "reset-password"
+      "reset-password",
     );
 
     const user = await userRepository.get(userId);
@@ -325,17 +350,21 @@ export class AuthUseCase implements IAuthUseCase {
 
     const newPasswordHash = await passwordHasher.hash(parsedData.data.newPassword);
     await userRepository.updatePassword(userId, newPasswordHash);
-    await userRepository.update(userId, { mustChangePassword: false })
-    if(!user.emailVerified) await userRepository.markVerified(userId);
-
+    await userRepository.update(userId, { mustChangePassword: false });
+    if (!user.emailVerified) await userRepository.markVerified(userId);
+    await notificationService.sendChangePasswordEmail(user.email);
     return { message: "Password changed successfully" };
   }
 
-  private async loginWithSocialProfile(profile: AuthSocialProfile): Promise<AuthResponse> {
+  private async loginWithSocialProfile(
+    profile: AuthSocialProfile,
+    context?: { userAgent?: string; ipAddress?: string },
+  ): Promise<AuthResponse> {
     return this.dependencies.concurrentLockService.runExclusive(
       this.getRegisterLockKeys(profile.email),
       async () => {
-        const { userRepository, tokenService, avatarColorService } = this.dependencies;
+        const { userRepository, tokenService, avatarColorService, notificationService } =
+          this.dependencies;
 
         let user = await userRepository.findByEmail(profile.email);
 
@@ -357,6 +386,7 @@ export class AuthUseCase implements IAuthUseCase {
             role: Role.USER,
             emailVerified: profile.emailVerified,
             mustChangePassword: false,
+            permissions_override: profile.permissions_override,
             status: UserStatus.ACTIVE,
             lastLoginAt: new Date(),
             createdAt: new Date(),
@@ -364,6 +394,15 @@ export class AuthUseCase implements IAuthUseCase {
           };
 
           await userRepository.insert(user);
+
+          if (this.dependencies.userSettingService) {
+            try {
+              await this.dependencies.userSettingService.default(newUserId);
+            } catch (error) {
+              console.error(`Failed to create default settings for user ${newUserId}:`, error);
+            }
+          }
+          await notificationService.sendWellComeEmail(user.email);
         } else {
           if (!this.isSessionAllowedStatus(user.status)) {
             throw new UnauthorizedError("Account is unavailable", ErrorCode.ACCOUNT_INACTIVE);
@@ -383,13 +422,13 @@ export class AuthUseCase implements IAuthUseCase {
           }
         }
 
-        const session = await tokenService.issueAuthSession(user);
+        const session = await tokenService.issueAuthSession(user, context);
         return this.buildAuthResponse(user, session);
       },
       {
         ttlMs: ENV.AUTH_CONCURRENT_LOCK_TTL_MS,
         conflictMessage: "A social login request for this account is already being processed",
-      }
+      },
     );
   }
 
@@ -409,14 +448,12 @@ export class AuthUseCase implements IAuthUseCase {
 
   private normalizeLockValue(value: string): string {
     const normalizedValue = value.trim();
-    return normalizedValue.includes("@")
-      ? normalizedValue.toLowerCase()
-      : normalizedValue;
+    return normalizedValue.includes("@") ? normalizedValue.toLowerCase() : normalizedValue;
   }
 
   private buildAuthResponse(
     user: AuthUser,
-    session: { accessToken: string; refreshToken: string }
+    session: { accessToken: string; refreshToken: string },
   ): AuthResponse {
     return {
       accessToken: session.accessToken,
@@ -431,7 +468,13 @@ export class AuthUseCase implements IAuthUseCase {
         avatarColor: user.avatarColor,
         name: user.name,
         emailVerified: user.emailVerified,
-        mustChangePassword: user.mustChangePassword
+        mustChangePassword: user.mustChangePassword,
+        provider: user.provider,
+        permissions_override: user.permissions_override,
+        permissions: this.authorizationUseCase.resolvePermissions({
+          role: user.role,
+          permissionsOverride: user.permissions_override,
+        }),
       },
     };
   }

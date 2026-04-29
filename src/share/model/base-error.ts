@@ -1,1 +1,1 @@
-export const ErrDataNotFound = new Error('Data not found');
+export const ErrDataNotFound = new Error("Data not found");

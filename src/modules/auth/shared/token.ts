@@ -1,7 +1,8 @@
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { PrismaClient } from "@prisma/client";
-
+import { UAParser } from "ua-parser-js";
+import { v4 as uuidv4 } from "uuid";
 import { ENV } from "../../../share/common/value";
 import { ITokenService } from "../interface";
 import { AuthActionTokenPurpose, AuthSession, AuthUser } from "../model/model";
@@ -34,15 +35,33 @@ type SessionModel = {
       userId: string;
       refreshToken: string;
       expiresAt: Date;
+      deviceId?: string;
+      deviceName?: string;
+      deviceType?: string;
+      userAgent?: string;
+      ipAddress?: string;
+      isActive?: boolean;
     };
   }): Promise<unknown>;
+
   delete(args: { where: { refreshToken: string } }): Promise<unknown>;
-  findUnique(args: {
-    where: { refreshToken: string };
-  }): Promise<{ userId: string; refreshToken: string; expiresAt: Date } | null>;
+
+  findUnique(args: { where: { refreshToken: string } }): Promise<{
+    userId: string;
+    refreshToken: string;
+    expiresAt: Date;
+
+    deviceId: string | null;
+    deviceName: string | null;
+    deviceType: string | null;
+    userAgent: string | null;
+    ipAddress: string | null;
+    isActive: boolean | null;
+  } | null>;
 };
 
 export class TokenService implements ITokenService {
+  private static readonly REMEMBER_REFRESH_EXPIRES = "30d";
   private readonly sessionModel: SessionModel;
   private readonly passwordTokenModel: ActionTokenModel;
   private readonly emailTokenModel: ActionTokenModel;
@@ -53,19 +72,38 @@ export class TokenService implements ITokenService {
     this.emailTokenModel = getEmailTokenModel(prisma);
   }
 
-  async issueAuthSession(user: AuthUser): Promise<AuthSession> {
+  async issueAuthSession(
+    user: AuthUser,
+    context?: {
+      userAgent?: string;
+      ipAddress?: string;
+    },
+    options?: { remember?: boolean },
+  ): Promise<AuthSession> {
     const session = this.createSessionTokens({
       sub: user.id,
       email: user.email,
       scope: user.role ?? "USER",
       status: user.status,
+      remember: options?.remember,
     });
+
+    const parser = new UAParser(context?.userAgent);
+    const ua = parser.getResult();
+
+    const deviceName = `${ua.browser.name || "Unknown"} ${ua.browser.version || ""}`;
+    const deviceType = ua.device.type || "desktop";
 
     await this.sessionModel.create({
       data: {
         userId: user.id,
         refreshToken: session.refreshToken,
         expiresAt: this.getTokenExpiry(session.refreshToken),
+        deviceId: uuidv4(),
+        deviceName,
+        deviceType,
+        userAgent: context?.userAgent,
+        ipAddress: context?.ipAddress,
       },
     });
 
@@ -99,7 +137,7 @@ export class TokenService implements ITokenService {
       sub: String(payload.sub),
       email: String(payload.email),
       scope: (payload as any).scope ?? "USER",
-      status: (payload as any).status ?? "ACTIVE"
+      status: (payload as any).status ?? "ACTIVE",
     });
 
     await this.sessionModel.delete({ where: { refreshToken } });
@@ -108,6 +146,12 @@ export class TokenService implements ITokenService {
         userId: session.userId,
         refreshToken: nextSession.refreshToken,
         expiresAt: this.getTokenExpiry(nextSession.refreshToken),
+        deviceId: session.deviceId ?? undefined,
+        deviceName: session.deviceName ?? undefined,
+        deviceType: session.deviceType ?? undefined,
+        userAgent: session.userAgent ?? undefined,
+        ipAddress: session.ipAddress ?? undefined,
+        isActive: session.isActive ?? undefined,
       },
     });
 
@@ -137,7 +181,7 @@ export class TokenService implements ITokenService {
 
   async verifyActionToken(
     token: string,
-    purpose: AuthActionTokenPurpose
+    purpose: AuthActionTokenPurpose,
   ): Promise<{ userId: string }> {
     const model = this.getActionTokenModel(purpose);
     const record = await model.findUnique({
@@ -158,16 +202,20 @@ export class TokenService implements ITokenService {
   }
 
   private getActionTokenModel(purpose: AuthActionTokenPurpose) {
-    return purpose === "reset-password"
-      ? this.passwordTokenModel
-      : this.emailTokenModel;
+    return purpose === "reset-password" ? this.passwordTokenModel : this.emailTokenModel;
   }
 
   private hashActionToken(token: string): string {
     return crypto.createHash("sha256").update(token).digest("hex");
   }
 
-  private createSessionTokens(payload: { sub: string; email: string; scope: string; status: string | undefined }): AuthSession {
+  private createSessionTokens(payload: {
+    sub: string;
+    email: string;
+    scope: string;
+    status: string | undefined;
+    remember?: boolean;
+  }): AuthSession {
     const normalizedPayload = {
       sub: payload.sub,
       email: payload.email,
@@ -181,7 +229,9 @@ export class TokenService implements ITokenService {
     });
 
     const refreshToken = jwt.sign(normalizedPayload, ENV.JWT_REFRESH_SECRET, {
-      expiresIn: ENV.JWT_REFRESH_EXPIRES as jwt.SignOptions["expiresIn"],
+      expiresIn: (payload.remember
+        ? TokenService.REMEMBER_REFRESH_EXPIRES
+        : ENV.JWT_REFRESH_EXPIRES) as jwt.SignOptions["expiresIn"],
       algorithm: "HS512",
     });
 

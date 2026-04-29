@@ -32,12 +32,13 @@ type RepositoryOptions = {
   touchUpdatedAt?: boolean;
 };
 
-export class BaseQueryRepositoryPrisma<Entity>
-  implements IQueryRepository<Entity, Partial<Entity>>
-{
+export class BaseQueryRepositoryPrisma<Entity> implements IQueryRepository<
+  Entity,
+  Partial<Entity>
+> {
   constructor(
     private readonly model: PrismaModel,
-    private readonly options: RepositoryOptions = {}
+    private readonly options: RepositoryOptions = {},
   ) {}
 
   async get(id: string): Promise<Entity | null> {
@@ -82,12 +83,13 @@ export class BaseQueryRepositoryPrisma<Entity>
   }
 }
 
-export class BaseCommandRepositoryPrisma<Entity, UpdateDTO>
-  implements ICommandRepository<Entity, UpdateDTO>
-{
+export class BaseCommandRepositoryPrisma<Entity, UpdateDTO> implements ICommandRepository<
+  Entity,
+  UpdateDTO
+> {
   constructor(
     private readonly model: PrismaModel,
-    private readonly options: RepositoryOptions = {}
+    private readonly options: RepositoryOptions = {},
   ) {}
 
   async insert(data: Entity): Promise<boolean> {
@@ -135,12 +137,14 @@ export class BaseCommandRepositoryPrisma<Entity, UpdateDTO>
   }
 }
 
-export class BaseRepositoryPrisma<Entity, UpdateDTO>
-  implements IRepository<Entity, Partial<Entity>, UpdateDTO>
-{
+export class BaseRepositoryPrisma<Entity, UpdateDTO> implements IRepository<
+  Entity,
+  Partial<Entity>,
+  UpdateDTO
+> {
   constructor(
     private readonly queryRepo: BaseQueryRepositoryPrisma<Entity>,
-    private readonly cmdRepo: BaseCommandRepositoryPrisma<Entity, UpdateDTO>
+    private readonly cmdRepo: BaseCommandRepositoryPrisma<Entity, UpdateDTO>,
   ) {}
 
   async get(id: string): Promise<Entity | null> {

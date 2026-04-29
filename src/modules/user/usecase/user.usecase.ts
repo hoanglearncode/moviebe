@@ -1,27 +1,27 @@
 import { IUserUseCase, UserHexagonDependencies } from "../interface";
+import { ChangePasswordDTO, GetSessionsQueryDTO, UpdateProfileDTO } from "../model/dto";
 import {
-  ChangePasswordDTO, GetSessionsQueryDTO,
-  UpdateProfileDTO, UpdateSettingsDTO,
-} from "../model/dto";
-import {
-  ErrPasswordInvalid, ErrPasswordUnchangeable,
-  ErrSessionNotFound, ErrSessionUnauthorized, ErrUserNotFound,
+  ErrPasswordInvalid,
+  ErrPasswordUnchangeable,
+  ErrSessionNotFound,
+  ErrSessionUnauthorized,
+  ErrUserNotFound,
 } from "../model/errors";
-import { OwnUserProfile, SessionListResponse, UserSettings } from "../model/model";
+import { OwnUserProfile, SessionListResponse } from "../model/model";
+import { AuthorizationUseCase } from "./authorization.usecase";
 
 export class UserUseCase implements IUserUseCase {
   private readonly userRepo: UserHexagonDependencies["userRepository"];
   private readonly sessionRepo: UserHexagonDependencies["sessionRepository"];
-  private readonly settingsRepo: UserHexagonDependencies["userSettingsRepository"];
   private readonly hasher: UserHexagonDependencies["passwordHasher"];
   private readonly notifier: UserHexagonDependencies["notificationService"];
+  private readonly authorizationUseCase = new AuthorizationUseCase();
 
   constructor(deps: UserHexagonDependencies) {
-    this.userRepo     = deps.userRepository;
-    this.sessionRepo  = deps.sessionRepository;
-    this.settingsRepo = deps.userSettingsRepository;
-    this.hasher       = deps.passwordHasher;
-    this.notifier     = deps.notificationService;
+    this.userRepo = deps.userRepository;
+    this.sessionRepo = deps.sessionRepository;
+    this.hasher = deps.passwordHasher;
+    this.notifier = deps.notificationService;
   }
 
   async getProfile(userId: string): Promise<OwnUserProfile> {
@@ -97,15 +97,6 @@ export class UserUseCase implements IUserUseCase {
     return { message: `Revoked ${count} session(s)` };
   }
 
-  async getSettings(userId: string): Promise<UserSettings> {
-    // Lazy init: tạo default nếu chưa có
-    return this.settingsRepo.upsertByUserId(userId, {});
-  }
-
-  async updateSettings(userId: string, data: UpdateSettingsDTO): Promise<UserSettings> {
-    return this.settingsRepo.upsertByUserId(userId, data);
-  }
-
   private toOwnProfile(user: any): OwnUserProfile {
     return {
       id: user.id,
@@ -122,6 +113,12 @@ export class UserUseCase implements IUserUseCase {
       role: user.role,
       lastLoginAt: user.lastLoginAt,
       createdAt: user.createdAt,
+      permissionsOverride: user.permissionsOverride,
+      permissions: this.authorizationUseCase.resolvePermissions({
+        role: user.role,
+        permissionsOverride: user.permissionsOverride,
+      }),
+      provider: user.provider || "local",
     };
   }
 }

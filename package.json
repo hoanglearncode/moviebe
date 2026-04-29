@@ -3,8 +3,12 @@
   "version": "1.0.0",
   "main": "index.js",
   "type": "module",
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "db:seed": "tsx prisma/seed.ts",
     "dev:worker": "tsx watch src/queue/worker.ts",
     "build": "tsc",
     "start": "node dist/index.js",
@@ -24,6 +28,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@payos/node": "^2.0.5",
     "@prisma/client": "^6.19.2",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.73.1",
@@ -44,6 +49,8 @@
     "passport-facebook": "^3.0.0",
     "prom-client": "^15.1.3",
     "pusher": "^5.3.3",
+    "socket.io": "^4.8.3",
+    "ua-parser-js": "^2.0.9",
     "uuid": "^13.0.0",
     "winston": "^3.19.0",
     "zod": "^4.3.6"
@@ -59,6 +66,8 @@
     "@types/multer": "^2.1.0",
     "@types/node": "^25.3.0",
     "@types/nodemailer": "^7.0.11",
+    "@typescript-eslint/eslint-plugin": "^8.58.1",
+    "@typescript-eslint/parser": "^8.58.1",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",

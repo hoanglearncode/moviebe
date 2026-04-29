@@ -1,27 +1,162 @@
+import { PrismaClient, EmailNotificationEvent } from "@prisma/client";
 import { IUserNotificationService } from "../interface";
+import { MailService, mailService } from "../../../share/component/mail";
+import { enqueueEmailJob, isQueueEnabled } from "../../../queue";
+import { logger } from "../../system/log/logger";
+import { ENV } from "../../../share/common/value";
 
-/**
- * UserNotificationService — stub implementation
- *
- * NOTE: Đây là "adapter" trong hexagonal architecture.
- * Hiện tại chỉ log ra console. Sau này thay bằng SendGrid, SES, etc.
- * mà không cần sửa gì ở usecase — đó là sức mạnh của hexagonal.
- */
+const prisma = new PrismaClient();
+
 export class UserNotificationService implements IUserNotificationService {
-  async sendPasswordChangeConfirmation(input: { email: string; name: string }) {
-    console.log(`[EMAIL] Password changed: ${input.email}`);
-    // TODO: integrate với email provider (SendGrid, AWS SES, etc.)
+  constructor(private readonly emailService: MailService = mailService) {}
+
+  /**
+   * 1. Password changed
+   */
+  async sendPasswordChangeConfirmation(input: { email: string; name: string }): Promise<void> {
+    const template = await this.getTemplate(EmailNotificationEvent.PASSWORD_CHANGED);
+
+    const html = this.render(template.body, {
+      email: input.email,
+      name: input.name || input.email,
+    });
+
+    const subject = this.render(template.subject, {
+      email: input.email,
+    });
+
+    await this.dispatchEmail({
+      to: input.email,
+      subject,
+      html,
+      text: "Your password has been changed successfully.",
+    });
   }
 
-  async sendAccountDeletedNotification(input: { email: string; name: string }) {
-    console.log(`[EMAIL] Account deleted: ${input.email}`);
+  /**
+   * 2. Account deleted
+   */
+  async sendAccountDeletedNotification(input: { email: string; name: string }): Promise<void> {
+    const template = await this.getTemplate(EmailNotificationEvent.ACCOUNT_DELETED);
+
+    const html = this.render(template.body, {
+      email: input.email,
+      name: input.name || input.email,
+    });
+
+    const subject = this.render(template.subject, {
+      email: input.email,
+    });
+
+    await this.dispatchEmail({
+      to: input.email,
+      subject,
+      html,
+      text: "Your account has been deleted.",
+    });
   }
 
-  async sendPasswordResetNotification(input: { email: string; token: string }) {
-    console.log(`[EMAIL] Password reset for: ${input.email}`);
+  /**
+   * 3. Reset password (theo interface)
+   */
+  async sendPasswordResetNotification(input: { email: string; token: string }): Promise<void> {
+    const resetUrl = `${ENV.FRONTEND_URL}/reset-password?token=${encodeURIComponent(input.token)}`;
+
+    const template = await this.getTemplate(
+      EmailNotificationEvent.RESET_PASSWORD, // ⚠️ dùng đúng template seed
+    );
+
+    const html = this.render(template.body, {
+      email: input.email,
+      name: input.email,
+      reset_url: resetUrl,
+      token: input.token,
+    });
+
+    const subject = this.render(template.subject, {
+      email: input.email,
+    });
+
+    await this.dispatchEmail({
+      to: input.email,
+      subject,
+      html,
+      text: `Reset password: ${resetUrl}`,
+    });
   }
 
-  async sendWelcomeEmail(input: { email: string; name: string }) {
-    console.log(`[EMAIL] Welcome email to: ${input.email}`);
+  /**
+   * 4. Welcome email
+   */
+  async sendWelcomeEmail(input: { email: string; name: string }): Promise<void> {
+    const template = await this.getTemplate(EmailNotificationEvent.WELCOME_NEW_ACCOUNT);
+
+    const html = this.render(template.body, {
+      email: input.email,
+      name: input.name || input.email,
+    });
+
+    const subject = this.render(template.subject, {
+      email: input.email,
+    });
+
+    await this.dispatchEmail({
+      to: input.email,
+      subject,
+      html,
+      text: "Welcome to CinePass!",
+    });
+  }
+
+  // ========================
+  // SHARED METHODS (giữ giống AuthNotificationService)
+  // ========================
+
+  private async getTemplate(event: EmailNotificationEvent) {
+    const template = await prisma.emailTemplate.findUnique({
+      where: { event },
+    });
+
+    if (!template || !template.isActive) {
+      throw new Error(`Email template not found or inactive: ${event}`);
+    }
+
+    return template;
+  }
+
+  private render(template: string, variables: Record<string, any>): string {
+    let result = template;
+
+    for (const key in variables) {
+      const value = variables[key] ?? "";
+      result = result.replace(new RegExp(`{{${key}}}`, "g"), value);
+    }
+
+    return result;
+  }
+
+  private async dispatchEmail(input: {
+    to: string;
+    subject: string;
+    html: string;
+    text: string;
+  }): Promise<void> {
+    if (!isQueueEnabled) {
+      await this.emailService.send(input);
+      return;
+    }
+
+    try {
+      await enqueueEmailJob(input, {
+        jobId: `mail:${input.to}:${Date.now()}`,
+      });
+    } catch (error) {
+      logger.warn("Queue email dispatch failed, falling back to direct mail send", {
+        to: input.to,
+        error: (error as Error).message,
+      });
+
+      await this.emailService.send(input);
+    }
   }
 }

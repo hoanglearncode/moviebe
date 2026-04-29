@@ -1,164 +1,154 @@
-import { logger } from "../../../../share/component/logger";
+import { IPartnerNotificationService } from "../interface";
+import { logger } from "../../system/log/logger";
+import { pushNotificationService, NotificationFactory } from "../../notification";
 
-/**
- * Partner Notification Service
- * Handles sending notifications for partner events
- * (Email, SMS, In-app notifications)
- */
-export class PartnerNotificationService {
-  /**
-   * Send withdrawal pending notification
-   * @param partnerId Partner ID
-   * @param withdrawalId Withdrawal ID
-   * @param amount Withdrawal amount
-   */
-  async sendWithdrawalPending(
-    partnerId: string,
-    withdrawalId: string,
-    amount: number
-  ): Promise<void> {
-    try {
-      // TODO: Implement email notification
-      logger.info(`[NOTIFICATION] Withdrawal ${withdrawalId} initiated for partner ${partnerId}. Amount: ${amount}`);
-      // Example: await mailService.send(partner.email, 'Withdrawal Initiated', ...)
-    } catch (error) {
-      logger.error(`Failed to send withdrawal pending notification: ${error}`);
-      // Don't throw - notification failures shouldn't block main operation
+export class PartnerNotificationService implements IPartnerNotificationService {
+  async sendWithdrawalPending(input: {
+    userId?: string;
+    email: string;
+    amount: number;
+    reference: string;
+  }): Promise<void> {
+    logger.info("[PartnerNotif] withdrawal.pending", {
+      email: input.email,
+      amount: input.amount,
+      ref: input.reference,
+    });
+
+    if (input.userId) {
+      await pushNotificationService
+        .send(
+          NotificationFactory.partnerWithdrawalPending(input.userId, input.reference, input.amount),
+        )
+        .catch((err) => logger.warn("[PartnerNotif] push failed", { err: err.message }));
     }
   }
 
-  /**
-   * Send withdrawal completed notification
-   * @param partnerId Partner ID
-   * @param withdrawalId Withdrawal ID
-   * @param amount Withdrawal amount
-   */
-  async sendWithdrawalCompleted(
-    partnerId: string,
-    withdrawalId: string,
-    amount: number
-  ): Promise<void> {
-    try {
-      // TODO: Implement email notification
-      logger.info(
-        `[NOTIFICATION] Withdrawal ${withdrawalId} completed for partner ${partnerId}. Amount: ${amount}`
-      );
-      // Example: await mailService.send(partner.email, 'Withdrawal Completed', ...)
-    } catch (error) {
-      logger.error(`Failed to send withdrawal completed notification: ${error}`);
+  async sendWithdrawalCompleted(input: {
+    userId?: string;
+    email: string;
+    amount: number;
+    reference: string;
+  }): Promise<void> {
+    logger.info("[PartnerNotif] withdrawal.completed", {
+      email: input.email,
+      amount: input.amount,
+      ref: input.reference,
+    });
+
+    if (input.userId) {
+      await pushNotificationService
+        .send(
+          NotificationFactory.partnerWithdrawalCompleted(
+            input.userId,
+            input.reference,
+            input.amount,
+          ),
+        )
+        .catch((err) => logger.warn("[PartnerNotif] push failed", { err: err.message }));
     }
   }
 
-  /**
-   * Send movie approved notification
-   * @param partnerId Partner ID
-   * @param movieId Movie ID
-   * @param movieTitle Movie title
-   */
-  async sendMovieApproved(
-    partnerId: string,
-    movieId: string,
-    movieTitle: string
-  ): Promise<void> {
-    try {
-      // TODO: Implement email notification
-      logger.info(
-        `[NOTIFICATION] Movie "${movieTitle}" (${movieId}) approved for partner ${partnerId}`
-      );
-      // Example: await mailService.send(partner.email, 'Movie Approved', ...)
-    } catch (error) {
-      logger.error(`Failed to send movie approved notification: ${error}`);
+  async sendWithdrawalFailed(input: {
+    userId?: string;
+    email: string;
+    amount: number;
+    reason: string;
+  }): Promise<void> {
+    logger.info("[PartnerNotif] withdrawal.failed", {
+      email: input.email,
+      amount: input.amount,
+      reason: input.reason,
+    });
+
+    if (input.userId) {
+      await pushNotificationService
+        .send(
+          NotificationFactory.partnerWithdrawalFailed(
+            input.userId,
+            "unknown",
+            input.amount,
+            input.reason,
+          ),
+        )
+        .catch((err) => logger.warn("[PartnerNotif] push failed", { err: err.message }));
     }
   }
 
-  /**
-   * Send movie rejected notification
-   * @param partnerId Partner ID
-   * @param movieId Movie ID
-   * @param movieTitle Movie title
-   * @param reason Rejection reason
-   */
-  async sendMovieRejected(
-    partnerId: string,
-    movieId: string,
-    movieTitle: string,
-    reason: string
-  ): Promise<void> {
-    try {
-      // TODO: Implement email notification
-      logger.info(
-        `[NOTIFICATION] Movie "${movieTitle}" (${movieId}) rejected for partner ${partnerId}. Reason: ${reason}`
-      );
-      // Example: await mailService.send(partner.email, 'Movie Rejected', ...)
-    } catch (error) {
-      logger.error(`Failed to send movie rejected notification: ${error}`);
+  async sendMovieApproved(input: {
+    userId?: string;
+    email: string;
+    movieTitle: string;
+    movieId?: string;
+  }): Promise<void> {
+    logger.info("[PartnerNotif] movie.approved", {
+      email: input.email,
+      movie: input.movieTitle,
+    });
+
+    if (input.userId) {
+      await pushNotificationService
+        .send(
+          NotificationFactory.partnerMovieApproved(
+            input.userId,
+            input.movieId ?? "",
+            input.movieTitle,
+          ),
+        )
+        .catch((err) => logger.warn("[PartnerNotif] push failed", { err: err.message }));
     }
   }
 
-  /**
-   * Send daily revenue report
-   * @param partnerId Partner ID
-   * @param dailyRevenue Daily revenue amount
-   * @param totalEarned Total earned amount
-   */
-  async sendDailyRevenueReport(
-    partnerId: string,
-    dailyRevenue: number,
-    totalEarned: number
-  ): Promise<void> {
-    try {
-      // TODO: Implement email notification with daily report
-      logger.info(
-        `[NOTIFICATION] Daily revenue report for partner ${partnerId}. Daily: ${dailyRevenue}, Total: ${totalEarned}`
-      );
-      // Example: await mailService.send(partner.email, 'Daily Revenue Report', ...)
-    } catch (error) {
-      logger.error(`Failed to send daily revenue report: ${error}`);
+  async sendMovieRejected(input: {
+    userId?: string;
+    email: string;
+    movieTitle: string;
+    movieId?: string;
+    reason: string;
+  }): Promise<void> {
+    logger.info("[PartnerNotif] movie.rejected", {
+      email: input.email,
+      movie: input.movieTitle,
+      reason: input.reason,
+    });
+
+    if (input.userId) {
+      await pushNotificationService
+        .send(
+          NotificationFactory.partnerMovieRejected(
+            input.userId,
+            input.movieId ?? "",
+            input.movieTitle,
+            input.reason,
+          ),
+        )
+        .catch((err) => logger.warn("[PartnerNotif] push failed", { err: err.message }));
     }
   }
 
-  /**
-   * Send showtime cancellation notification to customers
-   * @param showtimeId Showtime ID
-   * @param movieTitle Movie title
-   * @param cancelledAt Cancellation timestamp
-   */
-  async sendShowtimeCancellationNotice(
-    showtimeId: string,
-    movieTitle: string,
-    cancelledAt: Date
-  ): Promise<void> {
-    try {
-      // TODO: Implement SMS/email notification to ticket holders
-      logger.info(
-        `[NOTIFICATION] Showtime ${showtimeId} for "${movieTitle}" cancelled at ${cancelledAt}`
-      );
-      // Example: Find all ticket holders and notify them
-    } catch (error) {
-      logger.error(`Failed to send showtime cancellation notice: ${error}`);
-    }
-  }
+  async sendDailyRevenue(input: {
+    userId?: string;
+    email: string;
+    revenue: number;
+    date: string;
+  }): Promise<void> {
+    logger.info("[PartnerNotif] daily.revenue", {
+      email: input.email,
+      date: input.date,
+      revenue: input.revenue,
+    });
 
-  /**
-   * Send seat unavailable notification
-   * @param partnerId Partner ID
-   * @param showtimeId Showtime ID
-   * @param seatCode Seat code (e.g., "A1")
-   * @param reason Reason for unavailability
-   */
-  async sendSeatUnavailableNotification(
-    partnerId: string,
-    showtimeId: string,
-    seatCode: string,
-    reason: string
-  ): Promise<void> {
-    try {
-      // TODO: Implement notification
-      logger.info(
-        `[NOTIFICATION] Seat ${seatCode} in showtime ${showtimeId} is now unavailable. Reason: ${reason}`
-      );
-    } catch (error) {
-      logger.error(`Failed to send seat unavailable notification: ${error}`);
+    if (input.userId) {
+      await pushNotificationService
+        .send(
+          NotificationFactory.system(
+            input.userId,
+            "Báo cáo doanh thu hôm nay",
+            `Doanh thu ngày ${input.date}: ${input.revenue.toLocaleString("vi-VN")} VND`,
+            { revenue: input.revenue, date: input.date },
+          ),
+        )
+        .catch((err) => logger.warn("[PartnerNotif] push failed", { err: err.message }));
     }
   }
 }

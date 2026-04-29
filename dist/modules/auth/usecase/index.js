@@ -7,9 +7,14 @@ const http_server_1 = require("../../../share/transport/http-server");
 const error_code_1 = require("../../../share/model/error-code");
 const value_1 = require("../../../share/common/value");
 const dto_1 = require("../model/dto");
+const authorization_usecase_1 = require("../../user/usecase/authorization.usecase");
 class AuthUseCase {
     constructor(dependencies) {
         this.dependencies = dependencies;
+        this.authorizationUseCase = new authorization_usecase_1.AuthorizationUseCase();
+    }
+    isSessionAllowedStatus(status) {
+        return status === client_1.UserStatus.ACTIVE || status === client_1.UserStatus.BANNED;
     }
     async register(data) {
         const parsedData = dto_1.RegisterPayloadDTO.safeParse(data);
@@ -17,7 +22,7 @@ class AuthUseCase {
             throw new http_server_1.ValidationError("Invalid registration data", parsedData.error.issues);
         }
         return this.dependencies.concurrentLockService.runExclusive(this.getRegisterLockKeys(parsedData.data.email, parsedData.data.username), async () => {
-            const { userRepository, passwordHasher, tokenService, notificationService, avatarColorService } = this.dependencies;
+            const { userRepository, passwordHasher, tokenService, notificationService, avatarColorService, } = this.dependencies;
             const existingEmail = await userRepository.findByEmail(parsedData.data.email);
             if (existingEmail) {
                 throw new http_server_1.ValidationError("Email already exists", undefined, error_code_1.ErrorCode.EMAIL_EXISTS);
@@ -47,11 +52,20 @@ class AuthUseCase {
                 emailVerified: false,
                 mustChangePassword: false,
                 status: client_1.UserStatus.ACTIVE,
+                permissions_override: parsedData.data.permissions_override,
                 lastLoginAt: new Date(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
             await userRepository.insert(user);
+            if (this.dependencies.userSettingService) {
+                try {
+                    await this.dependencies.userSettingService.default(newUserId);
+                }
+                catch (error) {
+                    console.error(`Failed to create default settings for user ${newUserId}:`, error);
+                }
+            }
             const verifyToken = await tokenService.issueActionToken({
                 userId: newUserId,
                 purpose: "verify-email",
@@ -66,7 +80,7 @@ class AuthUseCase {
             conflictMessage: "A registration request for this account is already being processed",
         });
     }
-    async login(data) {
+    async login(data, context) {
         const parsedData = dto_1.LoginPayloadDTO.safeParse(data);
         if (!parsedData.success) {
             throw new http_server_1.ValidationError("Invalid login data", parsedData.error.issues);
@@ -77,7 +91,10 @@ class AuthUseCase {
             if (!user) {
                 throw new http_server_1.UnauthorizedError("Invalid credentials", error_code_1.ErrorCode.INVALID_CREDENTIALS);
             }
-            if (user.status !== client_1.UserStatus.ACTIVE) {
+            if (user.status === client_1.UserStatus.INACTIVE) {
+                throw new http_server_1.UnauthorizedError("Invalid credentials", error_code_1.ErrorCode.INVALID_CREDENTIALS);
+            }
+            if (!this.isSessionAllowedStatus(user.status)) {
                 throw new http_server_1.UnauthorizedError("Account is unavailable", error_code_1.ErrorCode.ACCOUNT_INACTIVE);
             }
             const isPasswordMatched = await passwordHasher.compare(parsedData.data.password, user.password || "");
@@ -87,7 +104,9 @@ class AuthUseCase {
             if (!user.emailVerified) {
                 throw new http_server_1.UnauthorizedError("Account is not verified", error_code_1.ErrorCode.ACCOUNT_NOT_VERIFIED);
             }
-            const session = await tokenService.issueAuthSession(user);
+            const session = await tokenService.issueAuthSession(user, context, {
+                remember: parsedData.data.remember,
+            });
             await userRepository.update(user.id, {
                 lastLoginAt: new Date(),
             });
@@ -108,36 +127,37 @@ class AuthUseCase {
         if (!user) {
             throw new http_server_1.NotFoundError("User");
         }
-        if (user.status !== client_1.UserStatus.ACTIVE) {
+        if (!this.isSessionAllowedStatus(user.status)) {
             throw new http_server_1.UnauthorizedError("Account is unavailable", error_code_1.ErrorCode.ACCOUNT_INACTIVE);
         }
         return this.buildAuthResponse(user, session);
     }
-    async loginGoogle(data) {
+    async loginGoogle(data, context) {
         const parsedData = dto_1.GoogleLoginPayloadDTO.safeParse(data);
         if (!parsedData.success) {
             throw new http_server_1.ValidationError("Invalid Google login data", parsedData.error.issues);
         }
         const profile = await this.dependencies.socialAuthService.verifyGoogleCredential(parsedData.data.credential);
-        return this.loginWithSocialProfile(profile);
+        return this.loginWithSocialProfile(profile, context);
     }
-    async loginGoogleTokenCallback(data) {
+    async loginGoogleTokenCallback(data, context) {
         const parsedData = dto_1.GoogleLoginTokenCallbackPayloadDTO.safeParse(data);
         if (!parsedData.success) {
             throw new http_server_1.ValidationError("Invalid Google token callback data", parsedData.error.issues);
         }
         const profile = await this.dependencies.socialAuthService.getGoogleProfile(parsedData.data.accessToken);
-        return this.loginWithSocialProfile(profile);
+        return this.loginWithSocialProfile(profile, context);
     }
-    async loginFacebook(data) {
+    async loginFacebook(data, context) {
         const parsedData = dto_1.FacebookLoginPayloadDTO.safeParse(data);
         if (!parsedData.success) {
             throw new http_server_1.ValidationError("Invalid Facebook login data", parsedData.error.issues);
         }
         const profile = await this.dependencies.socialAuthService.getFacebookProfile(parsedData.data.accessToken);
-        return this.loginWithSocialProfile(profile);
+        return this.loginWithSocialProfile(profile, context);
     }
     async verifyEmail(data) {
+        const { notificationService } = this.dependencies;
         const parsedData = dto_1.VerifyEmailPayloadDTO.safeParse(data);
         if (!parsedData.success) {
             throw new http_server_1.ValidationError("Invalid verification data", parsedData.error.issues);
@@ -149,6 +169,7 @@ class AuthUseCase {
             throw new http_server_1.NotFoundError("User");
         }
         await userRepository.markVerified(userId);
+        await notificationService.sendWellComeEmail(user.email);
         return { message: "Email verified successfully" };
     }
     async resendVerification(data) {
@@ -158,11 +179,8 @@ class AuthUseCase {
         }
         const { userRepository, tokenService, notificationService } = this.dependencies;
         const user = await userRepository.findByEmail(parsedData.data.email);
-        if (!user) {
-            throw new http_server_1.NotFoundError("User");
-        }
-        if (user.emailVerified) {
-            throw new http_server_1.ValidationError("Email is already verified");
+        if (!user || user.emailVerified) {
+            return { message: "If the email requires verification, a new email has been sent" };
         }
         const verifyToken = await tokenService.issueActionToken({
             userId: user.id,
@@ -172,7 +190,7 @@ class AuthUseCase {
             email: user.email,
             token: verifyToken,
         });
-        return { message: "Verification email sent" };
+        return { message: "If the email requires verification, a new email has been sent" };
     }
     async forgotPassword(data) {
         const parsedData = dto_1.ForgotPasswordPayloadDTO.safeParse(data);
@@ -200,7 +218,7 @@ class AuthUseCase {
         if (!parsedData.success) {
             throw new http_server_1.ValidationError("Invalid change password data", parsedData.error.issues);
         }
-        const { tokenService, userRepository, passwordHasher } = this.dependencies;
+        const { tokenService, userRepository, passwordHasher, notificationService } = this.dependencies;
         const { userId } = await tokenService.verifyActionToken(parsedData.data.token, "reset-password");
         const user = await userRepository.get(userId);
         if (!user) {
@@ -211,11 +229,12 @@ class AuthUseCase {
         await userRepository.update(userId, { mustChangePassword: false });
         if (!user.emailVerified)
             await userRepository.markVerified(userId);
+        await notificationService.sendChangePasswordEmail(user.email);
         return { message: "Password changed successfully" };
     }
-    async loginWithSocialProfile(profile) {
+    async loginWithSocialProfile(profile, context) {
         return this.dependencies.concurrentLockService.runExclusive(this.getRegisterLockKeys(profile.email), async () => {
-            const { userRepository, tokenService, avatarColorService } = this.dependencies;
+            const { userRepository, tokenService, avatarColorService, notificationService } = this.dependencies;
             let user = await userRepository.findByEmail(profile.email);
             if (!user) {
                 const newUserId = (0, uuid_1.v7)();
@@ -235,15 +254,25 @@ class AuthUseCase {
                     role: client_1.Role.USER,
                     emailVerified: profile.emailVerified,
                     mustChangePassword: false,
+                    permissions_override: profile.permissions_override,
                     status: client_1.UserStatus.ACTIVE,
                     lastLoginAt: new Date(),
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 };
                 await userRepository.insert(user);
+                if (this.dependencies.userSettingService) {
+                    try {
+                        await this.dependencies.userSettingService.default(newUserId);
+                    }
+                    catch (error) {
+                        console.error(`Failed to create default settings for user ${newUserId}:`, error);
+                    }
+                }
+                await notificationService.sendWellComeEmail(user.email);
             }
             else {
-                if (user.status !== client_1.UserStatus.ACTIVE) {
+                if (!this.isSessionAllowedStatus(user.status)) {
                     throw new http_server_1.UnauthorizedError("Account is unavailable", error_code_1.ErrorCode.ACCOUNT_INACTIVE);
                 }
                 await userRepository.update(user.id, {
@@ -258,7 +287,7 @@ class AuthUseCase {
                     throw new http_server_1.NotFoundError("User");
                 }
             }
-            const session = await tokenService.issueAuthSession(user);
+            const session = await tokenService.issueAuthSession(user, context);
             return this.buildAuthResponse(user, session);
         }, {
             ttlMs: value_1.ENV.AUTH_CONCURRENT_LOCK_TTL_MS,
@@ -277,9 +306,7 @@ class AuthUseCase {
     }
     normalizeLockValue(value) {
         const normalizedValue = value.trim();
-        return normalizedValue.includes("@")
-            ? normalizedValue.toLowerCase()
-            : normalizedValue;
+        return normalizedValue.includes("@") ? normalizedValue.toLowerCase() : normalizedValue;
     }
     buildAuthResponse(user, session) {
         return {
@@ -290,11 +317,18 @@ class AuthUseCase {
                 email: user.email,
                 username: user.username,
                 role: user.role,
+                status: user.status,
                 avatar: user.avatar,
                 avatarColor: user.avatarColor,
                 name: user.name,
                 emailVerified: user.emailVerified,
-                mustChangePassword: user.mustChangePassword
+                mustChangePassword: user.mustChangePassword,
+                provider: user.provider,
+                permissions_override: user.permissions_override,
+                permissions: this.authorizationUseCase.resolvePermissions({
+                    role: user.role,
+                    permissionsOverride: user.permissions_override,
+                }),
             },
         };
     }
