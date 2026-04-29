@@ -1,17 +1,17 @@
-import { cloudinary } from '../common/cloudinary';
-import { UploadApiResponse } from 'cloudinary';
-import { Readable } from 'stream';
+import { cloudinary } from "../common/cloudinary";
+import { UploadApiResponse } from "cloudinary";
+import { Readable } from "stream";
 
 export interface UploadResult {
-  url:       string;   // https CDN URL
-  publicId:  string;   // để xoá sau này nếu cần
-  width:     number;
-  height:    number;
-  format:    string;
-  bytes:     number;
+  url: string; // https CDN URL
+  publicId: string; // để xoá sau này nếu cần
+  width: number;
+  height: number;
+  format: string;
+  bytes: number;
 }
 
-export type UploadFolder = 'avatars' | 'categories' | 'products' | 'misc';
+export type UploadFolder = "avatars" | "categories" | "products" | "misc";
 
 export class UploadService {
   /**
@@ -20,9 +20,9 @@ export class UploadService {
    */
   async uploadBuffer(
     buffer: Buffer,
-    folder: UploadFolder = 'misc',
+    folder: UploadFolder = "misc",
     options?: {
-      publicId?:     string;
+      publicId?: string;
       transformation?: object;
     },
   ): Promise<UploadResult> {
@@ -30,24 +30,24 @@ export class UploadService {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder,
-          public_id:      options?.publicId,
+          public_id: options?.publicId,
           transformation: options?.transformation ?? [
-            { quality: 'auto', fetch_format: 'auto' },  // auto-optimize
+            { quality: "auto", fetch_format: "auto" }, // auto-optimize
           ],
           overwrite: true,
         },
         (error: Error | undefined, result: UploadApiResponse | undefined) => {
           if (error || !result) {
-            reject(error ?? new Error('Upload thất bại'));
+            reject(error ?? new Error("Upload thất bại"));
             return;
           }
           resolve({
-            url:      result.secure_url,
+            url: result.secure_url,
             publicId: result.public_id,
-            width:    result.width,
-            height:   result.height,
-            format:   result.format,
-            bytes:    result.bytes,
+            width: result.width,
+            height: result.height,
+            format: result.format,
+            bytes: result.bytes,
           });
         },
       );

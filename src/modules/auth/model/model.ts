@@ -5,22 +5,42 @@ import { UserStatus, Role } from "@prisma/client";
 export type AuthUser = {
   id: string;
   email: string;
-  username?: string | null;
-  name?: string | null;
-  password?: string | null;
-  provider?: string;
-  avatar?: string | null;
-  role?: Role;
-  lastLoginAt?: Date | null;
-  avatarColor?: string;
+  username: string | null;
+  name: string | null;
+  password: string | null;
+  provider: string;
+  avatar: string | null;
+  phone: string | null;
+  bio: string | null;
+  location: string | null;
+  role: Role;
+  lastLoginAt: Date | null;
+  avatarColor: string | undefined;
   emailVerified: boolean;
   mustChangePassword: boolean;
+  permissions_override: any;
   status: UserStatus;
   createdAt: Date;
   updatedAt: Date;
 };
 
-export type AuthPublicUser = Pick<AuthUser, "id" | "email" | "username" | "name" | "mustChangePassword" | "emailVerified" | "role" | "avatar">;
+export type AuthPublicUser = Pick<
+  AuthUser,
+  | "id"
+  | "email"
+  | "username"
+  | "name"
+  | "mustChangePassword"
+  | "emailVerified"
+  | "role"
+  | "status"
+  | "avatar"
+  | "avatarColor"
+  | "provider"
+  | "permissions_override"
+> & {
+  permissions?: string[];
+};
 
 export type AuthSession = {
   accessToken: string;
@@ -37,4 +57,5 @@ export type AuthSocialProfile = {
   avatar?: string | null;
   emailVerified: boolean;
   provider: "google" | "facebook";
+  permissions_override: JSON | null;
 };

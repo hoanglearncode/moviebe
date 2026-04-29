@@ -27,6 +27,7 @@ class SocialAuthService {
             avatar: payload.picture ?? null,
             emailVerified: payload.email_verified ?? true,
             provider: "google",
+            permissions_override: null,
         };
     }
     async getGoogleProfile(accessToken) {
@@ -48,6 +49,7 @@ class SocialAuthService {
             avatar: profile.picture ?? null,
             emailVerified: profile.email_verified ?? true,
             provider: "google",
+            permissions_override: null,
         };
     }
     async getFacebookProfile(accessToken) {
@@ -68,6 +70,7 @@ class SocialAuthService {
             avatar: profile.picture?.data?.url ?? null,
             emailVerified: true,
             provider: "facebook",
+            permissions_override: null,
         };
     }
 }

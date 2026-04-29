@@ -8,18 +8,18 @@ class UploadService {
      * Upload buffer lên Cloudinary.
      * Dùng stream để tránh ghi file tạm ra disk.
      */
-    async uploadBuffer(buffer, folder = 'misc', options) {
+    async uploadBuffer(buffer, folder = "misc", options) {
         return new Promise((resolve, reject) => {
             const uploadStream = cloudinary_1.cloudinary.uploader.upload_stream({
                 folder,
                 public_id: options?.publicId,
                 transformation: options?.transformation ?? [
-                    { quality: 'auto', fetch_format: 'auto' }, // auto-optimize
+                    { quality: "auto", fetch_format: "auto" }, // auto-optimize
                 ],
                 overwrite: true,
             }, (error, result) => {
                 if (error || !result) {
-                    reject(error ?? new Error('Upload thất bại'));
+                    reject(error ?? new Error("Upload thất bại"));
                     return;
                 }
                 resolve({

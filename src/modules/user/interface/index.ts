@@ -1,17 +1,28 @@
 import { IRepository, IUseCase } from "../../../share/interface";
 import { PagingDTO } from "../../../share/model/paging";
 import { PrismaClient } from "@prisma/client";
+import { IUserSetting } from "../../../modules/system/setting/interface";
 import {
-  UpdateProfileDTO, ChangePasswordDTO, UpdateSettingsDTO,
-  GetSessionsQueryDTO, CreateUserDTO, UpdateUserDTO,
-  ChangeUserStatusDTO, ResetUserPasswordDTO, ListUsersQueryDTO, UserCondDTO,
+  UpdateProfileDTO,
+  ChangePasswordDTO,
+  GetSessionsQueryDTO,
+  CreateUserDTO,
+  UpdateUserDTO,
+  ChangeUserStatusDTO,
+  ResetUserPasswordDTO,
+  ListUsersQueryDTO,
+  UserCondDTO,
   SeedUsersDTO,
 } from "../model/dto";
 import {
-  UserProfile, UserSession, UserSettings,
-  SessionListResponse, OwnUserProfile, UserListResponse,
+  UserProfile,
+  UserSession,
+  UserSettings,
+  SessionListResponse,
+  OwnUserProfile,
+  UserListResponse,
 } from "../model/model";
-import { SeedSummary } from "../shared/seed.service";
+import { SeedSummary } from "../shared/seed";
 
 // ==========================================
 // REPOSITORIES
@@ -21,7 +32,6 @@ export interface IUserRepository
   // NOTE: IRepository<Entity, Cond, UpdateDTO>
   // Cond = Partial<UserProfile> cho các method generic (get, findByCond, list, insert, update, delete)
   extends IRepository<UserProfile, Partial<UserProfile>, Partial<UserProfile>> {
-
   // Domain-specific methods — ngoài những gì base interface đã có
   findById(userId: string): Promise<UserProfile | null>;
   findByEmail(email: string): Promise<UserProfile | null>;
@@ -38,8 +48,11 @@ export interface IUserRepository
   listUsers(cond: ListUsersQueryDTO): Promise<{ items: OwnUserProfile[]; total: number }>;
 }
 
-export interface ISessionRepository
-  extends IRepository<UserSession, Partial<UserSession>, Partial<UserSession>> {
+export interface ISessionRepository extends IRepository<
+  UserSession,
+  Partial<UserSession>,
+  Partial<UserSession>
+> {
   findById(sessionId: string): Promise<UserSession | null>;
   findByUserId(userId: string): Promise<UserSession[]>;
   revokeSession(sessionId: string): Promise<boolean>;
@@ -48,8 +61,11 @@ export interface ISessionRepository
   deleteExpiredSessions(): Promise<number>;
 }
 
-export interface IUserSettingsRepository
-  extends IRepository<UserSettings, Partial<UserSettings>, Partial<UserSettings>> {
+export interface IUserSettingsRepository extends IRepository<
+  UserSettings,
+  Partial<UserSettings>,
+  Partial<UserSettings>
+> {
   findByUserId(userId: string): Promise<UserSettings | null>;
   upsertByUserId(userId: string, data: Partial<UserSettings>): Promise<UserSettings>;
 }
@@ -82,15 +98,20 @@ export interface IUserUseCase {
   getSessions(userId: string, query?: GetSessionsQueryDTO): Promise<SessionListResponse>;
   revokeSession(userId: string, sessionId: string): Promise<{ message: string }>;
   revokeAllSessions(userId: string): Promise<{ message: string }>;
-  getSettings(userId: string): Promise<UserSettings>;
-  updateSettings(userId: string, data: UpdateSettingsDTO): Promise<UserSettings>;
 }
 
-export interface IAdminUserUseCase
-  extends IUseCase<CreateUserDTO, UpdateUserDTO, OwnUserProfile, UserCondDTO> {
+export interface IAdminUserUseCase extends IUseCase<
+  CreateUserDTO,
+  UpdateUserDTO,
+  OwnUserProfile,
+  UserCondDTO
+> {
   listWithMeta(cond: ListUsersQueryDTO): Promise<UserListResponse>;
   changeUserStatus(userId: string, data: ChangeUserStatusDTO): Promise<{ message: string }>;
-  resetUserPassword(userId: string, data: ResetUserPasswordDTO): Promise<{ temporaryPassword: string }>;
+  resetUserPassword(
+    userId: string,
+    data: ResetUserPasswordDTO,
+  ): Promise<{ temporaryPassword: string }>;
   verifyUserEmail(userId: string): Promise<{ message: string }>;
   revokeAllUserSessions(userId: string): Promise<{ message: string }>;
   seedUsers(data: SeedUsersDTO): Promise<SeedSummary>;
@@ -136,4 +157,5 @@ export interface UserHexagonDependencies {
 // Vì cùng truy cập cùng bảng DB, chỉ khác ở logic nghiệp vụ
 export interface AdminUserHexagonDependencies extends UserHexagonDependencies {
   prisma: PrismaClient;
+  userSettingService?: IUserSetting;
 }

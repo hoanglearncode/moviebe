@@ -31,11 +31,38 @@ enum UserStatus {
   PENDING
 }
 
+enum StaffRole {
+  OWNER
+  MANAGER
+  CASHIER
+  SCANNER
+  STAFF
+}
+
+enum RoomType {
+  TWO_D
+  THREE_D
+  IMAX
+  VIP
+  FOUR_DX
+}
+
+enum RoomStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+}
+
 enum PartnerStatus {
+  BANNED
+  ACTIVE
+  DELETE
+}
+
+enum PartnerRequestStatus {
   PENDING
   APPROVED
   REJECTED
-  SUSPENDED
 }
 
 enum MovieStatus {
@@ -57,8 +84,8 @@ enum ShowtimeStatus {
 enum SeatType {
   STANDARD
   VIP
-  PREMIUM
-  ACCESSIBLE
+  COUPLE
+  BLOCKED
 }
 
 enum SeatStatus {
@@ -75,6 +102,16 @@ enum TicketStatus {
   CANCELLED
   REFUNDED
   PASSED
+}
+
+enum OrderStatus {
+  PENDING
+  PAYMENT_PROCESSING
+  COMPLETED
+  EXPIRED
+  CANCELLED
+  REFUND_REQUESTED
+  REFUNDED
 }
 
 enum TransactionType {
@@ -108,6 +145,25 @@ enum ReviewStatus {
   REMOVED
 }
 
+enum EmailNotificationEvent {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+  WELCOME_NEW_ACCOUNT
+  WELCOME_SOCIAL_LOGIN
+  ACCOUNT_UPDATED_BY_ADMIN
+  PASSWORD_CHANGED
+  ACCOUNT_DELETED
+  LOGIN_WARNING
+  PROMO_CAMPAIGN
+}
+
+enum EmailNotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  SCHEDULED
+}
+
 model User {
   id                 String                   @id @default(cuid())
   email              String                   @unique
@@ -121,8 +177,10 @@ model User {
   avatarColor        String?
   provider           String                   @default("local")
   role               Role                     @default(USER)
+  permissionsOverride Json?                   @map("permissions_override")
   status             UserStatus               @default(ACTIVE)
   emailVerified      Boolean                  @default(false)
+  dateOfBirth     DateTime?
   mustChangePassword Boolean                  @default(false)
   lastLoginAt        DateTime?
   createdAt          DateTime                 @default(now())
@@ -132,12 +190,21 @@ model User {
   resetTokens        PasswordResetToken[]
   emailTokens        EmailVerificationToken[]
   partner            Partner?
+  partnerRequests    PartnerRequest[]
+  orders             Order[]
   tickets            Ticket[]
   transactions       Transaction[]
   reviews            Review[]
   ownedCheckIns      CheckIn[]
   sentPasses         PassHistory[]            @relation("PassHistoryFromUser")
   receivedPasses     PassHistory[]            @relation("PassHistoryToUser")
+  notifications            Notification[]
+  staffPartners            PartnerStaff[]
+  broadcastsCreated        BroadcastNotification[] @relation("BroadcastCreatedBy")
+  reportsSubmitted         Report[]                @relation("ReportedBy")
+  reportsResolved          Report[]                @relation("ResolvedBy")
+  featureFlagsCreated      FeatureFlag[]           @relation("FlagCreatedBy")
+  featureFlagsUpdated      FeatureFlag[]           @relation("FlagUpdatedBy")
 
   @@index([email])
   @@index([username])
@@ -146,24 +213,17 @@ model User {
 }
 
 model UserSetting {
-  id                  String   @id @default(cuid())
-  userId              String   @unique
-  notifications       Boolean  @default(true)
-  marketingEmails     Boolean  @default(false)
-  pushNotifications   Boolean  @default(true)
-  smsNotifications    Boolean  @default(false)
-  autoplay            Boolean  @default(true)
-  autoQuality         Boolean  @default(true)
-  alwaysSubtitle      Boolean  @default(false)
-  autoPreviews        Boolean  @default(true)
-  publicWatchlist     Boolean  @default(false)
-  shareHistory        Boolean  @default(false)
-  personalizedRecs    Boolean  @default(true)
-  referralCode        String?
-  referrals           Int      @default(0)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @default(now()) @updatedAt
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  notifications    Boolean  @default(true)
+  marketingEmails  Boolean  @default(false)
+  pushNotifications Boolean @default(true)
+  smsNotifications Boolean  @default(false)
+  shareHistory     Boolean  @default(false)
+  personalizedRecs Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Session {
@@ -218,6 +278,9 @@ model Category {
   status      ModelStatus @default(active)
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at")
+  slug String @unique
+
+  movies Movie[]
 
   @@map("categories")
 }
@@ -231,7 +294,7 @@ model Partner {
   country           String
   postalCode        String?
   phone             String
-  email             String        @unique
+  email             String        
   website           String?
   logo              String?
   taxCode           String        @unique
@@ -240,7 +303,7 @@ model Partner {
   bankAccountNumber String
   bankName          String
   bankCode          String
-  status            PartnerStatus @default(PENDING)
+  status            PartnerStatus @default(ACTIVE)
   approvedAt        DateTime?
   rejectionReason   String?
   commissionRate    Float         @default(0.1)
@@ -254,9 +317,73 @@ model Partner {
   wallet            PartnerWallet?
   withdrawals       Withdrawal[]
   checkIns          CheckIn[]
+  rooms Room[]
+  approvedBy String?
+  approvedRequests PartnerRequest[] 
+  staffs PartnerStaff[]
+  services Service[]
+  orders Order[]
+  businessLicenseFile   String?
+
+  representativeName     String?
+  representativeIdNumber String?
+  representativeIdFile   String?
+
+  taxCertificateFile String?
+
+  lat Float?
+  lng Float?
+  description String?
+  facilities  String[] @default([])
 
   @@index([status])
   @@index([createdAt])
+  @@index([city])
+}
+
+model PartnerRequest {
+  id                String        @id @default(cuid())
+  userId            String
+  cinemaName        String
+  address           String
+  city              String
+  phone             String
+  email             String
+  logo              String?
+  taxCode           String
+  businessLicense       String
+  businessLicenseFile   String
+  representativeName     String
+  representativeIdNumber String
+  representativeIdFile   String
+  taxCertificateFile String
+  bankAccountName   String
+  bankAccountNumber String
+  bankName          String
+  status            PartnerRequestStatus @default(PENDING)
+  rejectionReason   String?
+  reviewedBy        String?
+  reviewedAt        DateTime?
+  createdAt         DateTime @default(now())
+  user              User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvedPartnerId String?
+  approvedPartner   Partner? @relation(fields: [approvedPartnerId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+}
+
+model PartnerStaff {
+  id        String    @id @default(cuid())
+  partnerId String
+  userId    String
+  role      StaffRole @default(STAFF)
+  createdAt DateTime  @default(now())
+
+  partner Partner @relation(fields: [partnerId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([partnerId, userId])
 }
 
 model Movie {
@@ -264,7 +391,8 @@ model Movie {
   partnerId   String
   title       String
   description String?
-  genre       String
+  genre String[]
+  categories Category[]
   language    String
   duration    Int
   releaseDate DateTime
@@ -280,6 +408,15 @@ model Movie {
   showtimes   Showtime[]
   tickets     Ticket[]
   reviews     Review[]
+  altTitle      String? 
+  country       String? 
+  year          Int? 
+  director      String?
+  tags          String[]  @default([])
+  allowComments Boolean   @default(true)
+  backdropUrl   String?
+  cast          Cast[] 
+  
 
   @@index([partnerId])
   @@index([status])
@@ -287,28 +424,51 @@ model Movie {
   @@index([createdAt])
 }
 
+
+model Cast {
+  id      String  @id @default(cuid())
+  movieId String
+  name    String
+  role    String
+  photo   String?
+  order   Int     @default(0)
+
+  movie   Movie   @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@index([movieId])
+}
+
 model Showtime {
   id             String         @id @default(cuid())
   movieId        String
   partnerId      String
-  cinemaRoomId   String
+  roomId         String
+
   startTime      DateTime
   endTime        DateTime
   basePrice      Int
+  priceConfig    Json
   status         ShowtimeStatus @default(SCHEDULED)
+
   totalSeats     Int
   availableSeats Int
   bookedSeats    Int            @default(0)
+
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @default(now()) @updatedAt
+
   movie          Movie          @relation(fields: [movieId], references: [id], onDelete: Cascade)
   partner        Partner        @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  room           Room           @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
   seats          Seat[]
   tickets        Ticket[]
+  orders         Order[]
   checkIns       CheckIn[]
 
   @@index([movieId])
   @@index([partnerId])
+  @@index([roomId])
   @@index([startTime])
   @@index([status])
 }
@@ -316,28 +476,126 @@ model Showtime {
 model Seat {
   id           String     @id @default(cuid())
   showtimeId   String
+
   seatNumber   String
   rowLabel     String
   columnNumber Int
+
   seatType     SeatType
   status       SeatStatus @default(AVAILABLE)
+
   price        Int
+
   lockedUntil  DateTime?
   lockedBy     String?
+
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @default(now()) @updatedAt
+
   showtime     Showtime   @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
   ticket       Ticket?
 
   @@unique([showtimeId, seatNumber])
   @@index([showtimeId])
   @@index([status])
-  @@index([lockedUntil])
+}
+
+model SeatTemplate {
+  id        String   @id @default(cuid())
+  roomId    String
+
+  row       Int
+  col       Int
+  seatType  SeatType
+  version   Int     @default(1) 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, row, col])
+  @@index([roomId])
+}
+
+model Room {
+  id            String   @id @default(cuid())
+  partnerId     String
+
+  name          String
+  type          RoomType
+  status        RoomStatus
+
+  rows          Int
+  seatsPerRow   Int
+
+  tech          String[]
+
+  screenWidth   Float
+  screenHeight  Float
+  screenPos     String
+  aspectRatio   String
+
+  entrancePos   String
+  aislePos      String?
+
+  layoutSeat    Json     // 2D array: number[][]
+
+  allowOnlineBooking     Boolean @default(true)
+  allowSeatSelection     Boolean @default(true)
+  
+  maxBookingDays         Int     @default(14)
+  maxSeatsPerTransaction Int     @default(10)
+
+  buildYear              Int?
+  lastRenovated          Int?
+
+  description            String?
+  internalNotes          String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  partner       Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  showtimes     Showtime[]
+  seatTemplates SeatTemplate[]
+  services      RoomService[]
+
+  @@unique([partnerId, name])
+  @@index([partnerId])
+  @@index([status])
+}
+
+
+model Service {
+  id          Int @id @default(autoincrement())
+  name        String
+  price       Int
+  category    String
+  icon        String?
+  partnerId   String
+  partner     Partner @relation(fields: [partnerId], references: [id])
+  description String?
+  rooms       RoomService[]
+
+  @@index([id])
+}
+
+model RoomService {
+  id        String   @id @default(cuid())
+  roomId    String
+  serviceId Int 
+  assignedAt DateTime @default(now())
+
+  room    Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, serviceId])
 }
 
 model Ticket {
   id            String       @id @default(cuid())
   userId        String
+  orderId       String?
   showtimeId    String
   partnerId     String
   movieId       String
@@ -354,6 +612,7 @@ model Ticket {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @default(now()) @updatedAt
   user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order         Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
   showtime      Showtime     @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
   partner       Partner      @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   movie         Movie        @relation(fields: [movieId], references: [id], onDelete: Cascade)
@@ -370,10 +629,37 @@ model Ticket {
   @@index([purchasedAt])
 }
 
+model Order {
+  id               String      @id @default(cuid())
+  userId           String
+  showtimeId       String
+  status           OrderStatus @default(PENDING)
+  totalAmount      Int
+  discountAmount   Int         @default(0)
+  finalAmount      Int
+  couponCode       String?
+  idempotencyKey   String?     @unique
+  expiresAt        DateTime
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @default(now()) @updatedAt
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  showtime         Showtime    @relation(fields: [showtimeId], references: [id], onDelete: Cascade)
+  tickets          Ticket[]
+  transactions     Transaction[]
+  partnerId String
+  partner   Partner @relation(fields: [partnerId], references: [id])
+
+  @@index([userId])
+  @@index([showtimeId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
 model Transaction {
   id                String            @id @default(cuid())
   userId            String?
   partnerId         String?
+  orderId           String?
   ticketId          String?
   withdrawalId      String?
   type              TransactionType
@@ -386,11 +672,13 @@ model Transaction {
   updatedAt         DateTime          @default(now()) @updatedAt
   user              User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   partner           Partner?          @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  order             Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
   ticket            Ticket?           @relation(fields: [ticketId], references: [id], onDelete: SetNull)
   withdrawal        Withdrawal?       @relation(fields: [withdrawalId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([partnerId])
+  @@index([orderId])
   @@index([ticketId])
   @@index([withdrawalId])
   @@index([type])
@@ -484,10 +772,313 @@ model Review {
   updatedAt DateTime     @default(now()) @updatedAt
   movie     Movie        @relation(fields: [movieId], references: [id], onDelete: Cascade)
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verifiedPurchase Boolean @default(false)
+  helpfulCount     Int     @default(0)
 
   @@unique([movieId, userId])
   @@index([movieId])
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+}
+
+// ─── In-App Push Notifications ───────────────────────────────────────────────
+
+enum NotificationType {
+  // Partner Portal
+  PARTNER_WITHDRAWAL_PENDING
+  PARTNER_WITHDRAWAL_COMPLETED
+  PARTNER_WITHDRAWAL_FAILED
+  PARTNER_MOVIE_APPROVED
+  PARTNER_MOVIE_REJECTED
+  PARTNER_DAILY_REVENUE
+  // Booking / Ticket
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  TICKET_REFUNDED
+  SHOWTIME_CANCELLED
+  // System
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  data      Json?
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+// ─── Email Notification Templates & Scheduling ───────────────────────────────
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  event       EmailNotificationEvent @unique
+  subject     String
+  body        String   @db.Text
+  description String?
+  variables   String[] @default([]) // e.g., ["{{name}}", "{{email}}", "{{link}}"]
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  scheduledEmails ScheduledEmailNotification[]
+
+  @@index([event])
+  @@index([isActive])
+}
+
+model ScheduledEmailNotification {
+  id           String                    @id @default(cuid())
+  userId       String?
+  email        String
+  templateId   String
+  template     EmailTemplate @relation(fields: [templateId], references: [id])
+  subject      String
+  body         String                    @db.Text
+  variables    Json? // Dinamically replace variables: { "name": "John", "link": "..." }
+  status       EmailNotificationStatus   @default(PENDING)
+  sentAt       DateTime?
+  failedReason String?
+  scheduledFor DateTime?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @default(now()) @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([createdAt])
+}
+
+// ─── Broadcast Notifications (admin → user segments) ─────────────────────────
+
+enum BroadcastTarget {
+  ALL
+  USERS
+  OWNERS
+  VIP
+  PREMIUM
+  FREE
+}
+
+enum BroadcastStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+  FAILED
+}
+
+enum BroadcastType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+
+enum BroadcastChannel {
+  ALL
+  WEBSITE
+  EMAIL
+  DESKTOP
+  MOBILE
+}
+
+model BroadcastNotification {
+  id          String          @id @default(cuid())
+  title       String
+  content     String          @db.Text
+  type        BroadcastType   @default(INFO)
+  target      BroadcastTarget @default(ALL)
+  status      BroadcastStatus @default(DRAFT)
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  totalSent   Int             @default(0)
+  readCount   Int             @default(0)
+  createdById String
+  createdBy   User            @relation("BroadcastCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @default(now()) @updatedAt
+  channel     BroadcastChannel @default(ALL)
+  imageUrls   String[]
+
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ─── System Settings (platform-wide key-value config) ────────────────────────
+
+model SystemSetting {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+// ─── Content Reports ─────────────────────────────────────────────────────────
+
+enum ReportTargetType {
+  COMMENT
+  USER
+  MOVIE
+  OWNER
+  REVIEW
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  HATE_SPEECH
+  MISINFORMATION
+  ADULT_CONTENT
+  VIOLENCE
+  COPYRIGHT
+  SCAM
+  IMPERSONATION
+  OTHER
+}
+
+enum ReportAction {
+  NONE
+  WARN_USER
+  DELETE_CONTENT
+  BAN_USER
+  BAN_OWNER
+  FLAG_CONTENT
+  ESCALATE
+}
+
+model Report {
+  id               String          @id @default(cuid())
+  target           ReportTargetType
+  targetId         String
+  targetPreview    String          @db.Text
+  targetAuthor     String
+  targetAuthorRole String          @default("user")
+  reason           ReportReason
+  description      String          @db.Text
+  status           ReportStatus    @default(PENDING)
+  priority         String          @default("medium")
+  autoFlagged      Boolean         @default(false)
+  reportedById     String
+  reportedBy       User            @relation("ReportedBy", fields: [reportedById], references: [id])
+  reportCount      Int             @default(1)
+  resolvedById     String?
+  resolvedBy       User?           @relation("ResolvedBy", fields: [resolvedById], references: [id])
+  resolvedAt       DateTime?
+  actionTaken      ReportAction    @default(NONE)
+  adminNote        String?         @db.Text
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @default(now()) @updatedAt
+
+  @@index([status])
+  @@index([target])
+  @@index([createdAt])
+}
+
+// ─── Feature Flags ────────────────────────────────────────────────────────────
+
+enum FlagType {
+  RELEASE
+  EXPERIMENT
+  BETA
+  OPS
+  EXPERIMENTAL
+}
+
+enum FlagEnv {
+  PRODUCTION
+  STAGING
+  DEVELOPMENT
+}
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  name        String
+  key         String   @unique
+  description String   @db.Text
+  enabled     Boolean  @default(false)
+  type        FlagType @default(RELEASE)
+  env         FlagEnv  @default(DEVELOPMENT)
+  rollout     Int      @default(0)
+  targets     String[] @default([])
+  tags        String[] @default([])
+  createdById String
+  createdBy   User     @relation("FlagCreatedBy", fields: [createdById], references: [id])
+  updatedById String
+  updatedBy   User     @relation("FlagUpdatedBy", fields: [updatedById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@index([key])
+  @@index([env])
+  @@index([enabled])
+}
+
+// ─── Audit Logs ───────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String
+  description String   @db.Text
+  category    String
+  severity    String
+  actorId     String?
+  actorEmail  String
+  actorRole   String   @default("admin")
+  targetType  String?
+  targetLabel String?
+  targetId    String?
+  meta        Json?
+  ip          String   @default("")
+  device      String   @default("desktop")
+  location    String   @default("")
+  createdAt   DateTime @default(now())
+
+  @@index([category])
+  @@index([severity])
+  @@index([createdAt])
+}
+
+// ─── Subscription Plans ───────────────────────────────────────────────────────
+
+model Plan {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  price       Int      @default(0)
+  yearlyPrice Int?
+  description String
+  maxDevices  Int      @default(1)
+  quality     String   @default("HD")
+  isActive    Boolean  @default(true)
+  isPopular   Boolean  @default(false)
+  color       String   @default("zinc")
+  icon        String   @default("star")
+  features    Json     @default("[]")
+  userCount   Int      @default(0)
+  revenue     Int      @default(0)
+  churnRate   Float    @default(0)
+  growthRate  Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@index([isActive])
+  @@index([slug])
 }

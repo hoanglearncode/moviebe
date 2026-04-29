@@ -16,7 +16,7 @@ class CategoryUseCase {
             // TODO: process error
             const issues = error.issues;
             for (const issue of issues) {
-                if (issue.path[0] === 'name') {
+                if (issue.path[0] === "name") {
                     throw errors_1.ErrCategoryNameTooShort;
                 }
             }
@@ -26,9 +26,11 @@ class CategoryUseCase {
         const category = {
             id: newId,
             name: parsedData.name,
+            slug: parsedData.slug,
             position: 0,
             image: parsedData.image,
             description: parsedData.description,
+            parentId: parsedData.parentId ?? null,
             status: base_model_1.ModelStatus.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date(),

@@ -5,12 +5,21 @@ import { PagingDTO } from "../../../share/model/paging";
 import { v7 } from "uuid";
 import { ZodError } from "zod";
 import { ICategoryUseCase } from "../interface";
-import { CategoryCondDTO, CategoryCondDTOSchema, CategoryCreateDTO, CategoryCreateSchema, CategoryUpdateDTO, CategoryUpdateSchema } from "../model/dto";
+import {
+  CategoryCondDTO,
+  CategoryCondDTOSchema,
+  CategoryCreateDTO,
+  CategoryCreateSchema,
+  CategoryUpdateDTO,
+  CategoryUpdateSchema,
+} from "../model/dto";
 import { ErrCategoryNameTooShort } from "../model/errors";
 import { Category } from "../model/model";
 
 export class CategoryUseCase implements ICategoryUseCase {
-  constructor(private readonly repository: IRepository<Category, CategoryCondDTO, CategoryUpdateDTO>) { }
+  constructor(
+    private readonly repository: IRepository<Category, CategoryCondDTO, CategoryUpdateDTO>,
+  ) {}
 
   async create(data: CategoryCreateDTO): Promise<string> {
     const { success, data: parsedData, error } = CategoryCreateSchema.safeParse(data);
@@ -20,7 +29,7 @@ export class CategoryUseCase implements ICategoryUseCase {
       const issues = (error as ZodError).issues;
 
       for (const issue of issues) {
-        if (issue.path[0] === 'name') {
+        if (issue.path[0] === "name") {
           throw ErrCategoryNameTooShort;
         }
       }
@@ -33,9 +42,11 @@ export class CategoryUseCase implements ICategoryUseCase {
     const category: Category = {
       id: newId,
       name: parsedData!.name,
+      slug: parsedData!.slug,
       position: 0,
       image: parsedData!.image,
       description: parsedData!.description,
+      parentId: parsedData!.parentId ?? null,
       status: ModelStatus.ACTIVE,
       createdAt: new Date(),
       updatedAt: new Date(),

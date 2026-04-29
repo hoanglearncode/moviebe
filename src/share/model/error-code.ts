@@ -20,5 +20,5 @@ export enum ErrorCode {
   SOCIAL_FACEBOOK_NO_EMAIL = 2201,
   SOCIAL_TOKEN_INVALID = 2202,
 
-  Duplicate = 2203
+  Duplicate = 2203,
 }

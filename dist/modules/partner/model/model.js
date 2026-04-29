@@ -5,7 +5,26 @@
  * ==========================================
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.WithdrawalStatus = exports.TransactionStatus = exports.TransactionType = exports.TicketStatus = exports.SeatStatus = exports.SeatType = void 0;
+exports.StaffRole = exports.WithdrawalStatus = exports.TransactionStatus = exports.TransactionType = exports.TicketStatus = exports.SeatStatus = exports.SeatType = exports.RoomStatus = exports.RoomType = void 0;
+/**
+ * ==========================================
+ * ROOM MODEL
+ * ==========================================
+ */
+var RoomType;
+(function (RoomType) {
+    RoomType["TWO_D"] = "TWO_D";
+    RoomType["THREE_D"] = "THREE_D";
+    RoomType["IMAX"] = "IMAX";
+    RoomType["VIP"] = "VIP";
+    RoomType["FOUR_DX"] = "FOUR_DX";
+})(RoomType || (exports.RoomType = RoomType = {}));
+var RoomStatus;
+(function (RoomStatus) {
+    RoomStatus["ACTIVE"] = "ACTIVE";
+    RoomStatus["INACTIVE"] = "INACTIVE";
+    RoomStatus["MAINTENANCE"] = "MAINTENANCE";
+})(RoomStatus || (exports.RoomStatus = RoomStatus = {}));
 /**
  * ==========================================
  * SEAT MODEL & CONSTANTS
@@ -15,8 +34,8 @@ var SeatType;
 (function (SeatType) {
     SeatType["STANDARD"] = "STANDARD";
     SeatType["VIP"] = "VIP";
-    SeatType["PREMIUM"] = "PREMIUM";
-    SeatType["ACCESSIBLE"] = "ACCESSIBLE";
+    SeatType["COUPLE"] = "COUPLE";
+    SeatType["BLOCKED"] = "BLOCKED";
 })(SeatType || (exports.SeatType = SeatType = {}));
 var SeatStatus;
 (function (SeatStatus) {
@@ -37,6 +56,7 @@ var TicketStatus;
     TicketStatus["USED"] = "USED";
     TicketStatus["CANCELLED"] = "CANCELLED";
     TicketStatus["REFUNDED"] = "REFUNDED";
+    TicketStatus["PASSED"] = "PASSED";
 })(TicketStatus || (exports.TicketStatus = TicketStatus = {}));
 /**
  * ==========================================
@@ -72,3 +92,11 @@ var WithdrawalStatus;
     WithdrawalStatus["FAILED"] = "FAILED";
     WithdrawalStatus["CANCELLED"] = "CANCELLED";
 })(WithdrawalStatus || (exports.WithdrawalStatus = WithdrawalStatus = {}));
+var StaffRole;
+(function (StaffRole) {
+    StaffRole["OWNER"] = "OWNER";
+    StaffRole["MANAGER"] = "MANAGER";
+    StaffRole["CASHIER"] = "CASHIER";
+    StaffRole["SCANNER"] = "SCANNER";
+    StaffRole["STAFF"] = "STAFF";
+})(StaffRole || (exports.StaffRole = StaffRole = {}));

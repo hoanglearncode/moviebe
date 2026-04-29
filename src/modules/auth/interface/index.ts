@@ -1,5 +1,6 @@
 import { IRepository } from "../../../share/interface";
 import { IConcurrentLockService } from "../../../share/component/concurrent-lock";
+import { IUserSetting } from "../../../modules/system/setting/interface";
 import {
   ChangePasswordDTO,
   FacebookTO,
@@ -21,7 +22,11 @@ import {
   AuthUser,
 } from "../model/model";
 
-export interface IAuthUserRepository extends IRepository<AuthUser, Partial<AuthUser>, Partial<AuthUser>> {
+export interface IAuthUserRepository extends IRepository<
+  AuthUser,
+  Partial<AuthUser>,
+  Partial<AuthUser>
+> {
   findByEmail(email: string): Promise<AuthUser | null>;
   findByUsername(username: string): Promise<AuthUser | null>;
   findByEmailOrUsername(identifier: string): Promise<AuthUser | null>;
@@ -35,23 +40,29 @@ export interface IPasswordHasher {
 }
 
 export interface ITokenService {
-  issueAuthSession(user: AuthUser): Promise<AuthSession>;
+  issueAuthSession(
+    user: AuthUser,
+    context?: {
+      userAgent?: string;
+      ipAddress?: string;
+    },
+    options?: { remember?: boolean },
+  ): Promise<AuthSession>;
   refreshAuthSession(refreshToken: string): Promise<AuthSession & { userId: string }>;
-  issueActionToken(payload: {
-    userId: string;
-    purpose: AuthActionTokenPurpose;
-  }): Promise<string>;
-  verifyActionToken(token: string, purpose: AuthActionTokenPurpose): Promise<{
+  issueActionToken(payload: { userId: string; purpose: AuthActionTokenPurpose }): Promise<string>;
+  verifyActionToken(
+    token: string,
+    purpose: AuthActionTokenPurpose,
+  ): Promise<{
     userId: string;
   }>;
 }
 
 export interface IAuthNotificationService {
   sendVerifyEmail(input: { email: string; token: string }): Promise<void>;
-  sendResetPasswordEmail(input: {
-    email: string;
-    token: string;
-  }): Promise<void>;
+  sendWellComeEmail(email: string): Promise<void>;
+  sendResetPasswordEmail(input: { email: string; token: string }): Promise<void>;
+  sendChangePasswordEmail(email: string): Promise<void>;
 }
 
 export interface ISocialAuthService {
@@ -62,11 +73,23 @@ export interface ISocialAuthService {
 
 export interface IAuthUseCase {
   register(data: RegisterDTO): Promise<{ userId: string }>;
-  login(data: LoginDTO): Promise<AuthResponse>;
+  login(
+    data: LoginDTO,
+    context?: { userAgent?: string; ipAddress?: string },
+  ): Promise<AuthResponse>;
   refreshToken(data: RefreshDTO): Promise<AuthResponse>;
-  loginGoogle(data: GoogleDTO): Promise<AuthResponse>;
-  loginGoogleTokenCallback(data: GoogleTokenDTO): Promise<AuthResponse>;
-  loginFacebook(data: FacebookTO): Promise<AuthResponse>;
+  loginGoogle(
+    data: GoogleDTO,
+    context?: { userAgent?: string; ipAddress?: string },
+  ): Promise<AuthResponse>;
+  loginGoogleTokenCallback(
+    data: GoogleTokenDTO,
+    context?: { userAgent?: string; ipAddress?: string },
+  ): Promise<AuthResponse>;
+  loginFacebook(
+    data: FacebookTO,
+    context?: { userAgent?: string; ipAddress?: string },
+  ): Promise<AuthResponse>;
   verifyEmail(data: VerifyEmailDTO): Promise<{ message: string }>;
   resendVerification(data: ResendVerificationDTO): Promise<{ message: string }>;
   forgotPassword(data: ForgotPasswordDTO): Promise<{ message: string }>;
@@ -86,4 +109,5 @@ export interface AuthHexagonDependencies {
   socialAuthService: ISocialAuthService;
   concurrentLockService: IConcurrentLockService;
   avatarColorService: IAvatarColorService;
+  userSettingService?: IUserSetting;
 }

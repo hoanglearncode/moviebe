@@ -1,6 +1,7 @@
 import { PagingDTO } from "../../share/model/paging";
 
-export interface IRepository<Entity, Cond, UpdateDTO> extends IQueryRepository<Entity, Cond>, ICommandRepository<Entity, UpdateDTO> { }
+export interface IRepository<Entity, Cond, UpdateDTO>
+  extends IQueryRepository<Entity, Cond>, ICommandRepository<Entity, UpdateDTO> {}
 
 export interface IQueryRepository<Entity, Cond> {
   get(id: string): Promise<Entity | null>;

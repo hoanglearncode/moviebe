@@ -7,10 +7,11 @@ import { HashService } from "./shared/hash";
 import { TokenService } from "./shared/token";
 import { AuthNotificationService } from "./shared/notification";
 import { SocialAuthService } from "./shared/social-auth";
-import { AvatarColorService } from "../user/shared/avatar-color.service";
+import { AvatarColorService } from "../user/shared/avatar-color";
 import { prisma } from "../../share/component/prisma";
 import { concurrentLockService } from "../../share/component/concurrent-lock";
 import { IAuthUseCase } from "./interface";
+import { createSettingUseCase } from "../system/setting";
 
 const buildRouter = (useCase: IAuthUseCase) => {
   const httpService = new AuthHttpService(useCase);
@@ -21,23 +22,14 @@ const buildRouter = (useCase: IAuthUseCase) => {
   router.post("/auth/google/callback", httpService.loginGoogle.bind(httpService));
   router.post(
     "/auth/google/callback/token",
-    httpService.loginGoogleTokenCallback.bind(httpService)
+    httpService.loginGoogleTokenCallback.bind(httpService),
   );
   router.post("/auth/facebook/callback", httpService.loginFacebook.bind(httpService));
   router.post("/auth/refresh-token", httpService.refreshToken.bind(httpService));
   router.post("/auth/verify-email", httpService.verifyEmail.bind(httpService));
-  router.post(
-    "/auth/resend-verification",
-    httpService.resendVerification.bind(httpService)
-  );
-  router.post(
-    "/auth/forgot-password",
-    httpService.forgotPassword.bind(httpService)
-  );
-  router.post(
-    "/auth/change-password",
-    httpService.changePassword.bind(httpService)
-  );
+  router.post("/auth/resend-verification", httpService.resendVerification.bind(httpService));
+  router.post("/auth/forgot-password", httpService.forgotPassword.bind(httpService));
+  router.post("/auth/change-password", httpService.changePassword.bind(httpService));
 
   return router;
 };
@@ -49,6 +41,7 @@ export const setupAuthHexagon = (prismaClient: PrismaClient = prisma) => {
   const notificationService = new AuthNotificationService();
   const socialAuthService = new SocialAuthService();
   const avatarColorService = new AvatarColorService();
+  const userSettingService = createSettingUseCase(prismaClient);
 
   const dependencies = {
     userRepository,
@@ -58,11 +51,11 @@ export const setupAuthHexagon = (prismaClient: PrismaClient = prisma) => {
     socialAuthService,
     concurrentLockService,
     avatarColorService,
+    userSettingService,
   };
 
   const useCase = new AuthUseCase(dependencies);
   return buildRouter(useCase);
 };
 
-export const setupAuthHexagonWithUseCase = (useCase: IAuthUseCase) =>
-  buildRouter(useCase);
+export const setupAuthHexagonWithUseCase = (useCase: IAuthUseCase) => buildRouter(useCase);

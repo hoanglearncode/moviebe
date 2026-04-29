@@ -9,28 +9,37 @@ export const RegisterPayloadDTO = z.object({
     .min(3, "username too short")
     .max(50, "username max 50 characters")
     .optional(),
-  name: z.string().trim().min(1, "name is required").optional(),
+  name: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().trim().min(1, "name cannot be blank").optional(),
+  ),
+  permissions_override: z.json().nullable().optional(),
 });
 
 export const LoginPayloadDTO = z.object({
-  emailOrUsername: z.string().trim().min(1, "email or username is required"),
+  emailOrUsername: z
+    .string()
+    .trim()
+    .min(1, "email or username is required")
+    .transform((value) => (value.includes("@") ? value.toLowerCase() : value)),
   password: z.string().min(8, "password must have at least 8 characters"),
+  remember: z.boolean().optional().default(false),
 });
 
 export const RefreshTokenPayloadDTO = z.object({
-  refreshToken: z.string().trim().min(1, "token is required")
+  refreshToken: z.string().trim().min(1, "token is required"),
 });
 
 export const GoogleLoginPayloadDTO = z.object({
-  credential: z.string().trim().min(1, "credential is required")
+  credential: z.string().trim().min(1, "credential is required"),
 });
 
 export const GoogleLoginTokenCallbackPayloadDTO = z.object({
-  accessToken: z.string().trim().min(1, "accessToken is required")
+  accessToken: z.string().trim().min(1, "accessToken is required"),
 });
 
 export const FacebookLoginPayloadDTO = z.object({
-  accessToken: z.string().trim().min(1, "accessToken is required")
+  accessToken: z.string().trim().min(1, "accessToken is required"),
 });
 
 export const VerifyEmailPayloadDTO = z.object({
@@ -47,9 +56,7 @@ export const ForgotPasswordPayloadDTO = z.object({
 
 export const ChangePasswordPayloadDTO = z.object({
   token: z.string().trim().min(1, "token is required"),
-  newPassword: z
-    .string()
-    .min(8, "new password must have at least 8 characters"),
+  newPassword: z.string().min(8, "new password must have at least 8 characters"),
 });
 
 export type RegisterDTO = z.infer<typeof RegisterPayloadDTO>;
@@ -59,8 +66,6 @@ export type GoogleDTO = z.infer<typeof GoogleLoginPayloadDTO>;
 export type GoogleTokenDTO = z.infer<typeof GoogleLoginTokenCallbackPayloadDTO>;
 export type FacebookTO = z.infer<typeof FacebookLoginPayloadDTO>;
 export type VerifyEmailDTO = z.infer<typeof VerifyEmailPayloadDTO>;
-export type ResendVerificationDTO = z.infer<
-  typeof ResendVerificationPayloadDTO
->;
+export type ResendVerificationDTO = z.infer<typeof ResendVerificationPayloadDTO>;
 export type ForgotPasswordDTO = z.infer<typeof ForgotPasswordPayloadDTO>;
 export type ChangePasswordDTO = z.infer<typeof ChangePasswordPayloadDTO>;

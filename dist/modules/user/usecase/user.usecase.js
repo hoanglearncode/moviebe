@@ -2,11 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserUseCase = void 0;
 const errors_1 = require("../model/errors");
+const authorization_usecase_1 = require("./authorization.usecase");
 class UserUseCase {
     constructor(deps) {
+        this.authorizationUseCase = new authorization_usecase_1.AuthorizationUseCase();
         this.userRepo = deps.userRepository;
         this.sessionRepo = deps.sessionRepository;
-        this.settingsRepo = deps.userSettingsRepository;
         this.hasher = deps.passwordHasher;
         this.notifier = deps.notificationService;
     }
@@ -73,13 +74,6 @@ class UserUseCase {
         const count = await this.sessionRepo.revokeAllSessionsByUserId(userId);
         return { message: `Revoked ${count} session(s)` };
     }
-    async getSettings(userId) {
-        // Lazy init: tạo default nếu chưa có
-        return this.settingsRepo.upsertByUserId(userId, {});
-    }
-    async updateSettings(userId, data) {
-        return this.settingsRepo.upsertByUserId(userId, data);
-    }
     toOwnProfile(user) {
         return {
             id: user.id,
@@ -96,6 +90,12 @@ class UserUseCase {
             role: user.role,
             lastLoginAt: user.lastLoginAt,
             createdAt: user.createdAt,
+            permissionsOverride: user.permissionsOverride,
+            permissions: this.authorizationUseCase.resolvePermissions({
+                role: user.role,
+                permissionsOverride: user.permissionsOverride,
+            }),
+            provider: user.provider || "local",
         };
     }
 }

@@ -4,20 +4,23 @@ exports.CategoryCondDTOSchema = exports.CategoryUpdateSchema = exports.CategoryC
 const base_model_1 = require("../../../share/model/base-model");
 const zod_1 = require("zod");
 exports.CategoryCreateSchema = zod_1.z.object({
-    name: zod_1.z.string().min(2, 'name must be at least 3 characters'),
+    name: zod_1.z.string().min(2, "name must be at least 3 characters"),
+    slug: zod_1.z.string().trim().min(1, "slug is required"),
     image: zod_1.z.string().optional(),
     description: zod_1.z.string().optional(),
-    parentId: zod_1.z.string().uuid().nullable().optional(),
+    parentId: zod_1.z.string().trim().min(1).nullable().optional(),
 });
 exports.CategoryUpdateSchema = zod_1.z.object({
-    name: zod_1.z.string().min(2, 'name must be at least 3 characters').optional(),
+    name: zod_1.z.string().min(2, "name must be at least 3 characters").optional(),
+    slug: zod_1.z.string().trim().min(1, "slug is required").optional(),
     image: zod_1.z.string().optional(),
-    description: zod_1.z.string().max(255, 'description must be at most 255 characters').optional(),
-    parentId: zod_1.z.string().uuid().nullable().optional(),
+    description: zod_1.z.string().max(255, "description must be at most 255 characters").optional(),
+    parentId: zod_1.z.string().trim().min(1).nullable().optional(),
     status: zod_1.z.nativeEnum(base_model_1.ModelStatus).optional(),
 });
 exports.CategoryCondDTOSchema = zod_1.z.object({
-    name: zod_1.z.string().min(2, 'name must be at least 3 characters').optional(),
-    parentId: zod_1.z.string().uuid().optional(),
+    name: zod_1.z.string().min(2, "name must be at least 3 characters").optional(),
+    slug: zod_1.z.string().trim().min(1).optional(),
+    parentId: zod_1.z.string().trim().min(1).optional(),
     status: zod_1.z.nativeEnum(base_model_1.ModelStatus).optional(),
 });

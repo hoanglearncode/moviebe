@@ -1,13 +1,6 @@
 "use strict";
-/**
- * User Module Constants
- */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AVATAR_COLORS = void 0;
-/**
- * Avatar color palette - must match frontend palette
- * Used for user profile customization
- */
 exports.AVATAR_COLORS = [
     "from-pink-600/60 to-rose-700/60 text-pink-200",
     "from-blue-600/60 to-indigo-700/60 text-blue-200",

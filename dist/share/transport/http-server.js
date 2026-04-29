@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BaseHttpService = exports.ConflictError = exports.UnauthorizedError = exports.NotFoundError = exports.ValidationError = exports.AppError = void 0;
+exports.BaseHttpService = exports.ConflictError = exports.ForbiddenError = exports.UnauthorizedError = exports.NotFoundError = exports.ValidationError = exports.AppError = void 0;
 exports.successResponse = successResponse;
 exports.errorResponse = errorResponse;
 const paging_1 = require("../model/paging");
@@ -36,6 +36,13 @@ class UnauthorizedError extends AppError {
     }
 }
 exports.UnauthorizedError = UnauthorizedError;
+class ForbiddenError extends AppError {
+    constructor(message = "Forbidden", code = error_code_1.ErrorCode.UNAUTHORIZED) {
+        super(message, code, 403);
+        this.name = "ForbiddenError";
+    }
+}
+exports.ForbiddenError = ForbiddenError;
 class ConflictError extends AppError {
     constructor(message = "Conflict", code = error_code_1.ErrorCode.CONCURRENT_TASK_LOCKED, details) {
         super(message, code, 409, details);
@@ -57,7 +64,7 @@ class BaseHttpService {
     async handleRequest(res, operation, successStatus = 200) {
         try {
             const result = await operation();
-            res.status(successStatus).json({ data: result });
+            successResponse(res, result, "Success", successStatus);
         }
         catch (error) {
             this.handleError(error, res);
@@ -111,10 +118,11 @@ exports.BaseHttpService = BaseHttpService;
 /**
  * Send success response
  */
-function successResponse(res, data, message = "Success", statusCode = 200) {
+function successResponse(res, data, message = "Success", statusCode = 200, paging = null) {
     res.status(statusCode).json({
         success: true,
         data,
+        paging,
         message,
     });
 }

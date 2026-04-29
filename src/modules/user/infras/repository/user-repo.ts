@@ -4,13 +4,10 @@ import { IUserRepository } from "../../interface";
 import { ListUsersQueryDTO } from "../../model/dto";
 import { OwnUserProfile, UserProfile } from "../../model/model";
 import { getUserModel } from "./dto";
+import { AuthorizationUseCase } from "../../usecase/authorization.usecase";
 
-// ──────────────────────────────────────────────
-// MAPPERS
-// ──────────────────────────────────────────────
+const authorizationUseCase = new AuthorizationUseCase();
 
-// NOTE: Mapper tách riêng để dễ test và tái sử dụng
-// Prisma trả về kiểu nội bộ của nó → ta map sang domain type
 function toUserProfile(raw: any): UserProfile {
   return {
     id: raw.id,
@@ -23,8 +20,9 @@ function toUserProfile(raw: any): UserProfile {
     phone: raw.phone ?? null,
     bio: raw.bio ?? null,
     location: raw.location ?? null,
-    avatarColor: raw.avatarColor ?? null,
+    avatarColor: raw.avatarColor ?? undefined,
     role: raw.role,
+    permissionsOverride: authorizationUseCase.normalizePermissionsOverride(raw.permissionsOverride),
     status: raw.status,
     emailVerified: raw.emailVerified ?? false,
     mustChangePassword: raw.mustChangePassword ?? false,
@@ -34,13 +32,13 @@ function toUserProfile(raw: any): UserProfile {
   };
 }
 
-// NOTE: OwnUserProfile = subset an toàn để trả về API (không có password)
 function toOwnUserProfile(user: UserProfile): OwnUserProfile {
   return {
     id: user.id,
     email: user.email,
     username: user.username,
     name: user.name,
+    provider: user.provider,
     avatar: user.avatar,
     status: user.status,
     bio: user.bio,
@@ -49,14 +47,11 @@ function toOwnUserProfile(user: UserProfile): OwnUserProfile {
     phone: user.phone,
     emailVerified: user.emailVerified,
     role: user.role,
+    permissionsOverride: user.permissionsOverride,
     lastLoginAt: user.lastLoginAt,
     createdAt: user.createdAt,
   };
 }
-
-// ──────────────────────────────────────────────
-// REPOSITORY
-// ──────────────────────────────────────────────
 
 export class PrismaUserRepository implements IUserRepository {
   private readonly model: ReturnType<typeof getUserModel>;
@@ -65,30 +60,15 @@ export class PrismaUserRepository implements IUserRepository {
     this.model = getUserModel(prisma);
   }
 
-  // ── IQueryRepository methods (required by base interface) ──
-
-  /**
-   * get — tìm theo ID (alias của findById, dùng bởi base interface)
-   */
   async get(id: string): Promise<UserProfile | null> {
     return this.findById(id);
   }
 
-  /**
-   * findByCond — tìm 1 user theo điều kiện đơn giản
-   * NOTE: Base interface trả về single entity (không phải array)
-   * Dùng cho các query đơn như: { email: "x@x.com" }
-   */
   async findByCond(cond: Partial<UserProfile>): Promise<UserProfile | null> {
     const raw = await this.model.findFirst({ where: cond as Prisma.UserWhereInput });
     return raw ? toUserProfile(raw) : null;
   }
 
-  /**
-   * list — generic list với Partial<UserProfile> filter
-   * NOTE: Method này match đúng signature của IRepository base
-   * Dùng bởi các generic caller, không có keyword search
-   */
   async list(cond: Partial<UserProfile>, paging: PagingDTO): Promise<UserProfile[]> {
     const skip = ((paging.page ?? 1) - 1) * (paging.limit ?? 20);
     const rows = await this.model.findMany({
@@ -100,17 +80,10 @@ export class PrismaUserRepository implements IUserRepository {
     return rows.map(toUserProfile);
   }
 
-  // ── ICommandRepository methods (required by base interface) ──
-
-  /**
-   * insert — nhận full UserProfile entity, trả boolean
-   * NOTE: Base interface định nghĩa insert(data: Entity): Promise<boolean>
-   * Khác với create() trả string id — đây là quyết định thiết kế của share layer
-   */
   async insert(data: UserProfile): Promise<boolean> {
     await this.model.create({
       data: {
-        id: data.id,          // NOTE: caller phải tự cấp id nếu dùng insert
+        id: data.id,
         email: data.email,
         name: data.name,
         username: data.username,
@@ -121,18 +94,16 @@ export class PrismaUserRepository implements IUserRepository {
         emailVerified: data.emailVerified,
         mustChangePassword: data.mustChangePassword,
         avatarColor: data.avatarColor,
+        permissionsOverride: data.permissionsOverride,
         phone: data.phone,
         bio: data.bio,
         location: data.location,
         avatar: data.avatar,
-      },
+      } as any,
     });
     return true;
   }
 
-  /**
-   * update — update theo id, data là Partial<UserProfile>
-   */
   async update(id: string, data: Partial<UserProfile>): Promise<boolean> {
     await this.model.update({
       where: { id },
@@ -141,27 +112,32 @@ export class PrismaUserRepository implements IUserRepository {
     return true;
   }
 
-  /**
-   * delete — base interface có isHard flag
-   * isHard=true  → xoá khỏi DB vĩnh viễn
-   * isHard=false → soft delete (set status=INACTIVE hoặc deletedAt)
-   *
-   * NOTE: Schema của bạn có thể không có deletedAt.
-   * Nếu không có, soft delete = set status INACTIVE.
-   */
   async delete(id: string, isHard: boolean): Promise<boolean> {
     if (isHard) {
       await this.model.delete({ where: { id } });
     } else {
+      const user = await this.model.findUnique({
+        where: { id },
+        select: { email: true, username: true },
+      });
+
+      if (!user) return false;
+
+      const timestamp = Date.now();
+      const newEmail = `${user.email.split("@")[0]}+inactive_${timestamp}@deleted.local`;
+
       await this.model.update({
         where: { id },
-        data: { status: "INACTIVE" },
+        data: {
+          status: "INACTIVE",
+          email: newEmail,
+          username: `${user.username}__inactive_${timestamp}`,
+        },
       });
     }
+
     return true;
   }
-
-  // ── Domain-specific methods ──
 
   async findById(userId: string): Promise<UserProfile | null> {
     const raw = await this.model.findUnique({ where: { id: userId } });
@@ -182,16 +158,19 @@ export class PrismaUserRepository implements IUserRepository {
     const raw = await this.model.update({
       where: { id: userId },
       data: {
-        ...(data.name !== undefined   && { name: data.name }),
-        ...(data.phone !== undefined  && { phone: data.phone }),
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.phone !== undefined && { phone: data.phone }),
         ...(data.avatar !== undefined && { avatar: data.avatar }),
-        ...(data.bio !== undefined    && { bio: data.bio }),
+        ...(data.bio !== undefined && { bio: data.bio }),
         ...(data.location !== undefined && { location: data.location }),
         ...(data.username !== undefined && { username: data.username }),
-        ...(data.role !== undefined   && { role: data.role }),
+        ...(data.role !== undefined && { role: data.role }),
+        ...(data.permissionsOverride !== undefined && {
+          permissionsOverride: data.permissionsOverride,
+        }),
         ...(data.status !== undefined && { status: data.status }),
         ...(data.emailVerified !== undefined && { emailVerified: data.emailVerified }),
-      },
+      } as any,
     });
     return toUserProfile(raw);
   }
@@ -213,10 +192,6 @@ export class PrismaUserRepository implements IUserRepository {
     return this.model.count();
   }
 
-  /**
-   * listUsers — admin filter đầy đủ với keyword, sort, paging
-   * NOTE: Tách khỏi base list() vì cần ListUsersQueryDTO phức tạp hơn
-   */
   async listUsers(cond: ListUsersQueryDTO): Promise<{ items: OwnUserProfile[]; total: number }> {
     const where = this.buildAdminWhere(cond);
     const orderBy = { [cond.sortBy]: cond.sortOrder };
@@ -233,8 +208,6 @@ export class PrismaUserRepository implements IUserRepository {
     };
   }
 
-  // ── Private helpers ──
-
   private buildAdminWhere(cond: ListUsersQueryDTO): Prisma.UserWhereInput {
     const { keyword, email, username, role, status } = cond;
     const where: Prisma.UserWhereInput = {};
@@ -247,14 +220,18 @@ export class PrismaUserRepository implements IUserRepository {
       ];
     }
 
-    if (email)    where.email = email;
+    if (email) where.email = email;
     if (username) where.username = username;
-    if (role)     where.role = role;
-    if (status)   where.status = status;
+    if (role) where.role = role;
+
+    if (status) {
+      where.status = status;
+    } else {
+      where.status = { not: "INACTIVE" };
+    }
 
     return where;
   }
 }
 
-export const createUserRepository = (prisma: PrismaClient) =>
-  new PrismaUserRepository(prisma);
+export const createUserRepository = (prisma: PrismaClient) => new PrismaUserRepository(prisma);

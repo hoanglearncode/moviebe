@@ -30,7 +30,7 @@ export class MailService {
 
     if (!ENV.SMTP_HOST || !ENV.SMTP_USER || !ENV.SMTP_PASS || !ENV.MAIL_FROM_EMAIL) {
       throw new Error(
-        "Mail service is not configured. Please set SMTP_HOST, SMTP_USER, SMTP_PASS and MAIL_FROM_EMAIL."
+        "Mail service is not configured. Please set SMTP_HOST, SMTP_USER, SMTP_PASS and MAIL_FROM_EMAIL.",
       );
     }
 

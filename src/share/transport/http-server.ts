@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { IUseCase } from "../interface";
-import { PagingDTOSchema } from "../model/paging";
+import { PagingDTO, PagingDTOSchema } from "../model/paging";
 import { ErrorCode } from "../model/error-code";
 
 export class AppError extends Error {
@@ -8,7 +8,7 @@ export class AppError extends Error {
     message: string,
     public readonly code: ErrorCode,
     public readonly status: number,
-    public readonly details?: any
+    public readonly details?: any,
   ) {
     super(message);
     this.name = "AppError";
@@ -36,11 +36,18 @@ export class UnauthorizedError extends AppError {
   }
 }
 
+export class ForbiddenError extends AppError {
+  constructor(message: string = "Forbidden", code: ErrorCode = ErrorCode.UNAUTHORIZED) {
+    super(message, code, 403);
+    this.name = "ForbiddenError";
+  }
+}
+
 export class ConflictError extends AppError {
   constructor(
     message: string = "Conflict",
     code: ErrorCode = ErrorCode.CONCURRENT_TASK_LOCKED,
-    details?: any
+    details?: any,
   ) {
     super(message, code, 409, details);
     this.name = "ConflictError";
@@ -62,11 +69,11 @@ export abstract class BaseHttpService<Entity, CreateDTO, UpdateDTO, Cond> {
   protected async handleRequest<T>(
     res: Response,
     operation: () => Promise<T>,
-    successStatus: number = 200
+    successStatus: number = 200,
   ): Promise<void> {
     try {
       const result = await operation();
-      res.status(successStatus).json({ data: result });
+      successResponse(res, result, "Success", successStatus);
     } catch (error) {
       this.handleError(error, res);
     }
@@ -133,6 +140,7 @@ export abstract class BaseHttpService<Entity, CreateDTO, UpdateDTO, Cond> {
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
+  paging?: PagingDTO | null;
   message?: string;
   error?: {
     code: string;
@@ -148,11 +156,13 @@ export function successResponse<T>(
   res: Response,
   data: T,
   message: string = "Success",
-  statusCode: number = 200
+  statusCode: number = 200,
+  paging: PagingDTO | null = null,
 ): void {
   res.status(statusCode).json({
     success: true,
     data,
+    paging,
     message,
   } as ApiResponse<T>);
 }
@@ -165,7 +175,7 @@ export function errorResponse(
   statusCode: number = 500,
   message: string = "Internal server error",
   code: string = ErrorCode.INTERNAL.toString(),
-  details?: any
+  details?: any,
 ): void {
   res.status(statusCode).json({
     success: false,
