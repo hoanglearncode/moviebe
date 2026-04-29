@@ -1,12 +1,12 @@
 import { PagingDTO } from "../../../share";
 import { MovieCondDTO } from "../model/dto";
 import { Movie, PublicShowtime, PublicShowtimeSeatMap } from "../model/model";
-import { IPublicMovieRepository, IPublicMovieUseCase } from "../interface";
+import { IPublicMovieRepository, IPublicMovieUseCase, MovieSectionsResponse } from "../interface";
 
 export class PublicMovieUseCase implements IPublicMovieUseCase {
   constructor(private readonly repo: IPublicMovieRepository) {}
 
-  async getListMovies(cond: MovieCondDTO, paging: PagingDTO): Promise<Movie[]> {
+  async getListMovies(cond: MovieCondDTO, paging: PagingDTO): Promise<MovieSectionsResponse> {
     return this.repo.getListMovies(cond, paging);
   }
 

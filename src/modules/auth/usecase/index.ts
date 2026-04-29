@@ -32,6 +32,7 @@ import {
 } from "../model/dto";
 import { AuthResponse, AuthSocialProfile, AuthUser } from "../model/model";
 import { AuthorizationUseCase } from "../../user/usecase/authorization.usecase";
+import { getSystemSettingsService } from "../../admin-system-settings";
 
 export class AuthUseCase implements IAuthUseCase {
   constructor(private readonly dependencies: AuthHexagonDependencies) {}
@@ -46,6 +47,22 @@ export class AuthUseCase implements IAuthUseCase {
     const parsedData = RegisterPayloadDTO.safeParse(data);
     if (!parsedData.success) {
       throw new ValidationError("Invalid registration data", parsedData.error.issues);
+    }
+
+    // Block new registrations when the platform has closed sign-ups.
+    // Non-fatal if SystemSettingsService is not yet initialised (defaults to open).
+    try {
+      const isOpen = await getSystemSettingsService().isRegistrationOpen();
+      if (!isOpen) {
+        throw new ValidationError(
+          "Registration is currently closed. Please try again later.",
+          undefined,
+          ErrorCode.VALIDATION,
+        );
+      }
+    } catch (err) {
+      if (err instanceof ValidationError) throw err;
+      // Settings service not available — treat as open
     }
 
     return this.dependencies.concurrentLockService.runExclusive(

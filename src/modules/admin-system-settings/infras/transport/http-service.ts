@@ -4,6 +4,12 @@ import { writeAuditLog } from "../../../admin-audit-logs/helper";
 import { getSystemSettingsService } from "../../shared/settings-service";
 import type { ISystemSettingsUseCase } from "../../interface";
 import { PrismaClient } from "@prisma/client";
+import { mailService } from "../../../../share/component/mail";
+import { logger } from "../../../system/log/logger";
+
+const SMTP_KEYS = new Set([
+  "smtpHost", "smtpPort", "smtpUser", "smtpPassword", "fromName", "fromEmail",
+]);
 
 function buildAuditDescription(
   changedKeys: string[],
@@ -74,6 +80,15 @@ export class SystemSettingsHttpService {
         getSystemSettingsService().invalidate();
       } catch {
         // Service may not be initialized in tests — ignore
+      }
+
+      // Invalidate mail transporter when SMTP config changes so the next
+      // send() call picks up the new settings from DB.
+      if (result.changedKeys.some((k) => SMTP_KEYS.has(k))) {
+        mailService.invalidate();
+        logger.info("[SystemSettings] Mail transporter invalidated due to SMTP config change", {
+          changedSmtpKeys: result.changedKeys.filter((k) => SMTP_KEYS.has(k)),
+        });
       }
 
       successResponse(res, result.settings, "Settings updated");

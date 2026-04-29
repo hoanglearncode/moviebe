@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
-import { BaseHttpService } from "../../../../share/transport/http-server";
+import { BaseHttpService, successResponse, errorResponse } from "../../../../share/transport/http-server";
 import { IPublicMovieUseCase } from "../../interface";
-import { MovieCondDTO, MovieCondDTOSchema } from "../../model/dto";
+import { MovieCondDTOSchema } from "../../model/dto";
 import { Movie } from "../../model/model";
+import { PagingDTOSchema } from "../../../../share";
 
 function getParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
@@ -17,13 +18,14 @@ export class PublicMovieHttpService extends BaseHttpService<any, Movie, any, any
   }
 
   async getListMovies(req: Request, res: Response): Promise<void> {
-    const cond = MovieCondDTOSchema.parse(req.query);
-    await this.handleRequest(res, () =>
-      this.movieUseCase.getListMovies(cond, {
-        page: Number(cond.page),
-        limit: Number(cond.limit),
-      }),
-    );
+    try {
+      const paging = PagingDTOSchema.parse(req.query)
+      const cond = MovieCondDTOSchema.parse(req.query);
+      const result  = await this.movieUseCase.getListMovies(cond, paging)
+      successResponse(res, result, "Success", 200, result.pagination);   
+    } catch (err: any) {
+      errorResponse(res, 500, err.message);
+    }
   }
 
   async getMovieDetail(req: Request, res: Response): Promise<void> {

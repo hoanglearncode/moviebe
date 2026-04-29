@@ -1,4 +1,8 @@
 import { DefaultUserSetting } from "../../modules/system/setting/model/model";
+import { defaultPartnerSettings } from "../../modules/partner-setting/model/model";
+import { DEFAULT_SETTINGS } from "../../modules/admin-system-settings/model/model";
+
+// ── User ──────────────────────────────────────────────────────────────────────
 
 export const defaultSettings: DefaultUserSetting = {
   notifications: true,
@@ -9,7 +13,10 @@ export const defaultSettings: DefaultUserSetting = {
   personalizedRecs: true,
 };
 
+// ── Partner ───────────────────────────────────────────────────────────────────
 
-export const defaultPartnerSetting: any = {}
+export { defaultPartnerSettings as defaultPartnerSetting };
 
-export const defaultSystemSetting: any  = {}
+// ── System (platform) ─────────────────────────────────────────────────────────
+
+export { DEFAULT_SETTINGS as defaultSystemSetting };

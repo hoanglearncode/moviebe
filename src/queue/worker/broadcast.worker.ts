@@ -7,6 +7,7 @@ import {
   BroadcastStatus,
   Role,
   UserStatus,
+  Prisma,
 } from "@prisma/client";
 import { prisma } from "../../share/component/prisma";
 import { logger } from "../../modules/system/log/logger";
@@ -19,35 +20,110 @@ import {
 import { BroadcastJobData, BroadcastJobName, QueueName } from "../modules/types";
 import { enqueueEmailJob } from "../config/email.queue";
 import { enqueueNotificationJob } from "../config/notification.queue";
+import { getSystemSettingsService } from "../../modules/admin-system-settings";
 
 let broadcastWorker: Worker<BroadcastJobData, void, BroadcastJobName> | null = null;
 
 const BATCH_SIZE = 100;
 
 /**
- * Returns Prisma `where` clause scoped to the correct recipient segment.
- *
- * NOTE: VIP / PREMIUM / FREE require a subscription relation on User (not yet migrated).
- * Until then they deliver to all active USER-role accounts.
- * TODO(subscription): add User.planSlug filter once schema is updated.
+ * Build Prisma `where` clause for the target segment, adding setting filters based on
+ * the delivery channel so we only reach users/partners who opted in.
  */
-function buildUserWhere(target: string) {
+function buildUserWhere(
+  target: string,
+  channel: string,
+): Prisma.UserWhereInput {
   const activeOnly = { status: UserStatus.ACTIVE };
+
+  const wantsPush: Prisma.UserWhereInput = {
+    OR: [
+      { settings: { is: null } },
+      { settings: { notifications: true } },
+    ],
+  };
+
+  const wantsEmail: Prisma.UserWhereInput = {
+    OR: [
+      { settings: { is: null } },
+      { settings: { marketingEmails: true } },
+    ],
+  };
+
+  const partnerWantsPush: Prisma.UserWhereInput = {
+    partner: {
+      OR: [
+        { setting: { is: null } },
+        { setting: { notifySystemAlerts: true } },
+      ],
+    },
+  };
+
+  const partnerWantsEmail: Prisma.UserWhereInput = {
+    partner: {
+      OR: [
+        { setting: { is: null } },
+        { setting: { emailSystemAlerts: true } },
+      ],
+    },
+  };
+
+  const isPush =
+    channel === BroadcastChannel.ALL ||
+    channel === BroadcastChannel.WEBSITE ||
+    channel === BroadcastChannel.DESKTOP ||
+    channel === BroadcastChannel.MOBILE;
+
+  const isEmail = channel === BroadcastChannel.ALL || channel === BroadcastChannel.EMAIL;
+
+  // For ALL channel: must want at least one of push or email
+  const settingFilterForUser: Prisma.UserWhereInput =
+    channel === BroadcastChannel.ALL
+      ? {
+          OR: [
+            { settings: { is: null } },
+            { settings: { notifications: true } },
+            { settings: { marketingEmails: true } },
+          ],
+        }
+      : isPush
+        ? wantsPush
+        : wantsEmail;
+
+  const settingFilterForOwner: Prisma.UserWhereInput =
+    channel === BroadcastChannel.ALL
+      ? {
+          partner: {
+            OR: [
+              { setting: { is: null } },
+              { setting: { notifySystemAlerts: true } },
+              { setting: { emailSystemAlerts: true } },
+            ],
+          },
+        }
+      : isPush
+        ? partnerWantsPush
+        : partnerWantsEmail;
+
   switch (target) {
     case BroadcastTarget.ALL:
-      return activeOnly;
+      return { ...activeOnly };
+
     case BroadcastTarget.OWNERS:
-      return { ...activeOnly, role: Role.PARTNER };
+      return { ...activeOnly, role: Role.PARTNER, ...settingFilterForOwner };
+
     case BroadcastTarget.USERS:
-      return { ...activeOnly, role: Role.USER };
+      return { ...activeOnly, role: Role.USER, ...settingFilterForUser };
+
     case BroadcastTarget.VIP:
     case BroadcastTarget.PREMIUM:
     case BroadcastTarget.FREE:
       logger.warn("[BroadcastWorker] Segment target has no subscription filter yet", { target });
-      return { ...activeOnly, role: Role.USER };
+      return { ...activeOnly, role: Role.USER, ...settingFilterForUser };
+
     default:
       logger.warn("[BroadcastWorker] Unknown target, falling back to USERS", { target });
-      return { ...activeOnly, role: Role.USER };
+      return { ...activeOnly, role: Role.USER, ...settingFilterForUser };
   }
 }
 
@@ -56,9 +132,19 @@ const processBroadcastJob = async (
 ): Promise<void> => {
   const { broadcastId, target, channel, title, message, imageUrls = [], broadcastType } = job.data;
 
-  const userWhere = buildUserWhere(target);
+  // Halt delivery during maintenance — mark as failed so it can be retried
+  const isMaintenance = await getSystemSettingsService().isMaintenanceMode();
+  if (isMaintenance) {
+    await prisma.broadcastNotification.update({
+      where: { id: broadcastId },
+      data: { status: BroadcastStatus.FAILED },
+    });
+    logger.warn("[BroadcastWorker] Skipped — system is in maintenance mode", { broadcastId });
+    throw new Error("System is in maintenance mode");
+  }
 
-  // Channel → delivery mode flags
+  const userWhere = buildUserWhere(target, channel);
+
   const shouldPushWebsite =
     channel === BroadcastChannel.ALL ||
     channel === BroadcastChannel.WEBSITE ||
@@ -68,8 +154,6 @@ const processBroadcastJob = async (
   const shouldSendEmail =
     channel === BroadcastChannel.ALL || channel === BroadcastChannel.EMAIL;
 
-  // Notification data embedded in each user notification record
-  // imageUrls and broadcastType let the FE render rich content and correct styling
   const notifData = {
     broadcastId,
     imageUrls,
@@ -147,10 +231,13 @@ const processBroadcastJob = async (
     totalSent += users.length;
     cursor = users[users.length - 1].id;
 
-    logger.debug("[BroadcastWorker] Batch delivered", { broadcastId, batchSize: users.length, totalSent });
+    logger.debug("[BroadcastWorker] Batch delivered", {
+      broadcastId,
+      batchSize: users.length,
+      totalSent,
+    });
   }
 
-  // Update final delivery count on the broadcast record
   await prisma.broadcastNotification.update({
     where: { id: broadcastId },
     data: { totalSent, sentAt: new Date(), status: BroadcastStatus.SENT },

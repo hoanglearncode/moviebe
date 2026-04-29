@@ -8,7 +8,8 @@ export const MovieCondDTOSchema = z.object({
   genres: z.string().optional(),
   showtimes: z.string().optional(),
   rates: z.string().optional(),
-  search: z.string().optional()
+  search: z.string().optional(),
+  grouped: z.coerce.boolean().optional(),
 });
 
 

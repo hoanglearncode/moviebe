@@ -280,7 +280,7 @@ model Category {
   updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at")
   slug String @unique
 
-  movies Movie[]
+  movies      MovieCategory[]
 
   @@map("categories")
 }
@@ -335,10 +335,39 @@ model Partner {
   lng Float?
   description String?
   facilities  String[] @default([])
+  setting     PartnerSetting?
 
   @@index([status])
   @@index([createdAt])
   @@index([city])
+}
+
+model PartnerSetting {
+  id                    String   @id @default(cuid())
+  partnerId             String   @unique
+
+  // In-app / push notification preferences
+  notifyNewBooking      Boolean  @default(true)
+  notifyWithdrawal      Boolean  @default(true)
+  notifyMovieStatus     Boolean  @default(true)
+  notifySystemAlerts    Boolean  @default(true)
+  notifyRevenueReport   Boolean  @default(true)
+
+  // Email preferences
+  emailNewBooking       Boolean  @default(false)
+  emailDailyReport      Boolean  @default(true)
+  emailWeeklyReport     Boolean  @default(true)
+  emailSystemAlerts     Boolean  @default(true)
+
+  // Operational settings
+  autoWithdrawEnabled   Boolean  @default(false)
+  autoWithdrawThreshold Float    @default(5000000)
+  reportTimezone        String   @default("Asia/Ho_Chi_Minh")
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @default(now()) @updatedAt
+
+  partner               Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
 }
 
 model PartnerRequest {
@@ -386,13 +415,24 @@ model PartnerStaff {
   @@unique([partnerId, userId])
 }
 
+model MovieCategory {
+  movieId    String
+  categoryId String
+
+  movie      Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+
+  @@id([movieId, categoryId])
+}
+
 model Movie {
   id          String      @id @default(cuid())
   partnerId   String
   title       String
   description String?
   genre String[]
-  categories Category[]
   language    String
   duration    Int
   releaseDate DateTime
@@ -416,6 +456,7 @@ model Movie {
   allowComments Boolean   @default(true)
   backdropUrl   String?
   cast          Cast[] 
+  categories  MovieCategory[]
   
 
   @@index([partnerId])

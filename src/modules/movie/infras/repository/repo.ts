@@ -1,36 +1,117 @@
 import { PrismaClient } from "@prisma/client";
-import { IPublicMovieRepository } from "../../interface";
+import { IPublicMovieRepository, MovieSectionsResponse } from "../../interface";
 import { Movie, PublicShowtime, PublicShowtimeSeatMap } from "../../model/model";
 import { getMovieRepo } from "./dto";
+import { PagingDTO } from "../../../../share";
 
 export class MovieRepository implements IPublicMovieRepository {
   constructor(private readonly prisma: PrismaClient) {
     getMovieRepo(this.prisma);
   }
 
-  async getListMovies(cond: any, paging: any): Promise<Movie[]> {
-    const { page, limit } = paging;
+  async getListMovies(
+    cond: any,
+    paging: PagingDTO
+  ): Promise<MovieSectionsResponse> {
+    const { page = 1, limit = 10 } = paging;
     const skip = (page - 1) * limit;
+    const now = new Date();
 
-    const movies = await this.prisma.movie.findMany({
-      skip,
-      take: limit,
-      where: {
-        status: { in: ["APPROVED", "ACTIVE"] },
-        ...(cond.search
-          ? { title: { contains: cond.search, mode: "insensitive" } }
-          : {}),
-        ...(cond.genres
-          ? { genre: { hasSome: cond.genres.split(",").map((g: string) => g.trim()) } }
-          : {}),
-      },
-      include: {
-        cast: { select: { name: true, role: true, photo: true } },
-      },
-      orderBy: { releaseDate: "desc" },
-    });
+    const baseWhere: any = {
+      status: { in: ["APPROVED", "ACTIVE"] },
+      ...(cond.search && {
+        title: { contains: cond.search, mode: "insensitive" },
+      }),
+      ...(cond.genres && {
+        genre: {
+          hasSome: cond.genres.split(",").map((g: string) => g.trim()),
+        },
+      }),
+    };
 
-    return movies as unknown as Movie[];
+    const castInclude = {
+      cast: {
+        select: {
+          name: true,
+          role: true,
+          photo: true,
+        },
+      },
+    };
+
+    const [
+      coming,
+      showing,
+      trend,
+      totalComing,
+      totalShowing,
+    ] = await Promise.all([
+      // 🎬 phim sắp chiếu
+      this.prisma.movie.findMany({
+        where: {
+          ...baseWhere,
+          releaseDate: { gt: now },
+        },
+        include: castInclude,
+        skip,
+        take: limit,
+        orderBy: { releaseDate: "asc" },
+      }),
+
+      // 🎬 phim đang chiếu
+      this.prisma.movie.findMany({
+        where: {
+          ...baseWhere,
+          releaseDate: { lte: now },
+          endDate: { gte: now },
+        },
+        include: castInclude,
+        skip,
+        take: limit,
+        orderBy: { releaseDate: "desc" },
+      }),
+
+      // 🔥 trending
+      this.prisma.movie.findMany({
+        where: baseWhere,
+        include: castInclude,
+        orderBy: {
+          tickets: { _count: "desc" },
+        },
+        take: 4,
+      }),
+
+      // 📊 count coming
+      this.prisma.movie.count({
+        where: {
+          ...baseWhere,
+          releaseDate: { gt: now },
+        },
+      }),
+
+      // 📊 count showing
+      this.prisma.movie.count({
+        where: {
+          ...baseWhere,
+          releaseDate: { lte: now },
+          endDate: { gte: now },
+        },
+      }),
+    ]);
+
+    return {
+      coming,
+      showing,
+      trend,
+      pagination: {
+        page,
+        limit,
+        totalComing,
+        totalShowing,
+        totalPagesComing: Math.ceil(totalComing / limit),
+        totalPagesShowing: Math.ceil(totalShowing / limit),
+      },
+    };
   }
 
   async getMovieById(id: string): Promise<Movie | null> {

@@ -1,4 +1,5 @@
 import { Job, Worker } from "bullmq";
+import { prisma } from "../../share/component/prisma";
 import { logger } from "../../modules/system/log/logger";
 import { PusherService } from "../../socket/services";
 import {
@@ -15,6 +16,18 @@ const processNotificationJob = async (
   job: Job<NotificationJobData, void, NotificationJobName>,
 ): Promise<void> => {
   const { notificationId, userId, type, title, message, data } = job.data;
+
+  // Respect user push-notification preference — the DB record already exists,
+  // we only skip the real-time Pusher event when the user has opted out.
+  const userSetting = await prisma.userSetting.findUnique({
+    where: { userId },
+    select: { pushNotifications: true },
+  });
+
+  if (userSetting && !userSetting.pushNotifications) {
+    logger.debug("[NotificationWorker] Skipped push — user opted out", { userId, notificationId });
+    return;
+  }
 
   await PusherService.trigger(`private-user-${userId}`, "notification.new", {
     id: notificationId,

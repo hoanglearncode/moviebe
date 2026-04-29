@@ -46,6 +46,7 @@ import { ServicesHttpService } from "./infras/transport/service-http-services";
 import { PartnerNotificationService } from "./shared/notification";
 import { createSessionRepository } from "../user/infras/repository/session-repo";
 import { createUserRepository } from "../user/infras/repository/user-repo";
+import { buildPartnerSettingRouter } from "../partner-setting";
 
 export const buildPartnerRequestUserRouter = (prisma: PrismaClient): Router => {
   const router = Router();
@@ -179,7 +180,7 @@ export default function buildPartnerRouter(prisma: PrismaClient): Router {
   const walletRepo = createWalletRepository(prisma);
   const serviceRepo = createServerRepository(prisma);
 
-  const notificationService = new PartnerNotificationService();
+  const notificationService = new PartnerNotificationService(prisma);
 
   const profileUC = new PartnerProfileUseCase(partnerRepo);
   const serviceUC = new ServicePartnerUser(serviceRepo);
@@ -264,12 +265,14 @@ export default function buildPartnerRouter(prisma: PrismaClient): Router {
   router.put("/rooms/:roomId", ...guard, (req, res) => roomSvc.updateRoom(req, res)); 
   router.delete("/rooms/:roomId", ...guard, (req, res) => roomSvc.deleteRoom(req, res)); 
   
-  router.get("/services", ...guard, (req, res) => serviceSvc.list(req, res)); 
-  router.get("/services/search", ...guard, (req, res) => serviceSvc.findByCond(req, res)); 
-  router.get("/services/:id", ...guard, (req, res) => serviceSvc.findById(req, res)); 
-  router.post("/services", ...guard, (req, res) => serviceSvc.create(req, res)); 
-  router.put("/services/:id", ...guard, (req, res) => serviceSvc.update(req, res)); 
+  router.get("/services", ...guard, (req, res) => serviceSvc.list(req, res));
+  router.get("/services/search", ...guard, (req, res) => serviceSvc.findByCond(req, res));
+  router.get("/services/:id", ...guard, (req, res) => serviceSvc.findById(req, res));
+  router.post("/services", ...guard, (req, res) => serviceSvc.create(req, res));
+  router.put("/services/:id", ...guard, (req, res) => serviceSvc.update(req, res));
   router.delete("/services/:id", ...guard, (req, res) => serviceSvc.delete(req, res));
+
+  router.use("/", buildPartnerSettingRouter(prisma, guard));
 
   return router;
 }

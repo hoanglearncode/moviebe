@@ -13,6 +13,7 @@ import {
   getPasswordTokenModel,
   getSessionModel,
 } from "../infras/repository/dto";
+import { getSystemSettingsService } from "../../admin-system-settings";
 
 type ActionTokenModel = {
   create(args: {
@@ -66,7 +67,7 @@ export class TokenService implements ITokenService {
   private readonly passwordTokenModel: ActionTokenModel;
   private readonly emailTokenModel: ActionTokenModel;
 
-  constructor(prisma: PrismaClient) {
+  constructor(private readonly prisma: PrismaClient) {
     this.sessionModel = getSessionModel(prisma);
     this.passwordTokenModel = getPasswordTokenModel(prisma);
     this.emailTokenModel = getEmailTokenModel(prisma);
@@ -80,12 +81,47 @@ export class TokenService implements ITokenService {
     },
     options?: { remember?: boolean },
   ): Promise<AuthSession> {
+    // Read platform settings — non-fatal, fall back to compile-time defaults.
+    let maxDevices = 4;
+    let sessionRefreshExpires: string | undefined;
+
+    try {
+      const svc = getSystemSettingsService();
+      const [maxDevStr, timeoutHoursStr] = await Promise.all([
+        svc.get("maxDevicesPerUser"),
+        svc.get("sessionTimeoutHours"),
+      ]);
+      maxDevices = Math.max(1, parseInt(maxDevStr, 10));
+      const timeoutHours = Math.max(1, parseInt(timeoutHoursStr, 10));
+      sessionRefreshExpires = `${timeoutHours}h`;
+    } catch {
+      // SystemSettingsService not available — use defaults
+    }
+
+    // Enforce max-devices limit: revoke the oldest session when the user is at
+    // the limit so they aren't locked out on new devices.
+    const activeCount = await this.prisma.session.count({
+      where: { userId: user.id, isActive: true, expiresAt: { gt: new Date() } },
+    });
+
+    if (activeCount >= maxDevices) {
+      const oldest = await this.prisma.session.findFirst({
+        where: { userId: user.id, isActive: true },
+        orderBy: { createdAt: "asc" },
+        select: { id: true },
+      });
+      if (oldest) {
+        await this.prisma.session.delete({ where: { id: oldest.id } });
+      }
+    }
+
     const session = this.createSessionTokens({
       sub: user.id,
       email: user.email,
       scope: user.role ?? "USER",
       status: user.status,
       remember: options?.remember,
+      sessionRefreshExpires,
     });
 
     const parser = new UAParser(context?.userAgent);
@@ -215,6 +251,7 @@ export class TokenService implements ITokenService {
     scope: string;
     status: string | undefined;
     remember?: boolean;
+    sessionRefreshExpires?: string;
   }): AuthSession {
     const normalizedPayload = {
       sub: payload.sub,
@@ -228,10 +265,13 @@ export class TokenService implements ITokenService {
       algorithm: "HS512",
     });
 
+    // Priority: remember-me > platform sessionTimeoutHours > ENV default
+    const refreshExpiresIn = payload.remember
+      ? TokenService.REMEMBER_REFRESH_EXPIRES
+      : (payload.sessionRefreshExpires ?? ENV.JWT_REFRESH_EXPIRES);
+
     const refreshToken = jwt.sign(normalizedPayload, ENV.JWT_REFRESH_SECRET, {
-      expiresIn: (payload.remember
-        ? TokenService.REMEMBER_REFRESH_EXPIRES
-        : ENV.JWT_REFRESH_EXPIRES) as jwt.SignOptions["expiresIn"],
+      expiresIn: refreshExpiresIn as jwt.SignOptions["expiresIn"],
       algorithm: "HS512",
     });
 

@@ -9,6 +9,7 @@ import {
   queuePrefix,
 } from "../config/config";
 import { QueueName, ScheduledEmailJobData, ScheduledEmailJobName } from "../modules/types";
+import { getSystemSettingsService } from "../../modules/admin-system-settings";
 
 let scheduledEmailQueue: Queue<ScheduledEmailJobData, void, ScheduledEmailJobName> | null = null;
 let scheduledEmailWorker: Worker<ScheduledEmailJobData, void, ScheduledEmailJobName> | null = null;
@@ -18,6 +19,12 @@ const REPEAT_EVERY_MS = 60_000;
 const processScheduledEmails = async (
   _job: Job<ScheduledEmailJobData, void, ScheduledEmailJobName>,
 ): Promise<void> => {
+  const isMaintenance = await getSystemSettingsService().isMaintenanceMode();
+  if (isMaintenance) {
+    logger.info("[ScheduledEmailWorker] Skipped tick — system is in maintenance mode");
+    return;
+  }
+
   const pending = await prisma.scheduledEmailNotification.findMany({
     where: {
       status: "PENDING",

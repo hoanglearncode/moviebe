@@ -19,6 +19,7 @@ import { createUploadRouter } from "./share/transport/upload.router";
 import { pusherAuthRouter } from "./share/transport/pusher-auth.router";
 import { defaultSettings } from "./share/common/seed-setting";
 import { seedEmailTemplates } from "./modules/notification/shared/seed";
+import { seedDefaults } from "./share/common/seed-defaults";
 import adminEmailRouter from "./modules/notification/infras/transport/admin-endpoints";
 import { notificationRouter } from "./modules/notification";
 import { setupPublicMovieRoutes, setupPublicShowtimeRoutes } from "./modules/movie";
@@ -46,6 +47,7 @@ config();
   await initializeQueueInfrastructure();
 
   await seedEmailTemplates(prisma);
+  await seedDefaults(prisma);
 
   await ensureAdminUser();
 

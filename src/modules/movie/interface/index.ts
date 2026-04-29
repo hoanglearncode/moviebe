@@ -2,8 +2,22 @@ import { PagingDTO } from "../../../share";
 import { Movie, PublicShowtime, PublicShowtimeSeatMap } from "../model/model";
 import { MovieCondDTO } from "../model/dto";
 
+export type MovieSectionsResponse = {
+  coming: Movie[];
+  showing: Movie[];
+  trend: Movie[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalComing: number;
+    totalShowing: number;
+    totalPagesComing: number;
+    totalPagesShowing: number;
+  };
+};
+
 export interface IPublicMovieRepository {
-  getListMovies(cond: MovieCondDTO, paging: PagingDTO): Promise<Movie[]>;
+  getListMovies(cond: MovieCondDTO, paging: PagingDTO): Promise<MovieSectionsResponse>;
   getMovieById(id: string): Promise<Movie | null>;
   getMovieShowtimes(movieId: string, date?: string): Promise<PublicShowtime[]>;
   getShowtimeById(showtimeId: string): Promise<PublicShowtime | null>;
@@ -11,7 +25,7 @@ export interface IPublicMovieRepository {
 }
 
 export interface IPublicMovieUseCase {
-  getListMovies(cond: MovieCondDTO, paging: PagingDTO): Promise<Movie[]>;
+  getListMovies(cond: MovieCondDTO, paging: PagingDTO): Promise<MovieSectionsResponse>;
   getMovieById(id: string): Promise<Movie | null>;
   getMovieShowtimes(movieId: string, date?: string): Promise<PublicShowtime[]>;
   getShowtimeById(showtimeId: string): Promise<PublicShowtime | null>;
