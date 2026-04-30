@@ -1,6 +1,6 @@
-import { IPaymentRepository, IPaymentUseCase } from "../interface";
-import { CreatePaymentResult, ConfirmMockResult, PaymentMethod } from "../model/model";
-import { OrderWithDetails } from "../../booking/model/model";
+import { IPaymentRepository, IPaymentUseCase } from "@/modules/payment/interface";
+import { CreatePaymentResult, ConfirmMockResult, PaymentMethod } from "@/modules/payment/model/model";
+import { OrderWithDetails } from "@/modules/booking/model/model";
 
 export class PaymentUseCase implements IPaymentUseCase {
   constructor(private readonly repo: IPaymentRepository) {}

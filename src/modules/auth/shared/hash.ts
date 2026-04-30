@@ -1,4 +1,4 @@
-import { IPasswordHasher } from "../interface";
+import { IPasswordHasher } from "@/modules/auth/interface";
 import bcrypt from "bcrypt";
 
 const saltRounds = 10;

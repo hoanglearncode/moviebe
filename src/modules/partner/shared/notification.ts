@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
-import { IPartnerNotificationService } from "../interface";
-import { logger } from "../../system/log/logger";
-import { pushNotificationService, NotificationFactory } from "../../notification";
+import { IPartnerNotificationService } from "@/modules/partner/interface";
+import { logger } from "@/modules/system/log/logger";
+import { pushNotificationService, NotificationFactory } from "@/modules/notification";
 
 type PartnerSettingRow = {
   notifyWithdrawal: boolean;

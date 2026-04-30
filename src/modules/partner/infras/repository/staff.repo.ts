@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
-import { PagingDTO } from "../../../../share";
-import { IStaffRepo } from "../../interface/staff.interface";
-import { PartnerStaff } from "../../model/model";
+import { PagingDTO } from "@/share";
+import { IStaffRepo } from "@/modules/partner/interface/staff.interface";
+import { PartnerStaff } from "@/modules/partner/model/model";
 
 export class StaffRepository implements IStaffRepo {
   constructor(private readonly prisma: PrismaClient) {}

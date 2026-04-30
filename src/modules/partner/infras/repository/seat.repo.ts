@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
-import { ISeatRepository } from "../../interface/seat.interface";
-import { Seat } from "../../model/model";
-import { PagingDTO } from "../../../../share";
+import { ISeatRepository } from "@/modules/partner/interface/seat.interface";
+import { Seat } from "@/modules/partner/model/model";
+import { PagingDTO } from "@/share";
 
 export class SeatRepository implements ISeatRepository {
   constructor(private readonly prisma: PrismaClient) {}

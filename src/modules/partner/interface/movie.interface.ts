@@ -1,6 +1,6 @@
-import { IRepository } from "../../../share/interface";
-import { Movie, CastMember, AdminMovieRow, AdminMovieStats } from "../model/model";
-import { CreateMovieDTO, UpdateMovieDTO, ListMoviesQueryDTO } from "../model/dto";
+import { IRepository } from "@/share/interface";
+import { Movie, CastMember, AdminMovieRow, AdminMovieStats } from "@/modules/partner/model/model";
+import { CreateMovieDTO, UpdateMovieDTO, ListMoviesQueryDTO } from "@/modules/partner/model/dto";
 
 // ─── Repository Port ──────────────────────────────────────────────────────────
 

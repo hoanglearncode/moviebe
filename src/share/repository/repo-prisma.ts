@@ -1,6 +1,6 @@
-import { ICommandRepository, IQueryRepository, IRepository } from "../interface";
-import { ModelStatus } from "../model/base-model";
-import { PagingDTO } from "../model/paging";
+import { ICommandRepository, IQueryRepository, IRepository } from "@/share/interface";
+import { ModelStatus } from "@/share/model/base-model";
+import { PagingDTO } from "@/share/model/paging";
 
 type PrismaQueryModel = {
   findUnique(args: { where: { id: string } }): Promise<unknown | null>;

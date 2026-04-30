@@ -1,12 +1,12 @@
-import { ICategoryUseCase } from "../../../../modules/category/interface";
+import { ICategoryUseCase } from "@/modules/category/interface";
 import {
   CategoryCondDTO,
   CategoryCondDTOSchema,
   CategoryCreateDTO,
   CategoryUpdateDTO,
-} from "../../../../modules/category/model/dto";
-import { Category } from "../../../../modules/category/model/model";
-import { BaseHttpService } from "../../../../share/transport/http-server";
+} from "@/modules/category/model/dto";
+import { Category } from "@/modules/category/model/model";
+import { BaseHttpService } from "@/share/transport/http-server";
 import { Request, Response } from "express";
 
 export class CategoryHttpService extends BaseHttpService<

@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { IRepository } from "../../share/interface";
-import { CategoryHttpService } from "./infras/transport/http-service";
-import { CategoryCondDTO, CategoryUpdateDTO } from "./model/dto";
-import { Category } from "./model/model";
-import { CategoryUseCase } from "./usecase";
-import { protect, adminMiddleware } from "../../share/middleware/auth";
+import { IRepository } from "@/share/interface";
+import { CategoryHttpService } from "@/modules/category/infras/transport/http-service";
+import { CategoryCondDTO, CategoryUpdateDTO } from "@/modules/category/model/dto";
+import { Category } from "@/modules/category/model/model";
+import { CategoryUseCase } from "@/modules/category/usecase";
+import { protect, adminMiddleware } from "@/share/middleware/auth";
 
 export const setupCategoryHexagon = (
   repository: IRepository<Category, CategoryCondDTO, CategoryUpdateDTO>,

@@ -1,8 +1,8 @@
 import { Prisma, PrismaClient, UserStatus } from "@prisma/client";
-import { IAuthUserRepository } from "../../interface";
-import { AuthUser } from "../../model/model";
-import { PagingDTO } from "../../../../share/model/paging";
-import { getUserModel } from "./dto";
+import { IAuthUserRepository } from "@/modules/auth/interface";
+import { AuthUser } from "@/modules/auth/model/model";
+import { PagingDTO } from "@/share/model/paging";
+import { getUserModel } from "@/modules/auth/infras/repository/dto";
 
 const toAuthUser = (raw: Prisma.UserGetPayload<Record<string, never>>): AuthUser => ({
   id: raw.id,

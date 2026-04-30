@@ -1,15 +1,15 @@
 import { Job, Queue, Worker } from "bullmq";
-import { prisma } from "../../share/component/prisma";
-import { logger } from "../../modules/system/log/logger";
-import { mailService } from "../../share/component/mail";
+import { prisma } from "@/share/component/prisma";
+import { logger } from "@/modules/system/log/logger";
+import { mailService } from "@/share/component/mail";
 import {
   areQueueWorkersEnabled,
   createRedisConnection,
   isQueueEnabled,
   queuePrefix,
-} from "../config/config";
-import { QueueName, ScheduledEmailJobData, ScheduledEmailJobName } from "../modules/types";
-import { getSystemSettingsService } from "../../modules/admin-system-settings";
+} from "@/queue/config/config";
+import { QueueName, ScheduledEmailJobData, ScheduledEmailJobName } from "@/queue/modules/types";
+import { getSystemSettingsService } from "@/modules/admin-manage/admin-system-settings";
 
 let scheduledEmailQueue: Queue<ScheduledEmailJobData, void, ScheduledEmailJobName> | null = null;
 let scheduledEmailWorker: Worker<ScheduledEmailJobData, void, ScheduledEmailJobName> | null = null;

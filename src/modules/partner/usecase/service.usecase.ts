@@ -1,15 +1,15 @@
-import { PagingDTO } from "../../../share";
-import { IPartnerServicesUseCase } from "../interface";
-import { IPartnerServiceRepository } from "../interface/services.interface";
+import { PagingDTO } from "@/share";
+import { IPartnerServicesUseCase } from "@/modules/partner/interface";
+import { IPartnerServiceRepository } from "@/modules/partner/interface/services.interface";
 import {
   ServiceCondDTOSchema,
   CreateServiceDTO,
   UpdateServiceDTO,
   CreateServicePayloadDTO,
   UpdateServicePayloadDTO,
-} from "../model/dto";
-import { Services } from "../model/model";
-import { ErrCategoryNameTooShort } from "../model/error";
+} from "@/modules/partner/model/dto";
+import { Services } from "@/modules/partner/model/model";
+import { ErrCategoryNameTooShort } from "@/modules/partner/model/error";
 import { ZodError } from "zod";
 
 export class ServicePartnerUser implements IPartnerServicesUseCase {

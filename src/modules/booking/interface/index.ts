@@ -1,5 +1,5 @@
-import { Order, OrderWithDetails } from "../model/model";
-import { LockSeatsDTO, LockSeatsResult } from "../model/dto";
+import { Order, OrderWithDetails } from "@/modules/booking/model/model";
+import { LockSeatsDTO, LockSeatsResult } from "@/modules/booking/model/dto";
 
 export interface IBookingRepository {
   findOrderById(orderId: string): Promise<Order | null>;

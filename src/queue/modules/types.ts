@@ -1,10 +1,11 @@
-import { SendMailInput } from "../../share/component/mail";
+import { SendMailInput } from "@/share/component/mail";
 
 export const QueueName = {
   Email: "email",
   Notification: "notification",
   Broadcast: "broadcast",
   ScheduledEmail: "scheduled-email",
+  AccountLock: "account-lock",
 } as const;
 
 export type QueueName = (typeof QueueName)[keyof typeof QueueName];
@@ -51,3 +52,11 @@ export type BroadcastJobData = {
 export type ScheduledEmailJobName = "process-scheduled-emails";
 
 export type ScheduledEmailJobData = Record<string, never>;
+
+export type LockJobName = "unlock-account";
+
+export type LockJobData = {
+  userId: string;
+  stage: number;
+  traceId?: string;
+};

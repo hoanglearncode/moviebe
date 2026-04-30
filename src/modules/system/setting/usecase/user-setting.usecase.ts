@@ -1,9 +1,9 @@
 import { PrismaClient } from "@prisma/client";
-import { IUserSetting } from "../interface";
-import { UpdateUserSettingSchema, UserSetting, UserSettingUpdate } from "../model/model";
-import { defaultSettings } from "../../../../share/common/seed-setting";
-import { getUserSettingModel } from "../infras/repository/dto";
-import { ValidationError } from "../../../../share/transport/http-server";
+import { IUserSetting } from "@/modules/system/setting/interface";
+import { UpdateUserSettingSchema, UserSetting, UserSettingUpdate } from "@/modules/system/setting/model/model";
+import { defaultSettings } from "@/share/common/seed-setting";
+import { getUserSettingModel } from "@/modules/system/setting/infras/repository/dto";
+import { ValidationError } from "@/share/transport/http-server";
 
 export class UserSettingUseCase implements IUserSetting {
   private readonly model: ReturnType<typeof getUserSettingModel>;

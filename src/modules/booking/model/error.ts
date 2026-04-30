@@ -1,5 +1,5 @@
-import { AppError, ValidationError } from "../../../share/transport/http-server";
-import { ErrorCode } from "../../../share/model/error-code";
+import { AppError, ValidationError } from "@/share/transport/http-server";
+import { ErrorCode } from "@/share/model/error-code";
 
 export class ShowtimeNotFoundError extends AppError {
   constructor() {

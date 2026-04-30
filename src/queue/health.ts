@@ -1,6 +1,6 @@
 import { Queue } from "bullmq";
-import { createRedisConnection, isQueueEnabled, queuePrefix } from "./config/config";
-import { QueueName } from "./modules/types";
+import { createRedisConnection, isQueueEnabled, queuePrefix } from "@/queue/config/config";
+import { QueueName } from "@/queue/modules/types";
 import type { QueueStats } from "../modules/admin-system-settings/model/model";
 
 const EMPTY_STATS: QueueStats = { waiting: 0, active: 0, failed: 0 };

@@ -1,6 +1,6 @@
-import { IRepository } from "../../../share/interface";
-import { Transaction, Withdrawal, PartnerWallet, WithdrawalListResponse } from "../model/model";
-import { CreateWithdrawalDTO, ListWithdrawalsQueryDTO, RevenueQueryDTO } from "../model/dto";
+import { IRepository } from "@/share/interface";
+import { Transaction, Withdrawal, PartnerWallet, WithdrawalListResponse } from "@/modules/partner/model/model";
+import { CreateWithdrawalDTO, ListWithdrawalsQueryDTO, RevenueQueryDTO } from "@/modules/partner/model/dto";
 
 
 export interface ITransactionRepository extends IRepository<

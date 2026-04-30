@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { IBookingUseCase } from "../../interface";
-import { LockSeatsDTOSchema } from "../../model/dto";
-import { successResponse, errorResponse } from "../../../../share/transport/http-server";
+import { IBookingUseCase } from "@/modules/booking/interface";
+import { LockSeatsDTOSchema } from "@/modules/booking/model/dto";
+import { successResponse, errorResponse } from "@/share/transport/http-server";
 
 function getParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;

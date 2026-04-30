@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
-import { IUserTicketRepository } from "../../interface";
-import { UserTicket, TicketListResult } from "../../model/model";
-import { ListTicketsDTO } from "../../model/dto";
+import { IUserTicketRepository } from "@/modules/ticket/interface";
+import { UserTicket, TicketListResult } from "@/modules/ticket/model/model";
+import { ListTicketsDTO } from "@/modules/ticket/model/dto";
 
 export class UserTicketRepository implements IUserTicketRepository {
   constructor(private readonly prisma: PrismaClient) {}

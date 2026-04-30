@@ -1,6 +1,6 @@
-import { IRepository } from "../../../share/interface";
-import { IConcurrentLockService } from "../../../share/component/concurrent-lock";
-import { IUserSetting } from "../../../modules/system/setting/interface";
+import { IRepository } from "@/share/interface";
+import { IConcurrentLockService } from "@/share/component/concurrent-lock";
+import { IUserSetting } from "@/modules/system/setting/interface";
 import {
   ChangePasswordDTO,
   FacebookTO,
@@ -12,7 +12,7 @@ import {
   RegisterDTO,
   ResendVerificationDTO,
   VerifyEmailDTO,
-} from "../model/dto";
+} from "@/modules/auth/model/dto";
 import {
   AuthActionTokenPurpose,
   AuthResponse,
@@ -20,7 +20,7 @@ import {
   AuthPublicUser,
   AuthSession,
   AuthUser,
-} from "../model/model";
+} from "@/modules/auth/model/model";
 
 export interface IAuthUserRepository extends IRepository<
   AuthUser,

@@ -1,4 +1,4 @@
-import { PagingDTO } from "../../share/model/paging";
+import { PagingDTO } from "@/share/model/paging";
 
 export interface IRepository<Entity, Cond, UpdateDTO>
   extends IQueryRepository<Entity, Cond>, ICommandRepository<Entity, UpdateDTO> {}

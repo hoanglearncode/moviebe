@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
-import { PagingDTO } from "../../../../share";
-import { IPartnerServiceRepository, AdminServiceListQuery } from "../../interface/services.interface";
-import { CreateServiceDTO, UpdateServiceDTO } from "../../model/dto";
-import { Services, AdminServiceRow } from "../../model/model";
+import { PagingDTO } from "@/share";
+import { IPartnerServiceRepository, AdminServiceListQuery } from "@/modules/partner/interface/services.interface";
+import { CreateServiceDTO, UpdateServiceDTO } from "@/modules/partner/model/dto";
+import { Services, AdminServiceRow } from "@/modules/partner/model/model";
 
 export class Service implements IPartnerServiceRepository {
   constructor(private readonly prisma: PrismaClient) {}

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
-import { uploadMiddleware } from "../middleware/upload.middleware";
-import { uploadService, UploadFolder } from "../repository/upload.service";
-import { logger } from "../../modules/system/log/logger";
+import { uploadMiddleware } from "@/share/middleware/upload.middleware";
+import { uploadService, UploadFolder } from "@/share/repository/upload.service";
+import { logger } from "@/modules/system/log/logger";
 
 const VALID_FOLDERS: UploadFolder[] = ["avatars", "categories", "products", "misc"];
 

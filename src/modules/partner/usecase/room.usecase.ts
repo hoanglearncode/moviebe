@@ -2,11 +2,11 @@ import {
   IWalletRepository,
   ITransactionRepository,
   IWithdrawalRepository,
-} from "../interface/finance.interface";
-import { IShowtimeRepository } from "../interface/showtime.interface";
-import { ITicketRepository } from "../interface/ticket.interface";
-import { IPartnerDashboardUseCase } from "../interface/dashboard.interface";
-import { DashboardStats } from "../model/model";
+} from "@/modules/partner/interface/finance.interface";
+import { IShowtimeRepository } from "@/modules/partner/interface/showtime.interface";
+import { ITicketRepository } from "@/modules/partner/interface/ticket.interface";
+import { IPartnerDashboardUseCase } from "@/modules/partner/interface/dashboard.interface";
+import { DashboardStats } from "@/modules/partner/model/model";
 
 export class PartnerDashboardUseCase implements IPartnerDashboardUseCase {
   constructor(

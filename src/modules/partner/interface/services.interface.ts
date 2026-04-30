@@ -1,6 +1,6 @@
-import { CreateServiceDTO, UpdateServiceDTO } from "../model/dto";
-import { PagingDTO } from "../../../share";
-import { Services, AdminServiceRow } from "../model/model";
+import { CreateServiceDTO, UpdateServiceDTO } from "@/modules/partner/model/dto";
+import { PagingDTO } from "@/share";
+import { Services, AdminServiceRow } from "@/modules/partner/model/model";
 
 export interface AdminServiceListQuery {
   page?: number;

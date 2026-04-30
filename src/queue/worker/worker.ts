@@ -1,5 +1,7 @@
-import { logger } from "../../modules/system/log/logger";
-import { initializeQueueInfrastructure, shutdownQueueInfrastructure } from "../index";
+import { logger } from "@/modules/system/log/logger";
+import { initializeQueueInfrastructure, shutdownQueueInfrastructure } from "@/queue";
+import { initSystemSettingsService } from "@/modules/admin-manage/admin-system-settings";
+import { prisma } from "@/share/component/prisma";
 
 const shutdown = async (signal: string) => {
   logger.info(`Queue worker received ${signal}`);
@@ -8,6 +10,7 @@ const shutdown = async (signal: string) => {
 };
 
 (async () => {
+  initSystemSettingsService(prisma);
   await initializeQueueInfrastructure();
   logger.info("Queue worker started");
 })();

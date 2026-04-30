@@ -28,6 +28,7 @@ enum UserStatus {
   ACTIVE
   INACTIVE
   BANNED
+  LOCKED
   PENDING
 }
 

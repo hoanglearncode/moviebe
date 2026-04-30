@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { getSystemSettingsService } from "../../modules/admin-system-settings";
-import { ENV } from "../common/value";
-import { logger } from "../../modules/system/log/logger";
+import { getSystemSettingsService } from "@/modules/admin-manage/admin-system-settings";
+import { ENV } from "@/share/common/value";
+import { logger } from "@/modules/system/log/logger";
 
 
 const BYPASS_PREFIXES = ["/v1/auth/login", "/v1/auth/refresh-token", "/v1/auth/google", "/v1/auth/facebook"];

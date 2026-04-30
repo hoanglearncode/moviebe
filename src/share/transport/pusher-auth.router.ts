@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
-import { authMiddleware } from "../middleware/auth";
-import { pusher, isPusherConfigured } from "../../socket/config";
-import { errorResponse } from "./http-server";
+import { authMiddleware } from "@/share/middleware/auth";
+import { pusher, isPusherConfigured } from "@/socket/config";
+import { errorResponse } from "@/share/transport/http-server";
 
 const router = Router();
 

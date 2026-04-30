@@ -1,14 +1,14 @@
-export { PartnerRepository, createPartnerRepository } from "./profile.repo";
-export { MovieRepository, createMovieRepository } from "./movie.repo";
-export { ShowtimeRepository, createShowtimeRepository } from "./showtime.repo";
-export { RoomRepository, createRoomRepository, type IRoomRepository } from "./room.repo";
-export { SeatRepository, createSeatRepository } from "./seat.repo";
+export { PartnerRepository, createPartnerRepository } from "@/modules/partner/infras/repository/profile.repo";
+export { MovieRepository, createMovieRepository } from "@/modules/partner/infras/repository/movie.repo";
+export { ShowtimeRepository, createShowtimeRepository } from "@/modules/partner/infras/repository/showtime.repo";
+export { RoomRepository, createRoomRepository, type IRoomRepository } from "@/modules/partner/infras/repository/room.repo";
+export { SeatRepository, createSeatRepository } from "@/modules/partner/infras/repository/seat.repo";
 export {
   TicketRepository,
   CheckInRepository,
   createTicketRepository,
   createCheckInRepository,
-} from "./ticket.repo";
+} from "@/modules/partner/infras/repository/ticket.repo";
 export {
   TransactionRepository,
   WithdrawalRepository,
@@ -16,5 +16,5 @@ export {
   createTransactionRepository,
   createWithdrawalRepository,
   createWalletRepository,
-} from "./finance.repo";
-export { StaffRepository, createStaffRepository } from "./staff.repo";
+} from "@/modules/partner/infras/repository/finance.repo";
+export { StaffRepository, createStaffRepository } from "@/modules/partner/infras/repository/staff.repo";

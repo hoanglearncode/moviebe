@@ -1,4 +1,4 @@
-import { pusher } from "../config";
+import { pusher } from "@/socket/config";
 
 // ── Channel Types ──────────────────────────────────────────────────────────────
 export type PusherChannel =

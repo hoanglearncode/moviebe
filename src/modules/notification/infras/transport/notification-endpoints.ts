@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
-import { authMiddleware, requireActiveUser } from "../../../../share/middleware/auth";
-import { successResponse, errorResponse } from "../../../../share/transport/http-server";
-import { pushNotificationService } from "../../usecase/push-notification";
+import { authMiddleware, requireActiveUser } from "@/share/middleware/auth";
+import { successResponse, errorResponse } from "@/share/transport/http-server";
+import { pushNotificationService } from "@/modules/notification/usecase/push-notification";
 
 const router = Router();
 const guard = [authMiddleware, requireActiveUser];

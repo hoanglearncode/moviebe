@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { successResponse, errorResponse } from "../../../../share/transport/http-server";
-import { PagingDTO } from "../../../../share";
-import { CreateRoomPayloadDTO, UpdateRoomPayloadDTO } from "../../model/dto";
-import { IRoomRepository } from "../repository/room.repo";
+import { successResponse, errorResponse } from "@/share/transport/http-server";
+import { PagingDTO } from "@/share";
+import { CreateRoomPayloadDTO, UpdateRoomPayloadDTO } from "@/modules/partner/model/dto";
+import { IRoomRepository } from "@/modules/partner/infras/repository/room.repo";
 
 export class RoomManagementHttpService {
   constructor(private roomRepo: IRoomRepository) {}

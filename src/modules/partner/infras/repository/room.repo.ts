@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
-import { Room } from "../../model/model";
-import { CreateRoomDTO, UpdateRoomDTO } from "../../model/dto";
-import { PagingDTO } from "../../../../share";
+import { Room } from "@/modules/partner/model/model";
+import { CreateRoomDTO, UpdateRoomDTO } from "@/modules/partner/model/dto";
+import { PagingDTO } from "@/share";
 
 export interface IRoomRepository {
   create(partnerId: string, data: CreateRoomDTO): Promise<Room>;

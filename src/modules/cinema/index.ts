@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { successResponse, errorResponse } from "../../share/transport/http-server";
-import { CinemaUseCase } from "./usecase";
+import { successResponse, errorResponse } from "@/share/transport/http-server";
+import { CinemaUseCase } from "@/modules/cinema/usecase";
 
 export function buildCinemaRouter(prisma: PrismaClient): Router {
   const router = Router();

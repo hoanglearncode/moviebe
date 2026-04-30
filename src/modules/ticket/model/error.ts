@@ -1,5 +1,5 @@
-import { AppError } from "../../../share/transport/http-server";
-import { ErrorCode } from "../../../share/model/error-code";
+import { AppError } from "@/share/transport/http-server";
+import { ErrorCode } from "@/share/model/error-code";
 
 export class TicketNotFoundError extends AppError {
   constructor() {

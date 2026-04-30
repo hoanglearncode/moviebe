@@ -4,10 +4,10 @@ import {
   NotFoundError,
   UnauthorizedError,
   ValidationError,
-} from "../../../share/transport/http-server";
-import { ErrorCode } from "../../../share/model/error-code";
-import { ENV } from "../../../share/common/value";
-import { AuthHexagonDependencies, IAuthUseCase } from "../interface";
+} from "@/share/transport/http-server";
+import { ErrorCode } from "@/share/model/error-code";
+import { ENV } from "@/share/common/value";
+import { AuthHexagonDependencies, IAuthUseCase } from "@/modules/auth/interface";
 import {
   ChangePasswordDTO,
   ChangePasswordPayloadDTO,
@@ -29,10 +29,19 @@ import {
   VerifyEmailDTO,
   VerifyEmailPayloadDTO,
   RefreshTokenPayloadDTO,
-} from "../model/dto";
-import { AuthResponse, AuthSocialProfile, AuthUser } from "../model/model";
-import { AuthorizationUseCase } from "../../user/usecase/authorization.usecase";
-import { getSystemSettingsService } from "../../admin-system-settings";
+} from "@/modules/auth/model/dto";
+import { AuthResponse, AuthSocialProfile, AuthUser } from "@/modules/auth/model/model";
+import { AuthorizationUseCase } from "@/modules/admin-manage/admin-user/usecase/authorization.usecase";
+import { getSystemSettingsService } from "@/modules/admin-manage/admin-system-settings";
+import {
+  PERMANENT_LOGIN_LOCK_STAGE,
+  applyLoginLock,
+  clearLoginLockStateOnSuccess,
+  getLoginLockStage,
+  incrementLoginFailCount,
+  isLoginTemporarilyLocked,
+  setPermanentLoginLockStage,
+} from "@/modules/auth/shared/lock";
 
 export class AuthUseCase implements IAuthUseCase {
   constructor(private readonly dependencies: AuthHexagonDependencies) {}
@@ -175,18 +184,50 @@ export class AuthUseCase implements IAuthUseCase {
           throw new UnauthorizedError("Account is unavailable", ErrorCode.ACCOUNT_INACTIVE);
         }
 
+        if (await isLoginTemporarilyLocked(user.id)) {
+          throw new UnauthorizedError(
+            "Account is temporarily locked due to repeated failed login attempts",
+            ErrorCode.ACCOUNT_INACTIVE,
+          );
+        }
+
         const isPasswordMatched = await passwordHasher.compare(
           parsedData.data.password,
           user.password || "",
         );
 
         if (!isPasswordMatched) {
+          const attemptCount = await incrementLoginFailCount(user.id);
+          if (attemptCount >= 5) {
+            const currentStage = await getLoginLockStage(user.id);
+            const nextStage = Math.min(currentStage + 1, PERMANENT_LOGIN_LOCK_STAGE);
+
+            if (nextStage >= PERMANENT_LOGIN_LOCK_STAGE) {
+              await this.dependencies.userRepository.update(user.id, {
+                status: "LOCKED" as UserStatus,
+              });
+              await setPermanentLoginLockStage(user.id);
+              throw new UnauthorizedError(
+                "Account locked permanently due to repeated failed login attempts",
+                ErrorCode.ACCOUNT_INACTIVE,
+              );
+            }
+
+            await applyLoginLock(user.id, nextStage);
+            throw new UnauthorizedError(
+              "Account temporarily locked due to repeated failed login attempts",
+              ErrorCode.ACCOUNT_INACTIVE,
+            );
+          }
+
           throw new UnauthorizedError("Invalid credentials", ErrorCode.INVALID_CREDENTIALS);
         }
 
         if (!user.emailVerified) {
           throw new UnauthorizedError("Account is not verified", ErrorCode.ACCOUNT_NOT_VERIFIED);
         }
+
+        await clearLoginLockStateOnSuccess(user.id);
 
         const session = await tokenService.issueAuthSession(user, context, {
           remember: parsedData.data.remember,

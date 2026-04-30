@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
 import { ZodType } from "zod";
-import { IUserSetting } from "../../interface";
+import { IUserSetting } from "@/modules/system/setting/interface";
 import {
   UnauthorizedError,
   errorResponse,
   successResponse,
-} from "../../../../../share/transport/http-server";
-import { UserSettingUpdate } from "../../model/model";
+} from "@/share/transport/http-server";
+import { UserSettingUpdate } from "@/modules/system/setting/model/model";
 
 type AuthenticatedRequest = Request & {
   user?: {

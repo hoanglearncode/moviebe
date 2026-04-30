@@ -1,15 +1,15 @@
-import { PagingDTO } from "../../../share";
+import { PagingDTO } from "@/share";
 import {
   RegisterPartnerDTO,
   RequestCondDTO,
   SubmitPartnerRequestInput,
   UpdatePartnerDTO,
-} from "../model/dto";
+} from "@/modules/partner/model/dto";
 import {
   MyPartnerStatusResponse,
   PartnerRequestRow,
   PartnerRequestUpdateInput,
-} from "../model/model";
+} from "@/modules/partner/model/model";
 
 export interface IPartnerRequestRepository {
   create(data: SubmitPartnerRequestInput): Promise<PartnerRequestRow>;

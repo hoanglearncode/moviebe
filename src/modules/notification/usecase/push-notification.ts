@@ -1,8 +1,8 @@
 import { NotificationType } from "@prisma/client";
 import { randomUUID } from "crypto";
-import { prisma } from "../../../share/component/prisma";
-import { enqueueNotificationJob } from "../../../queue/config/notification.queue";
-import { logger } from "../../system/log/logger";
+import { prisma } from "@/share/component/prisma";
+import { enqueueNotificationJob } from "@/queue/config/notification.queue";
+import { logger } from "@/modules/system/log/logger";
 
 export type SendPushInput = {
   userId: string;

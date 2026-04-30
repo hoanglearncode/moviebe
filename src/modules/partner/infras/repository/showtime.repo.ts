@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
-import { IShowtimeRepository } from "../../interface/showtime.interface";
-import { Showtime } from "../../model/model";
-import { UpdateShowtimeDTO, ListShowtimesQueryDTO } from "../../model/dto";
-import { PagingDTO } from "../../../../share";
+import { IShowtimeRepository } from "@/modules/partner/interface/showtime.interface";
+import { Showtime } from "@/modules/partner/model/model";
+import { UpdateShowtimeDTO, ListShowtimesQueryDTO } from "@/modules/partner/model/dto";
+import { PagingDTO } from "@/share";
 
 export class ShowtimeRepository implements IShowtimeRepository {
   constructor(private readonly prisma: PrismaClient) {}

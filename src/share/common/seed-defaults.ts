@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
-import { logger } from "../../modules/system/log/logger";
-import { DEFAULT_SETTINGS, KNOWN_KEYS } from "../../modules/admin-system-settings/model/model";
-import { defaultSettings } from "./seed-setting";
-import { defaultPartnerSettings } from "../../modules/partner-setting/model/model";
+import { logger } from "@/modules/system/log/logger";
+import { DEFAULT_SETTINGS, KNOWN_KEYS } from "@/modules/admin-manage/admin-system-settings/model/model";
+import { defaultSettings } from "@/share/common/seed-setting";
+import { defaultPartnerSettings } from "@/modules/partner-manage/partner-setting/model/model";
 
 const BATCH = 500;
 

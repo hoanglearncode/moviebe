@@ -1,17 +1,17 @@
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
-import { AuthHttpService } from "./infras/transport/http-service";
-import { createAuthUserRepository } from "./infras/repository/repo";
-import { AuthUseCase } from "./usecase";
-import { HashService } from "./shared/hash";
-import { TokenService } from "./shared/token";
-import { AuthNotificationService } from "./shared/notification";
-import { SocialAuthService } from "./shared/social-auth";
-import { AvatarColorService } from "../user/shared/avatar-color";
-import { prisma } from "../../share/component/prisma";
-import { concurrentLockService } from "../../share/component/concurrent-lock";
-import { IAuthUseCase } from "./interface";
-import { createSettingUseCase } from "../system/setting";
+import { AuthHttpService } from "@/modules/auth/infras/transport/http-service";
+import { createAuthUserRepository } from "@/modules/auth/infras/repository/repo";
+import { AuthUseCase } from "@/modules/auth/usecase";
+import { HashService } from "@/modules/auth/shared/hash";
+import { TokenService } from "@/modules/auth/shared/token";
+import { AuthNotificationService } from "@/modules/auth/shared/notification";
+import { SocialAuthService } from "@/modules/auth/shared/social-auth";
+import { AvatarColorService } from "@/share/common/avatar-color";
+import { prisma } from "@/share/component/prisma";
+import { concurrentLockService } from "@/share/component/concurrent-lock";
+import { IAuthUseCase } from "@/modules/auth/interface";
+import { createSettingUseCase } from "@/modules/system/setting";
 
 const buildRouter = (useCase: IAuthUseCase) => {
   const httpService = new AuthHttpService(useCase);

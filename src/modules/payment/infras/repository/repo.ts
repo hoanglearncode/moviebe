@@ -1,14 +1,14 @@
 import { randomUUID } from "crypto";
 import { PrismaClient } from "@prisma/client";
-import { IPaymentRepository } from "../../interface";
-import { CreatePaymentResult, ConfirmMockResult, PaymentMethod } from "../../model/model";
-import { OrderWithDetails } from "../../../booking/model/model";
+import { IPaymentRepository } from "@/modules/payment/interface";
+import { CreatePaymentResult, ConfirmMockResult, PaymentMethod } from "@/modules/payment/model/model";
+import { OrderWithDetails } from "@/modules/booking/model/model";
 import {
   PaymentOrderNotFoundError,
   OrderNotPendingError,
   PaymentAccessDeniedError,
-} from "../../model/error";
-import { ENV } from "../../../../share/common/value";
+} from "@/modules/payment/model/error";
+import { ENV } from "@/share/common/value";
 
 export class PaymentRepository implements IPaymentRepository {
   constructor(private readonly prisma: PrismaClient) {}

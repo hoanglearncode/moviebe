@@ -1,8 +1,8 @@
-import { IShowtimeRepository } from "../interface/showtime.interface";
-import { ISeatRepository, ISeatManagementUseCase } from "../interface/seat.interface";
-import { IMovieRepository } from "../interface/movie.interface";
-import { Seat, SeatType, SeatStatus } from "../model/model";
-import { UpdateSeatDTO } from "../model/dto";
+import { IShowtimeRepository } from "@/modules/partner/interface/showtime.interface";
+import { ISeatRepository, ISeatManagementUseCase } from "@/modules/partner/interface/seat.interface";
+import { IMovieRepository } from "@/modules/partner/interface/movie.interface";
+import { Seat, SeatType, SeatStatus } from "@/modules/partner/model/model";
+import { UpdateSeatDTO } from "@/modules/partner/model/dto";
 
 export class SeatManagementUseCase implements ISeatManagementUseCase {
   constructor(

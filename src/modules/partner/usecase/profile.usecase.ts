@@ -1,6 +1,6 @@
-import { IPartnerRepository, IPartnerProfileUseCase } from "../interface/profile.interface";
-import { PartnerProfile } from "../model/model";
-import { UpdatePartnerDTO } from "../model/dto";
+import { IPartnerRepository, IPartnerProfileUseCase } from "@/modules/partner/interface/profile.interface";
+import { PartnerProfile } from "@/modules/partner/model/model";
+import { UpdatePartnerDTO } from "@/modules/partner/model/dto";
 
 export class PartnerProfileUseCase implements IPartnerProfileUseCase {
   constructor(private readonly partnerRepo: IPartnerRepository) {}

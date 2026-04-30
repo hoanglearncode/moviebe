@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { IUseCase } from "../interface";
-import { PagingDTO, PagingDTOSchema } from "../model/paging";
-import { ErrorCode } from "../model/error-code";
+import { IUseCase } from "@/share/interface";
+import { PagingDTO, PagingDTOSchema } from "@/share/model/paging";
+import { ErrorCode } from "@/share/model/error-code";
 
 export class AppError extends Error {
   constructor(

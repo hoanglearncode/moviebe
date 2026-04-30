@@ -1,9 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
-import { PaymentRepository } from "./infras/repository/repo";
-import { PaymentUseCase } from "./usecase/index";
-import { PaymentHttpService } from "./infras/transport/http-service";
-import { authMiddleware, requireActiveUser } from "../../share/middleware/auth";
+import { PaymentRepository } from "@/modules/payment/infras/repository/repo";
+import { PaymentUseCase } from "@/modules/payment/usecase";
+import { PaymentHttpService } from "@/modules/payment/infras/transport/http-service";
+import { authMiddleware, requireActiveUser } from "@/share/middleware/auth";
 
 export const buildPaymentRouter = (prisma: PrismaClient): Router => {
   const repo = new PaymentRepository(prisma);

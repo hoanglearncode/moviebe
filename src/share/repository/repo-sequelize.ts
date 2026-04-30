@@ -2,4 +2,4 @@ export {
   BaseCommandRepositoryPrisma,
   BaseQueryRepositoryPrisma,
   BaseRepositoryPrisma,
-} from "./repo-prisma";
+} from "@/share/repository/repo-prisma";

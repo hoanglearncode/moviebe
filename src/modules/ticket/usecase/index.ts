@@ -1,7 +1,7 @@
-import { IUserTicketRepository, IUserTicketUseCase } from "../interface";
-import { UserTicket, TicketListResult } from "../model/model";
-import { ListTicketsDTO } from "../model/dto";
-import { TicketNotFoundError, TicketAccessDeniedError } from "../model/error";
+import { IUserTicketRepository, IUserTicketUseCase } from "@/modules/ticket/interface";
+import { UserTicket, TicketListResult } from "@/modules/ticket/model/model";
+import { ListTicketsDTO } from "@/modules/ticket/model/dto";
+import { TicketNotFoundError, TicketAccessDeniedError } from "@/modules/ticket/model/error";
 
 export class UserTicketUseCase implements IUserTicketUseCase {
   constructor(private readonly repo: IUserTicketRepository) {}

@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { createPartnerRepository } from "../infras/repository/profile.repo";
-import { errorResponse } from "../../../share";
+import { createPartnerRepository } from "@/modules/partner/infras/repository/profile.repo";
+import { errorResponse } from "@/share";
 
 export function resolvePartnerIdMiddleware(partnerRepo: ReturnType<typeof createPartnerRepository>) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {

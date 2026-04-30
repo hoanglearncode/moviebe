@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
-import { successResponse, errorResponse } from "../../../../share/transport/http-server";
+import { successResponse, errorResponse } from "@/share/transport/http-server";
 import {
   IShowtimeManagementUseCase,
-} from "../../interface";
+} from "@/modules/partner/interface";
 import {
   CreateShowtimeDTO,
   UpdateShowtimeDTO,
   ListShowtimesQueryDTO,
-} from "../../model/dto";
+} from "@/modules/partner/model/dto";
 
 export class ShowtimeManagementHttpService {
   constructor(private useCase: IShowtimeManagementUseCase) {}

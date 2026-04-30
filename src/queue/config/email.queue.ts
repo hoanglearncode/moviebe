@@ -1,6 +1,6 @@
 import { Queue } from "bullmq";
-import { createRedisConnection, defaultJobOptions, isQueueEnabled, queuePrefix } from "./config";
-import { EmailJobData, EmailJobName, QueueName } from "../modules/types";
+import { createRedisConnection, defaultJobOptions, isQueueEnabled, queuePrefix } from "@/queue/config/config";
+import { EmailJobData, EmailJobName, QueueName } from "@/queue/modules/types";
 
 let emailQueue: Queue<EmailJobData, void, EmailJobName> | null = null;
 

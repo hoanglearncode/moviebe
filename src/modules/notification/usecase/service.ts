@@ -1,10 +1,10 @@
 import { EmailNotificationEvent, EmailTemplate } from "@prisma/client";
-import { enqueueEmailJob } from "../../../queue/config/email.queue";
-import { logger } from "../../system/log/logger";
+import { enqueueEmailJob } from "@/queue/config/email.queue";
+import { logger } from "@/modules/system/log/logger";
 import {
   IEmailTemplateRepository,
   IScheduledEmailRepository,
-} from "../infras/repository/repository";
+} from "@/modules/notification/infras/repository/repository";
 
 export class EmailNotificationService {
   constructor(

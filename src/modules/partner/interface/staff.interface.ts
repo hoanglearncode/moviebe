@@ -1,5 +1,5 @@
-import { IRepository } from "../../../share/interface";
-import { PartnerStaff } from "../model/model";
+import { IRepository } from "@/share/interface";
+import { PartnerStaff } from "@/modules/partner/model/model";
 
 export interface IStaffRepo extends IRepository<
   PartnerStaff,

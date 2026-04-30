@@ -1,13 +1,13 @@
 import { NextFunction, Request, RequestHandler, Response } from "express";
 import jwt from "jsonwebtoken";
 import { Role, UserStatus } from "@prisma/client";
-import { ENV } from "../common/value";
-import { ErrorCode } from "../model/error-code";
-import { prisma } from "../component/prisma";
-import { errorResponse } from "../transport/http-server";
-import { logger } from "../../modules/system/log/logger";
-import { AuthorizationUseCase } from "../../modules/user/usecase/authorization.usecase";
-import { PermissionCode } from "../security/permissions";
+import { ENV } from "@/share/common/value";
+import { ErrorCode } from "@/share/model/error-code";
+import { prisma } from "@/share/component/prisma";
+import { errorResponse } from "@/share/transport/http-server";
+import { logger } from "@/modules/system/log/logger";
+import { AuthorizationUseCase } from "@/modules/admin-manage/admin-user/usecase/authorization.usecase";
+import { PermissionCode } from "@/share/security/permissions";
 
 const authorizationUseCase = new AuthorizationUseCase();
 

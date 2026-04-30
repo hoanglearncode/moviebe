@@ -3,10 +3,10 @@ import {
   ITransactionRepository,
   IWithdrawalRepository,
   IWalletRepository,
-} from "../../interface/finance.interface";
-import { Transaction, Withdrawal, PartnerWallet, WithdrawalListResponse } from "../../model/model";
-import { ListWithdrawalsQueryDTO } from "../../model/dto";
-import { PagingDTO } from "../../../../share";
+} from "@/modules/partner/interface/finance.interface";
+import { Transaction, Withdrawal, PartnerWallet, WithdrawalListResponse } from "@/modules/partner/model/model";
+import { ListWithdrawalsQueryDTO } from "@/modules/partner/model/dto";
+import { PagingDTO } from "@/share";
 
 export class TransactionRepository implements ITransactionRepository {
   constructor(private readonly prisma: PrismaClient) {}

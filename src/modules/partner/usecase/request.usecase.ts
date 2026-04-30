@@ -1,19 +1,19 @@
 import { randomUUID } from "crypto";
-import { ConflictError, NotFoundError, PagingDTO, ValidationError } from "../../../share";
+import { ConflictError, NotFoundError, PagingDTO, ValidationError } from "@/share";
 import {
   IPartnerRequestRepository,
   IPartnerRequestUseCase,
-} from "../interface/partner-request.interface";
+} from "@/modules/partner/interface/partner-request.interface";
 import {
   RegisterPartnerDTO,
   RequestCondDTO,
   SubmitPartnerRequestSchema,
   UpdatePartnerDTO,
-} from "../model/dto";
-import { MyPartnerStatusResponse, PartnerRequestRow, StaffRole } from "../model/model";
-import { IWalletRepository } from "../interface/finance.interface";
-import { IPartnerRepository } from "../interface/profile.interface";
-import { IStaffRepo } from "../interface/staff.interface";
+} from "@/modules/partner/model/dto";
+import { MyPartnerStatusResponse, PartnerRequestRow, StaffRole } from "@/modules/partner/model/model";
+import { IWalletRepository } from "@/modules/partner/interface/finance.interface";
+import { IPartnerRepository } from "@/modules/partner/interface/profile.interface";
+import { IStaffRepo } from "@/modules/partner/interface/staff.interface";
 import { ISessionRepository, IUserRepository } from "../../user/interface";
 
 export class RequestUseCase implements IPartnerRequestUseCase {

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { IPaymentUseCase } from "../../interface";
-import { CreatePaymentDTOSchema, ConfirmMockPaymentDTOSchema } from "../../model/dto";
-import { successResponse, errorResponse } from "../../../../share/transport/http-server";
+import { IPaymentUseCase } from "@/modules/payment/interface";
+import { CreatePaymentDTOSchema, ConfirmMockPaymentDTOSchema } from "@/modules/payment/model/dto";
+import { successResponse, errorResponse } from "@/share/transport/http-server";
 
 function getParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;

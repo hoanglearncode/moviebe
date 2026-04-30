@@ -1,13 +1,13 @@
 import { randomUUID } from "crypto";
 import { PrismaClient } from "@prisma/client";
-import { IBookingRepository } from "../../interface";
-import { Order, OrderWithDetails, BookingTicket } from "../../model/model";
-import { LockSeatsDTO, LockSeatsResult } from "../../model/dto";
+import { IBookingRepository } from "@/modules/booking/interface";
+import { Order, OrderWithDetails, BookingTicket } from "@/modules/booking/model/model";
+import { LockSeatsDTO, LockSeatsResult } from "@/modules/booking/model/dto";
 import {
   ShowtimeNotFoundError,
   ShowtimeNotAvailableError,
   SeatsNotAvailableError,
-} from "../../model/error";
+} from "@/modules/booking/model/error";
 
 export class BookingRepository implements IBookingRepository {
   constructor(private readonly prisma: PrismaClient) {}

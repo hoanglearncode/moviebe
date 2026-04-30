@@ -5,11 +5,11 @@
  * all classes so existing import paths continue to work.
  */
 
-export { PartnerProfileUseCase } from "./profile.usecase";
-export { RequestUseCase } from "./request.usecase";
-export { MovieManagementUseCase } from "./movie.usecase";
-export { ShowtimeManagementUseCase } from "./showtime.usecase";
-export { SeatManagementUseCase } from "./seat.usecase";
-export { TicketCheckInUseCase } from "./ticket.usecase";
-export { PartnerFinanceUseCase } from "./finance.usecase";
-export { PartnerDashboardUseCase } from "./dashboard.usecase";
+export { PartnerProfileUseCase } from "@/modules/partner/usecase/profile.usecase";
+export { RequestUseCase } from "@/modules/partner/usecase/request.usecase";
+export { MovieManagementUseCase } from "@/modules/partner/usecase/movie.usecase";
+export { ShowtimeManagementUseCase } from "@/modules/partner/usecase/showtime.usecase";
+export { SeatManagementUseCase } from "@/modules/partner/usecase/seat.usecase";
+export { TicketCheckInUseCase } from "@/modules/partner/usecase/ticket.usecase";
+export { PartnerFinanceUseCase } from "@/modules/partner/usecase/finance.usecase";
+export { PartnerDashboardUseCase } from "@/modules/partner/usecase/dashboard.usecase";

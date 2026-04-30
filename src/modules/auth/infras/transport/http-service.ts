@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { BaseHttpService } from "../../../../share/transport/http-server";
-import { IAuthUseCase } from "../../interface";
+import { BaseHttpService } from "@/share/transport/http-server";
+import { IAuthUseCase } from "@/modules/auth/interface";
 import {
   ChangePasswordDTO,
   FacebookTO,
@@ -12,7 +12,7 @@ import {
   RegisterDTO,
   ResendVerificationDTO,
   VerifyEmailDTO,
-} from "../../model/dto";
+} from "@/modules/auth/model/dto";
 
 export class AuthHttpService extends BaseHttpService<any, RegisterDTO, any, any> {
   private readonly authUseCase: IAuthUseCase;

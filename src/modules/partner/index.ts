@@ -4,8 +4,8 @@ import {
   authMiddleware,
   requireActiveUser,
   requireRole,
-} from "../../share/middleware/auth";
-import { resolvePartnerIdMiddleware } from "./shared/middleware";
+} from "@/share/middleware/auth";
+import { resolvePartnerIdMiddleware } from "@/modules/partner/shared/middleware";
 import {
   createPartnerRepository,
   createMovieRepository,
@@ -18,9 +18,9 @@ import {
   createCheckInRepository,
   createWalletRepository,
   createStaffRepository,
-} from "./infras/repository/repo";
-import { createPartnerRequestRepository } from "./infras/repository/partner-request-repo";
-import { createServerRepository } from "./infras/repository/services.repo";
+} from "@/modules/partner/infras/repository/repo";
+import { createPartnerRequestRepository } from "@/modules/partner/infras/repository/partner-request-repo";
+import { createServerRepository } from "@/modules/partner/infras/repository/services.repo";
 import {
   PartnerProfileUseCase,
   RequestUseCase,
@@ -30,23 +30,23 @@ import {
   TicketCheckInUseCase,
   PartnerFinanceUseCase,
   PartnerDashboardUseCase,
-} from "./usecase";
-import { ServicePartnerUser } from "./usecase/service.usecase";
-import { PartnerProfileHttpService } from "./infras/transport/profile.http-service";
-import { MovieManagementHttpService } from "./infras/transport/movie.http-service";
-import { successResponse, errorResponse } from "../../share/transport/http-server";
-import { ShowtimeManagementHttpService } from "./infras/transport/showtime.http-service";
-import { RoomManagementHttpService } from "./infras/transport/room.http-services";
-import { SeatManagementHttpService } from "./infras/transport/seat.http-services";
-import { TicketCheckInHttpService } from "./infras/transport/ticket.http-service";
-import { PartnerFinanceHttpService } from "./infras/transport/finance.http-service";
-import { PartnerDashboardHttpService } from "./infras/transport/dashboard.http-service";
-import { PartnerRequestHttpService } from "./infras/transport/partner-request.http-service";
-import { ServicesHttpService } from "./infras/transport/service-http-services";
-import { PartnerNotificationService } from "./shared/notification";
-import { createSessionRepository } from "../user/infras/repository/session-repo";
-import { createUserRepository } from "../user/infras/repository/user-repo";
-import { buildPartnerSettingRouter } from "../partner-setting";
+} from "@/modules/partner/usecase";
+import { ServicePartnerUser } from "@/modules/partner/usecase/service.usecase";
+import { PartnerProfileHttpService } from "@/modules/partner/infras/transport/profile.http-service";
+import { MovieManagementHttpService } from "@/modules/partner/infras/transport/movie.http-service";
+import { successResponse, errorResponse } from "@/share/transport/http-server";
+import { ShowtimeManagementHttpService } from "@/modules/partner/infras/transport/showtime.http-service";
+import { RoomManagementHttpService } from "@/modules/partner/infras/transport/room.http-services";
+import { SeatManagementHttpService } from "@/modules/partner/infras/transport/seat.http-services";
+import { TicketCheckInHttpService } from "@/modules/partner/infras/transport/ticket.http-service";
+import { PartnerFinanceHttpService } from "@/modules/partner/infras/transport/finance.http-service";
+import { PartnerDashboardHttpService } from "@/modules/partner/infras/transport/dashboard.http-service";
+import { PartnerRequestHttpService } from "@/modules/partner/infras/transport/partner-request.http-service";
+import { ServicesHttpService } from "@/modules/partner/infras/transport/service-http-services";
+import { PartnerNotificationService } from "@/modules/partner/shared/notification";
+import { createSessionRepository } from "@/modules/admin-manage/admin-user/infras/repository/session-repo";
+import { createUserRepository } from "@/modules/admin-manage/admin-user/infras/repository/user-repo";
+import { buildPartnerSettingRouter } from "@/modules/partner-manage/partner-setting";
 
 export const buildPartnerRequestUserRouter = (prisma: PrismaClient): Router => {
   const router = Router();

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { successResponse, errorResponse } from "../../../../share/transport/http-server";
-import { ISeatManagementUseCase } from "../../interface";
-import { UpdateSeatDTO } from "../../model/dto";
+import { successResponse, errorResponse } from "@/share/transport/http-server";
+import { ISeatManagementUseCase } from "@/modules/partner/interface";
+import { UpdateSeatDTO } from "@/modules/partner/model/dto";
 
 
 

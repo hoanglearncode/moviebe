@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
-import { IPublicMovieRepository, MovieSectionsResponse } from "../../interface";
-import { Movie, PublicShowtime, PublicShowtimeSeatMap } from "../../model/model";
-import { getMovieRepo } from "./dto";
-import { PagingDTO } from "../../../../share";
+import { IPublicMovieRepository, MovieSectionsResponse } from "@/modules/movie/interface";
+import { Movie, PublicShowtime, PublicShowtimeSeatMap } from "@/modules/movie/model/model";
+import { getMovieRepo } from "@/modules/movie/infras/repository/dto";
+import { PagingDTO } from "@/share";
 
 export class MovieRepository implements IPublicMovieRepository {
   constructor(private readonly prisma: PrismaClient) {

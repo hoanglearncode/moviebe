@@ -1,5 +1,5 @@
 import Pusher from "pusher";
-import { ENV } from "../../share/common/value";
+import { ENV } from "@/share/common/value";
 
 const requiredEnvs = ["PUSHER_APP_ID", "PUSHER_KEY", "PUSHER_SECRET", "PUSHER_CLUSTER"] as const;
 

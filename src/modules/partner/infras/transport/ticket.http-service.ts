@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
-import { successResponse, errorResponse } from "../../../../share/transport/http-server";
-import { ITicketCheckInUseCase } from "../../interface";
+import { successResponse, errorResponse } from "@/share/transport/http-server";
+import { ITicketCheckInUseCase } from "@/modules/partner/interface";
 import {
   CheckInDTO,
   ListTicketsQueryDTO 
-} from "../../model/dto";
+} from "@/modules/partner/model/dto";
 
 
 

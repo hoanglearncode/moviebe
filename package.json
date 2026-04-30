@@ -7,8 +7,8 @@
     "dev": "tsx watch src/index.ts",
     "dev:worker": "tsx watch src/queue/worker.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
-    "start:worker": "node dist/queue/worker.js",
+    "start": "node --loader tsconfig-paths/esm-loader dist/index.js",
+    "start:worker": "node --loader tsconfig-paths/esm-loader dist/queue/worker.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -53,7 +53,8 @@
     "ua-parser-js": "^2.0.9",
     "uuid": "^13.0.0",
     "winston": "^3.19.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "tsconfig-paths": "^4.2.0"
   },
   "devDependencies": {
     "@mermaid-js/mermaid-cli": "^11.12.0",

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { IPartnerServicesUseCase } from "../../interface";
+import { IPartnerServicesUseCase } from "@/modules/partner/interface";
 
 export class ServicesHttpService {
   constructor(private useCase: IPartnerServicesUseCase) {}

@@ -1,6 +1,6 @@
-import { DefaultUserSetting } from "../../modules/system/setting/model/model";
-import { defaultPartnerSettings } from "../../modules/partner-setting/model/model";
-import { DEFAULT_SETTINGS } from "../../modules/admin-system-settings/model/model";
+import { DefaultUserSetting } from "@/modules/system/setting/model/model";
+import { defaultPartnerSettings } from "@/modules/partner-manage/partner-setting/model/model";
+import { DEFAULT_SETTINGS } from "@/modules/admin-manage/admin-system-settings/model/model";
 
 // ── User ──────────────────────────────────────────────────────────────────────
 

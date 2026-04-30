@@ -1,13 +1,15 @@
-import { logger } from "../modules/system/log/logger";
-import { areQueueWorkersEnabled, isQueueEnabled, queuePrefix } from "./config/config";
-import { closeBroadcastQueue } from "./config/broadcast.queue";
-import { closeEmailQueue } from "./config/email.queue";
-import { closeNotificationQueue } from "./config/notification.queue";
-import { closeBroadcastWorker, startBroadcastWorker } from "./worker/broadcast.worker";
-import { closeEmailWorker, startEmailWorker } from "./worker/email.worker";
-import { closeNotificationWorker, startNotificationWorker } from "./worker/notification.worker";
-import { closeScheduledEmailWorker, startScheduledEmailWorker } from "./worker/scheduled-email.worker";
-import { closeSeatCleanupWorker, startSeatCleanupWorker } from "./worker/seat-cleanup.worker";
+import { logger } from "@/modules/system/log/logger";
+import { areQueueWorkersEnabled, isQueueEnabled, queuePrefix } from "@/queue/config/config";
+import { closeBroadcastQueue } from "@/queue/config/broadcast.queue";
+import { closeEmailQueue } from "@/queue/config/email.queue";
+import { closeLockQueue } from "@/queue/config/lock.queue";
+import { closeNotificationQueue } from "@/queue/config/notification.queue";
+import { closeBroadcastWorker, startBroadcastWorker } from "@/queue/worker/broadcast.worker";
+import { closeEmailWorker, startEmailWorker } from "@/queue/worker/email.worker";
+import { closeLockWorker, startLockWorker } from "@/queue/worker/lock.work";
+import { closeNotificationWorker, startNotificationWorker } from "@/queue/worker/notification.worker";
+import { closeScheduledEmailWorker, startScheduledEmailWorker } from "@/queue/worker/scheduled-email.worker";
+import { closeSeatCleanupWorker, startSeatCleanupWorker } from "@/queue/worker/seat-cleanup.worker";
 
 export const initializeQueueInfrastructure = async (): Promise<void> => {
   if (!isQueueEnabled) {
@@ -23,6 +25,7 @@ export const initializeQueueInfrastructure = async (): Promise<void> => {
   startEmailWorker();
   startNotificationWorker();
   startBroadcastWorker();
+  startLockWorker();
   startSeatCleanupWorker();
   await startScheduledEmailWorker();
 };
@@ -35,17 +38,21 @@ export const shutdownQueueInfrastructure = async (): Promise<void> => {
     closeNotificationQueue(),
     closeBroadcastWorker(),
     closeBroadcastQueue(),
+    closeLockWorker(),
+    closeLockQueue(),
     closeScheduledEmailWorker(),
     closeSeatCleanupWorker(),
   ]);
   logger.info("Queue infrastructure shut down");
 };
 
-export * from "./config/config";
-export * from "./modules/types";
-export * from "./config/email.queue";
-export * from "./config/notification.queue";
-export * from "./config/broadcast.queue";
-export * from "./worker/email.worker";
-export * from "./worker/notification.worker";
-export * from "./worker/broadcast.worker";
+export * from "@/queue/config/config";
+export * from "@/queue/modules/types";
+export * from "@/queue/config/email.queue";
+export * from "@/queue/config/notification.queue";
+export * from "@/queue/config/broadcast.queue";
+export * from "@/queue/config/lock.queue";
+export * from "@/queue/worker/email.worker";
+export * from "@/queue/worker/notification.worker";
+export * from "@/queue/worker/broadcast.worker";
+export * from "@/queue/worker/lock.work";

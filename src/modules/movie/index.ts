@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
-import { MovieRepository } from "./infras/repository/repo";
-import { PublicMovieUseCase } from "./usecase/index";
-import { PublicMovieHttpService } from "./infras/transport/http-service";
+import { MovieRepository } from "@/modules/movie/infras/repository/repo";
+import { PublicMovieUseCase } from "@/modules/movie/usecase";
+import { PublicMovieHttpService } from "@/modules/movie/infras/transport/http-service";
 
 export const buildPublicMovieRouter = (prisma: PrismaClient): Router => {
   const movieRepo = new MovieRepository(prisma);

@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { getUserSettingModel } from "./dto";
+import { getUserSettingModel } from "@/modules/system/setting/infras/repository/dto";
 
 export class PrismaUserSettingsRepository {
   private readonly model: ReturnType<typeof getUserSettingModel>;

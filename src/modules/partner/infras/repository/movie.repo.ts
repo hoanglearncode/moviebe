@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
-import { IMovieRepository } from "../../interface/movie.interface";
-import { Movie, CastMember, AdminMovieRow, AdminMovieStats } from "../../model/model";
-import { ListMoviesQueryDTO } from "../../model/dto";
-import { PagingDTO } from "../../../../share";
+import { IMovieRepository } from "@/modules/partner/interface/movie.interface";
+import { Movie, CastMember, AdminMovieRow, AdminMovieStats } from "@/modules/partner/model/model";
+import { ListMoviesQueryDTO } from "@/modules/partner/model/dto";
+import { PagingDTO } from "@/share";
 
 // ─── Mapper ───────────────────────────────────────────────────────────────────
 

@@ -1,9 +1,9 @@
 import { OAuth2Client } from "google-auth-library";
-import { ISocialAuthService } from "../interface";
-import { AuthSocialProfile } from "../model/model";
-import { ENV } from "../../../share/common/value";
-import { UnauthorizedError, ValidationError } from "../../../share/transport/http-server";
-import { ErrorCode } from "../../../share/model/error-code";
+import { ISocialAuthService } from "@/modules/auth/interface";
+import { AuthSocialProfile } from "@/modules/auth/model/model";
+import { ENV } from "@/share/common/value";
+import { UnauthorizedError, ValidationError } from "@/share/transport/http-server";
+import { ErrorCode } from "@/share/model/error-code";
 
 type GoogleUserInfoResponse = {
   email?: string;

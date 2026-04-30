@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
-import { IPartnerRepository } from "../../interface/profile.interface";
-import { PartnerProfile } from "../../model/model";
-import { UpdatePartnerDTO } from "../../model/dto";
-import { PagingDTO } from "../../../../share";
+import { IPartnerRepository } from "@/modules/partner/interface/profile.interface";
+import { PartnerProfile } from "@/modules/partner/model/model";
+import { UpdatePartnerDTO } from "@/modules/partner/model/dto";
+import { PagingDTO } from "@/share";
 
 export class PartnerRepository implements IPartnerRepository {
   constructor(private readonly prisma: PrismaClient) {}

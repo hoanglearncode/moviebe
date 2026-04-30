@@ -3,10 +3,10 @@ import {
   ITicketRepository,
   ICheckInRepository,
   ITicketCheckInUseCase,
-} from "../interface/ticket.interface";
-import { IShowtimeRepository } from "../interface/showtime.interface";
-import { Ticket, CheckIn, TicketListResponse } from "../model/model";
-import { CheckInDTO, ListTicketsQueryDTO } from "../model/dto";
+} from "@/modules/partner/interface/ticket.interface";
+import { IShowtimeRepository } from "@/modules/partner/interface/showtime.interface";
+import { Ticket, CheckIn, TicketListResponse } from "@/modules/partner/model/model";
+import { CheckInDTO, ListTicketsQueryDTO } from "@/modules/partner/model/dto";
 
 export class TicketCheckInUseCase implements ITicketCheckInUseCase {
   constructor(

@@ -1,5 +1,5 @@
 import nodemailer, { Transporter } from "nodemailer";
-import { ENV } from "../common/value";
+import { ENV } from "@/share/common/value";
 
 export type SendMailInput = {
   to: string;

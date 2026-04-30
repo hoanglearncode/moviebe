@@ -1,10 +1,10 @@
 import { PrismaClient } from "@prisma/client";
 import { Router, Request, Response } from "express";
-import { UserTicketRepository } from "./infras/repository/repo";
-import { UserTicketUseCase } from "./usecase/index";
-import { UserTicketHttpService } from "./infras/transport/http-service";
-import { authMiddleware, requireActiveUser } from "../../share/middleware/auth";
-import { successResponse, errorResponse } from "../../share/transport/http-server";
+import { UserTicketRepository } from "@/modules/ticket/infras/repository/repo";
+import { UserTicketUseCase } from "@/modules/ticket/usecase";
+import { UserTicketHttpService } from "@/modules/ticket/infras/transport/http-service";
+import { authMiddleware, requireActiveUser } from "@/share/middleware/auth";
+import { successResponse, errorResponse } from "@/share/transport/http-server";
 
 export const buildTicketRouter = (prisma: PrismaClient): Router => {
   const repo = new UserTicketRepository(prisma);

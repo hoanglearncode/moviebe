@@ -1,6 +1,6 @@
-import { IRepository } from "../../../share/interface";
-import { Seat } from "../model/model";
-import { UpdateSeatDTO } from "../model/dto";
+import { IRepository } from "@/share/interface";
+import { Seat } from "@/modules/partner/model/model";
+import { UpdateSeatDTO } from "@/modules/partner/model/dto";
 
 // ─── Repository Port ──────────────────────────────────────────────────────────
 

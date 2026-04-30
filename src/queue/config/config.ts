@@ -1,6 +1,6 @@
 import IORedis, { RedisOptions } from "ioredis";
 import { JobsOptions } from "bullmq";
-import { ENV } from "../../share/common/value";
+import { ENV } from "@/share/common/value";
 
 const parseQueueBoolean = (value?: string): boolean => value === "true";
 

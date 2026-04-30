@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import { BaseHttpService, successResponse, errorResponse } from "../../../../share/transport/http-server";
-import { IPublicMovieUseCase } from "../../interface";
-import { MovieCondDTOSchema } from "../../model/dto";
-import { Movie } from "../../model/model";
-import { PagingDTOSchema } from "../../../../share";
+import { BaseHttpService, successResponse, errorResponse } from "@/share/transport/http-server";
+import { IPublicMovieUseCase } from "@/modules/movie/interface";
+import { MovieCondDTOSchema } from "@/modules/movie/model/dto";
+import { Movie } from "@/modules/movie/model/model";
+import { PagingDTOSchema } from "@/share";
 
 function getParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;

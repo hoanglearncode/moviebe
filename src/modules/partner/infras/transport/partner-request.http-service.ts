@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { logger } from "../../../system/log/logger";
-import { AppError, errorResponse, successResponse } from "../../../../share/transport/http-server";
-import { IPartnerRequestUseCase } from "../../interface/partner-request.interface";
-import { RequestCondDTOSchema } from "../../model/dto";
-import { writeAuditLog } from "../../../admin-audit-logs/helper";
+import { logger } from "@/modules/system/log/logger";
+import { AppError, errorResponse, successResponse } from "@/share/transport/http-server";
+import { IPartnerRequestUseCase } from "@/modules/partner/interface/partner-request.interface";
+import { RequestCondDTOSchema } from "@/modules/partner/model/dto";
+import { writeAuditLog } from "@/modules/admin-manage/admin-audit-logs/helper";
 
 export class PartnerRequestHttpService {
   constructor(

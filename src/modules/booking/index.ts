@@ -1,9 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
-import { BookingRepository } from "./infras/repository/repo";
-import { BookingUseCase } from "./usecase/index";
-import { BookingHttpService } from "./infras/transport/http-service";
-import { authMiddleware, requireActiveUser } from "../../share/middleware/auth";
+import { BookingRepository } from "@/modules/booking/infras/repository/repo";
+import { BookingUseCase } from "@/modules/booking/usecase";
+import { BookingHttpService } from "@/modules/booking/infras/transport/http-service";
+import { authMiddleware, requireActiveUser } from "@/share/middleware/auth";
 
 export const buildBookingRouter = (prisma: PrismaClient): Router => {
   const repo = new BookingRepository(prisma);

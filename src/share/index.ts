@@ -1,25 +1,25 @@
 // Common
-export * from "./common/value";
+export * from "@/share/common/value";
 
 // Model
-export * from "./model/base-error";
-export * from "./model/base-model";
-export * from "./model/paging";
-export * from "./model/error-code";
+export * from "@/share/model/base-error";
+export * from "@/share/model/base-model";
+export * from "@/share/model/paging";
+export * from "@/share/model/error-code";
 
 // Interface
-export * from "./interface";
+export * from "@/share/interface";
 
 // Component
-export * from "./component/prisma";
-export * from "./component/mail";
-export * from "./component/concurrent-lock";
+export * from "@/share/component/prisma";
+export * from "@/share/component/mail";
+export * from "@/share/component/concurrent-lock";
 
 // Repository
-export * from "./repository/generic-prisma-repo";
+export * from "@/share/repository/generic-prisma-repo";
 
 // Transport
-export * from "./transport/http-server";
+export * from "@/share/transport/http-server";
 
 // Container
-export * from "./container";
+export * from "@/share/container";

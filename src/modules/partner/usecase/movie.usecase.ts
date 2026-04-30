@@ -1,9 +1,9 @@
 import { randomUUID } from "crypto";
-import { IPartnerRepository } from "../interface/profile.interface";
-import { IMovieRepository, IMovieManagementUseCase } from "../interface/movie.interface";
-import { IShowtimeRepository } from "../interface/showtime.interface";
-import { ISeatRepository } from "../interface/seat.interface";
-import { IRoomRepository } from "../infras/repository/room.repo";
+import { IPartnerRepository } from "@/modules/partner/interface/profile.interface";
+import { IMovieRepository, IMovieManagementUseCase } from "@/modules/partner/interface/movie.interface";
+import { IShowtimeRepository } from "@/modules/partner/interface/showtime.interface";
+import { ISeatRepository } from "@/modules/partner/interface/seat.interface";
+import { IRoomRepository } from "@/modules/partner/infras/repository/room.repo";
 import {
   PartnerProfile,
   Movie,
@@ -13,8 +13,8 @@ import {
   Seat,
   SeatType,
   SeatStatus,
-} from "../model/model";
-import { CreateMovieDTO, UpdateMovieDTO, ListMoviesQueryDTO, ShowtimePlanDTO } from "../model/dto";
+} from "@/modules/partner/model/model";
+import { CreateMovieDTO, UpdateMovieDTO, ListMoviesQueryDTO, ShowtimePlanDTO } from "@/modules/partner/model/dto";
 
 export class MovieManagementUseCase implements IMovieManagementUseCase {
   constructor(

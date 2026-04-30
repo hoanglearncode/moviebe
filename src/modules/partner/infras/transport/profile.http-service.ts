@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { successResponse, errorResponse } from "../../../../share/transport/http-server";
-import { IPartnerProfileUseCase } from "../../interface/profile.interface";
-import { UpdatePartnerDTO } from "../../model/dto";
+import { successResponse, errorResponse } from "@/share/transport/http-server";
+import { IPartnerProfileUseCase } from "@/modules/partner/interface/profile.interface";
+import { UpdatePartnerDTO } from "@/modules/partner/model/dto";
 
 export class PartnerProfileHttpService {
   constructor(private useCase: IPartnerProfileUseCase) {}

@@ -1,8 +1,8 @@
 import { PrismaClient, PartnerRequest } from "@prisma/client";
-import { IPartnerRequestRepository } from "../../interface/partner-request.interface";
-import { PartnerRequestRow, PartnerRequestUpdateInput } from "../../model/model";
-import { SubmitPartnerRequestInput } from "../../model/dto";
-import { PagingDTO } from "../../../../share";
+import { IPartnerRequestRepository } from "@/modules/partner/interface/partner-request.interface";
+import { PartnerRequestRow, PartnerRequestUpdateInput } from "@/modules/partner/model/model";
+import { SubmitPartnerRequestInput } from "@/modules/partner/model/dto";
+import { PagingDTO } from "@/share";
 
 export class PartnerRequestRepository implements IPartnerRequestRepository {
   constructor(private prismaClient: PrismaClient) {}

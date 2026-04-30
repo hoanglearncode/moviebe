@@ -1,6 +1,6 @@
-import { PagingDTO } from "../../../share";
-import { Movie, PublicShowtime, PublicShowtimeSeatMap } from "../model/model";
-import { MovieCondDTO } from "../model/dto";
+import { PagingDTO } from "@/share";
+import { Movie, PublicShowtime, PublicShowtimeSeatMap } from "@/modules/movie/model/model";
+import { MovieCondDTO } from "@/modules/movie/model/dto";
 
 export type MovieSectionsResponse = {
   coming: Movie[];

@@ -1,7 +1,7 @@
 import { Queue, Worker, QueueEvents } from "bullmq";
-import { prisma } from "../../share/component/prisma";
-import { logger } from "../../modules/system/log/logger";
-import { queueConnectionOptions, queuePrefix, areQueueWorkersEnabled } from "../config/config";
+import { prisma } from "@/share/component/prisma";
+import { logger } from "@/modules/system/log/logger";
+import { queueConnectionOptions, queuePrefix, areQueueWorkersEnabled } from "@/queue/config/config";
 
 const QUEUE_NAME = `${queuePrefix}-seat-cleanup`;
 

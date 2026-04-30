@@ -1,14 +1,14 @@
 import { Job, Worker } from "bullmq";
-import { prisma } from "../../share/component/prisma";
-import { logger } from "../../modules/system/log/logger";
-import { PusherService } from "../../socket/services";
+import { prisma } from "@/share/component/prisma";
+import { logger } from "@/modules/system/log/logger";
+import { PusherService } from "@/socket/services";
 import {
   areQueueWorkersEnabled,
   createRedisConnection,
   isQueueEnabled,
   queuePrefix,
-} from "../config/config";
-import { NotificationJobData, NotificationJobName, QueueName } from "../modules/types";
+} from "@/queue/config/config";
+import { NotificationJobData, NotificationJobName, QueueName } from "@/queue/modules/types";
 
 let notificationWorker: Worker<NotificationJobData, void, NotificationJobName> | null = null;
 

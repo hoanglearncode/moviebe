@@ -1,6 +1,6 @@
-import { IRepository } from "../../../share/interface";
-import { PartnerProfile } from "../model/model";
-import { UpdatePartnerDTO } from "../model/dto";
+import { IRepository } from "@/share/interface";
+import { PartnerProfile } from "@/modules/partner/model/model";
+import { UpdatePartnerDTO } from "@/modules/partner/model/dto";
 
 // ─── Repository Port ──────────────────────────────────────────────────────────
 

@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { successResponse, errorResponse } from "../../../../share/transport/http-server";
-import { IPartnerFinanceUseCase } from "../../interface";
+import { successResponse, errorResponse } from "@/share/transport/http-server";
+import { IPartnerFinanceUseCase } from "@/modules/partner/interface";
 import {
   CreateWithdrawalDTO,
   ListWithdrawalsQueryDTO,
   RevenueQueryDTO,
-} from "../../model/dto";
+} from "@/modules/partner/model/dto";
 
 
 

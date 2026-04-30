@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
-import { ITicketRepository, ICheckInRepository } from "../../interface/ticket.interface";
-import { Ticket, CheckIn, TicketListResponse } from "../../model/model";
-import { ListTicketsQueryDTO } from "../../model/dto";
-import { PagingDTO } from "../../../../share";
+import { ITicketRepository, ICheckInRepository } from "@/modules/partner/interface/ticket.interface";
+import { Ticket, CheckIn, TicketListResponse } from "@/modules/partner/model/model";
+import { ListTicketsQueryDTO } from "@/modules/partner/model/dto";
+import { PagingDTO } from "@/share";
 
 export class TicketRepository implements ITicketRepository {
   constructor(private readonly prisma: PrismaClient) {}

@@ -1,12 +1,12 @@
-import { CategoryCondDTO, CategoryUpdateDTO } from "../../../../modules/category/model/dto";
-import { Category } from "../../../../modules/category/model/model";
+import { CategoryCondDTO, CategoryUpdateDTO } from "@/modules/category/model/dto";
+import { Category } from "@/modules/category/model/model";
 import {
   BaseCommandRepositoryPrisma,
   BaseQueryRepositoryPrisma,
   BaseRepositoryPrisma,
-} from "../../../../share/repository/repo-prisma";
+} from "@/share/repository/repo-prisma";
 import { PrismaClient } from "@prisma/client";
-import { getCategoryModel } from "./dto";
+import { getCategoryModel } from "@/modules/category/infras/repository/dto";
 
 // implement ORM here (Prisma)
 

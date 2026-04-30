@@ -3,17 +3,17 @@ import crypto from "crypto";
 import { PrismaClient } from "@prisma/client";
 import { UAParser } from "ua-parser-js";
 import { v4 as uuidv4 } from "uuid";
-import { ENV } from "../../../share/common/value";
-import { ITokenService } from "../interface";
-import { AuthActionTokenPurpose, AuthSession, AuthUser } from "../model/model";
-import { UnauthorizedError } from "../../../share/transport/http-server";
-import { ErrorCode } from "../../../share/model/error-code";
+import { ENV } from "@/share/common/value";
+import { ITokenService } from "@/modules/auth/interface";
+import { AuthActionTokenPurpose, AuthSession, AuthUser } from "@/modules/auth/model/model";
+import { UnauthorizedError } from "@/share/transport/http-server";
+import { ErrorCode } from "@/share/model/error-code";
 import {
   getEmailTokenModel,
   getPasswordTokenModel,
   getSessionModel,
-} from "../infras/repository/dto";
-import { getSystemSettingsService } from "../../admin-system-settings";
+} from "@/modules/auth/infras/repository/dto";
+import { getSystemSettingsService } from "@/modules/admin-manage/admin-system-settings";
 
 type ActionTokenModel = {
   create(args: {

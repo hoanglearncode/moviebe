@@ -1,5 +1,5 @@
-import { UserTicket, TicketListResult } from "../model/model";
-import { ListTicketsDTO } from "../model/dto";
+import { UserTicket, TicketListResult } from "@/modules/ticket/model/model";
+import { ListTicketsDTO } from "@/modules/ticket/model/dto";
 
 export interface IUserTicketRepository {
   findByUserId(userId: string, query: ListTicketsDTO): Promise<TicketListResult>;

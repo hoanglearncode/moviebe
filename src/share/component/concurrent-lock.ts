@@ -1,5 +1,5 @@
-import { ErrorCode } from "../model/error-code";
-import { ConflictError } from "../transport/http-server";
+import { ErrorCode } from "@/share/model/error-code";
+import { ConflictError } from "@/share/transport/http-server";
 
 export type ConcurrentLockOptions = {
   ttlMs?: number;

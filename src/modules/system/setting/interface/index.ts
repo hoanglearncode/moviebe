@@ -1,5 +1,5 @@
 import { UpdateSettingsDTO } from "../../../user/model/dto";
-import { UserSetting } from "../model/model";
+import { UserSetting } from "@/modules/system/setting/model/model";
 
 export interface IUserSetting {
   get(userId: string): Promise<UserSetting | null>;

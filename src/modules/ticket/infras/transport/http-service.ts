@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { IUserTicketUseCase } from "../../interface";
-import { ListTicketsDTOSchema } from "../../model/dto";
-import { successResponse, errorResponse } from "../../../../share/transport/http-server";
+import { IUserTicketUseCase } from "@/modules/ticket/interface";
+import { ListTicketsDTOSchema } from "@/modules/ticket/model/dto";
+import { successResponse, errorResponse } from "@/share/transport/http-server";
 
 function getParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;

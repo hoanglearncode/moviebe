@@ -1,11 +1,11 @@
-import { IBookingRepository, IBookingUseCase } from "../interface";
-import { LockSeatsDTO, LockSeatsResult } from "../model/dto";
-import { OrderWithDetails } from "../model/model";
+import { IBookingRepository, IBookingUseCase } from "@/modules/booking/interface";
+import { LockSeatsDTO, LockSeatsResult } from "@/modules/booking/model/dto";
+import { OrderWithDetails } from "@/modules/booking/model/model";
 import {
   OrderNotFoundError,
   OrderAccessDeniedError,
   OrderAlreadyCompletedError,
-} from "../model/error";
+} from "@/modules/booking/model/error";
 
 export class BookingUseCase implements IBookingUseCase {
   constructor(private readonly repo: IBookingRepository) {}

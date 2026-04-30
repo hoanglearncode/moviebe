@@ -1,6 +1,6 @@
-import { IRepository } from "../../../share/interface";
-import { Ticket, CheckIn, TicketListResponse } from "../model/model";
-import { CheckInDTO, ListTicketsQueryDTO } from "../model/dto";
+import { IRepository } from "@/share/interface";
+import { Ticket, CheckIn, TicketListResponse } from "@/modules/partner/model/model";
+import { CheckInDTO, ListTicketsQueryDTO } from "@/modules/partner/model/dto";
 
 // ─── Repository Ports ─────────────────────────────────────────────────────────
 

@@ -9,18 +9,18 @@ import {
   UserStatus,
   Prisma,
 } from "@prisma/client";
-import { prisma } from "../../share/component/prisma";
-import { logger } from "../../modules/system/log/logger";
+import { prisma } from "@/share/component/prisma";
+import { logger } from "@/modules/system/log/logger";
 import {
   areQueueWorkersEnabled,
   createRedisConnection,
   isQueueEnabled,
   queuePrefix,
-} from "../config/config";
-import { BroadcastJobData, BroadcastJobName, QueueName } from "../modules/types";
-import { enqueueEmailJob } from "../config/email.queue";
-import { enqueueNotificationJob } from "../config/notification.queue";
-import { getSystemSettingsService } from "../../modules/admin-system-settings";
+} from "@/queue/config/config";
+import { BroadcastJobData, BroadcastJobName, QueueName } from "@/queue/modules/types";
+import { enqueueEmailJob } from "@/queue/config/email.queue";
+import { enqueueNotificationJob } from "@/queue/config/notification.queue";
+import { getSystemSettingsService } from "@/modules/admin-manage/admin-system-settings";
 
 let broadcastWorker: Worker<BroadcastJobData, void, BroadcastJobName> | null = null;
 

@@ -1,9 +1,9 @@
-import { prisma } from "./component/prisma";
+import { prisma } from "@/share/component/prisma";
 import {
   BaseCommandRepositoryPrisma,
   BaseQueryRepositoryPrisma,
   BaseRepositoryPrisma,
-} from "./repository/generic-prisma-repo";
+} from "@/share/repository/generic-prisma-repo";
 
 const hardDeleteOnly = {
   softDelete: false as const,

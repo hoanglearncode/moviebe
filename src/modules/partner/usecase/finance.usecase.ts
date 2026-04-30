@@ -1,12 +1,12 @@
 import { randomUUID } from "crypto";
-import { IPartnerRepository } from "../interface/profile.interface";
+import { IPartnerRepository } from "@/modules/partner/interface/profile.interface";
 import {
   IWalletRepository,
   ITransactionRepository,
   IWithdrawalRepository,
   IPartnerNotificationService,
   IPartnerFinanceUseCase,
-} from "../interface/finance.interface";
+} from "@/modules/partner/interface/finance.interface";
 import {
   PartnerWallet,
   Transaction,
@@ -15,8 +15,8 @@ import {
   Withdrawal,
   WithdrawalStatus,
   WithdrawalListResponse,
-} from "../model/model";
-import { CreateWithdrawalDTO, ListWithdrawalsQueryDTO, RevenueQueryDTO } from "../model/dto";
+} from "@/modules/partner/model/model";
+import { CreateWithdrawalDTO, ListWithdrawalsQueryDTO, RevenueQueryDTO } from "@/modules/partner/model/dto";
 
 export class PartnerFinanceUseCase implements IPartnerFinanceUseCase {
   constructor(

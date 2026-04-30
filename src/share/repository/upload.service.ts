@@ -1,4 +1,4 @@
-import { cloudinary } from "../common/cloudinary";
+import { cloudinary } from "@/share/common/cloudinary";
 import { UploadApiResponse } from "cloudinary";
 import { Readable } from "stream";
 

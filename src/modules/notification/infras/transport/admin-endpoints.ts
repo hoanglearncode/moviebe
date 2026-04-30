@@ -3,15 +3,15 @@ import {
   EmailTemplateRepository,
   ScheduledEmailRepository,
   EmailNotificationService,
-} from "../../index";
-import { prisma } from "../../../../share/component/prisma";
-import { logger } from "../../../system/log/logger";
+} from "@/modules/notification";
+import { prisma } from "@/share/component/prisma";
+import { logger } from "@/modules/system/log/logger";
 import {
   authMiddleware,
   requireActiveUser,
   requirePermission,
-} from "../../../../share/middleware/auth";
-import { PERMISSIONS } from "../../../../share/security/permissions";
+} from "@/share/middleware/auth";
+import { PERMISSIONS } from "@/share/security/permissions";
 
 const router = Router();
 

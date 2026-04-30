@@ -1,13 +1,13 @@
 import { Job, Worker } from "bullmq";
-import { logger } from "../../modules/system/log/logger";
-import { mailService } from "../../share/component/mail";
+import { logger } from "@/modules/system/log/logger";
+import { mailService } from "@/share/component/mail";
 import {
   areQueueWorkersEnabled,
   createRedisConnection,
   isQueueEnabled,
   queuePrefix,
-} from "../config/config";
-import { EmailJobData, EmailJobName, QueueName } from "../modules/types";
+} from "@/queue/config/config";
+import { EmailJobData, EmailJobName, QueueName } from "@/queue/modules/types";
 
 let emailWorker: Worker<EmailJobData, void, EmailJobName> | null = null;
 

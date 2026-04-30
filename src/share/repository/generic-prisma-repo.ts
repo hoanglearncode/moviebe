@@ -1,6 +1,6 @@
-import { IRepository, IQueryRepository, ICommandRepository } from "../interface";
-import { ModelStatus } from "../model/base-model";
-import { PagingDTO } from "../model/paging";
+import { IRepository, IQueryRepository, ICommandRepository } from "@/share/interface";
+import { ModelStatus } from "@/share/model/base-model";
+import { PagingDTO } from "@/share/model/paging";
 
 type PrismaWhere = Record<string, unknown>;
 type PrismaData = Record<string, unknown>;

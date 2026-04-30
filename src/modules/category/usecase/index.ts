@@ -1,10 +1,10 @@
-import { IRepository } from "../../../share/interface";
-import { ErrDataNotFound } from "../../../share/model/base-error";
-import { ModelStatus } from "../../../share/model/base-model";
-import { PagingDTO } from "../../../share/model/paging";
+import { IRepository } from "@/share/interface";
+import { ErrDataNotFound } from "@/share/model/base-error";
+import { ModelStatus } from "@/share/model/base-model";
+import { PagingDTO } from "@/share/model/paging";
 import { v7 } from "uuid";
 import { ZodError } from "zod";
-import { ICategoryUseCase } from "../interface";
+import { ICategoryUseCase } from "@/modules/category/interface";
 import {
   CategoryCondDTO,
   CategoryCondDTOSchema,
@@ -12,9 +12,9 @@ import {
   CategoryCreateSchema,
   CategoryUpdateDTO,
   CategoryUpdateSchema,
-} from "../model/dto";
-import { ErrCategoryNameTooShort } from "../model/errors";
-import { Category } from "../model/model";
+} from "@/modules/category/model/dto";
+import { ErrCategoryNameTooShort } from "@/modules/category/model/errors";
+import { Category } from "@/modules/category/model/model";
 
 export class CategoryUseCase implements ICategoryUseCase {
   constructor(
