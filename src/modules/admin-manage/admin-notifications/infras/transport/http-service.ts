@@ -1,6 +1,6 @@
 import { Request, Response, Router } from "express";
-import { protect, requireRole } from "../../../../share/middleware/auth";
-import { successResponse, errorResponse, ValidationError, NotFoundError } from "../../../../share/transport/http-server";
+import { protect, requireRole } from "@/share/middleware/auth";
+import { successResponse, errorResponse, ValidationError, NotFoundError } from "@/share/transport/http-server";
 import type { BroadcastNotificationUseCase } from "@/modules/admin-manage/admin-notifications/usecase";
 import { PrismaClient, BroadcastStatus, BroadcastType } from "@prisma/client";
 import { writeAuditLog } from "@/modules/admin-manage/admin-audit-logs/helper";

@@ -44,7 +44,7 @@ export class UserUseCase implements IUserUseCase {
 
     await this.sessionRepo.revokeAllSessionsByUserId(userId);
     // Hard delete vì user tự xoá tài khoản của mình
-    await this.userRepo.delete(userId, true);
+    await this.userRepo.delete(userId, false);
 
     this.notifier
       .sendAccountDeletedNotification({ email: user.email, name: user.name ?? user.email })
@@ -96,6 +96,12 @@ export class UserUseCase implements IUserUseCase {
     const count = await this.sessionRepo.revokeAllSessionsByUserId(userId);
     return { message: `Revoked ${count} session(s)` };
   }
+
+  async checkPassword(userId: string, password: string): Promise<boolean> {
+    const oldPassword = await this.userRepo.checkPassword(userId);
+    return this.hasher.compare(password, oldPassword);
+  }
+
 
   private toOwnProfile(user: any): OwnUserProfile {
     return {

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { PrismaClient, FlagType, FlagEnv } from "@prisma/client";
-import { protect, requireRole } from "../../share/middleware/auth";
-import { successResponse, errorResponse } from "../../share/transport/http-server";
+import { protect, requireRole } from "@/share/middleware/auth";
+import { successResponse, errorResponse } from "@/share/transport/http-server";
 import { writeAuditLog } from "@/modules/admin-manage/admin-audit-logs/helper";
 
 const adminGuard = [...protect(requireRole("ADMIN"))];

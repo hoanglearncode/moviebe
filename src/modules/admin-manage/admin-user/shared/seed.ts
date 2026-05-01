@@ -4,9 +4,9 @@
  */
 
 import { PrismaClient, Role, UserStatus } from "@prisma/client";
-import { SeedGenerator } from "../../../share/common/seed-generator";
-import { HashService } from "../../auth/shared/hash";
-import { defaultSettings } from "../../../share/common/seed-setting";
+import { SeedGenerator } from "@/share/common/seed-generator";
+import { HashService } from "@/modules/auth/shared/hash";
+import { defaultSettings } from "@/share/common/seed-setting";
 
 export interface SeedProgressCallback {
   onProgress?: (created: number, total: number, percentage: number) => void;

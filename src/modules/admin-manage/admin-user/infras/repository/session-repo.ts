@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { PagingDTO } from "../../../../share/model/paging";
+import { PagingDTO } from "@/share/model/paging";
 import { ISessionRepository } from "@/modules/admin-manage/admin-user/interface";
 import { UserSession } from "@/modules/admin-manage/admin-user/model/model";
 import { getSessionModel } from "@/modules/admin-manage/admin-user/infras/repository/dto";

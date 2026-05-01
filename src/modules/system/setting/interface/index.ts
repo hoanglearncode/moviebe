@@ -1,4 +1,4 @@
-import { UpdateSettingsDTO } from "../../../user/model/dto";
+import { UpdateSettingsDTO } from "@/modules/user/model/dto";
 import { UserSetting } from "@/modules/system/setting/model/model";
 
 export interface IUserSetting {

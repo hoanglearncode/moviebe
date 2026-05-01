@@ -1,6 +1,6 @@
-import { PagingDTO } from "../../../share/model/paging";
+import { PagingDTO } from "@/share/model/paging";
 import { IAdminUserUseCase, AdminUserHexagonDependencies } from "@/modules/admin-manage/admin-user/interface";
-import { IUserSetting } from "../../../modules/system/setting/interface";
+import { IUserSetting } from "@/modules/system/setting/interface";
 import {
   ChangeUserStatusDTO,
   CreateUserDTO,
@@ -12,7 +12,7 @@ import {
 import { ErrEmailAlreadyExists, ErrUserNotFound, ErrUsernameAlreadyExists } from "@/modules/admin-manage/admin-user/model/errors";
 import { OwnUserProfile, UserListResponse } from "@/modules/admin-manage/admin-user/model/model";
 import { SeedService, SeedSummary } from "@/modules/admin-manage/admin-user/shared/seed";
-import { IAuthNotificationService, ITokenService } from "../../auth/interface";
+import { IAuthNotificationService, ITokenService } from "@/modules/auth/interface";
 
 export class AdminUserUseCase implements IAdminUserUseCase {
   private readonly userRepo: AdminUserHexagonDependencies["userRepository"];

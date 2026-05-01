@@ -1,7 +1,7 @@
-import { IRepository, IUseCase } from "../../../share/interface";
-import { PagingDTO } from "../../../share/model/paging";
+import { IRepository, IUseCase } from "@/share/interface";
+import { PagingDTO } from "@/share/model/paging";
 import { PrismaClient } from "@prisma/client";
-import { IUserSetting } from "../../../modules/system/setting/interface";
+import { IUserSetting } from "@/modules/system/setting/interface";
 import {
   UpdateProfileDTO,
   ChangePasswordDTO,
@@ -32,7 +32,7 @@ export interface IUserRepository
   // NOTE: IRepository<Entity, Cond, UpdateDTO>
   // Cond = Partial<UserProfile> cho các method generic (get, findByCond, list, insert, update, delete)
   extends IRepository<UserProfile, Partial<UserProfile>, Partial<UserProfile>> {
-  // Domain-specific methods — ngoài những gì base interface đã có
+  checkPassword(userId: string): Promise<string>
   findById(userId: string): Promise<UserProfile | null>;
   findByEmail(email: string): Promise<UserProfile | null>;
   findByUsername(username: string): Promise<UserProfile | null>;
@@ -98,6 +98,7 @@ export interface IUserUseCase {
   getSessions(userId: string, query?: GetSessionsQueryDTO): Promise<SessionListResponse>;
   revokeSession(userId: string, sessionId: string): Promise<{ message: string }>;
   revokeAllSessions(userId: string): Promise<{ message: string }>;
+  checkPassword(userId: string, password: string): Promise<boolean>;
 }
 
 export interface IAdminUserUseCase extends IUseCase<

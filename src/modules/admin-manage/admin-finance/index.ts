@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { protect, requireRole } from "../../share/middleware/auth";
-import { successResponse, errorResponse } from "../../share/transport/http-server";
+import { protect, requireRole } from "@/share/middleware/auth";
+import { successResponse, errorResponse } from "@/share/transport/http-server";
 import { AdminFinanceUseCase } from "@/modules/admin-manage/admin-finance/usecase";
 import { writeAuditLog } from "@/modules/admin-manage/admin-audit-logs/helper";
 

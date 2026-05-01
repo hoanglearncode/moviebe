@@ -1,5 +1,5 @@
 import { Prisma, PrismaClient } from "@prisma/client";
-import { PagingDTO } from "../../../../share/model/paging";
+import { PagingDTO } from "@/share/model/paging";
 import { IUserRepository } from "@/modules/admin-manage/admin-user/interface";
 import { ListUsersQueryDTO } from "@/modules/admin-manage/admin-user/model/dto";
 import { OwnUserProfile, UserProfile } from "@/modules/admin-manage/admin-user/model/model";
@@ -206,6 +206,11 @@ export class PrismaUserRepository implements IUserRepository {
       items: rows.map(toUserProfile).map(toOwnUserProfile),
       total,
     };
+  }
+
+  async checkPassword(userId: string): Promise<string> {
+    const raw = await this.model.findUnique({ where: { id: userId } });
+    return raw?.password || "";
   }
 
   private buildAdminWhere(cond: ListUsersQueryDTO): Prisma.UserWhereInput {

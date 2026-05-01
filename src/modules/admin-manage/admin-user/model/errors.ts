@@ -11,8 +11,8 @@ import {
   NotFoundError,
   UnauthorizedError,
   ValidationError,
-} from "../../../share/transport/http-server";
-import { ErrorCode } from "../../../share/model/error-code";
+} from "@/share/transport/http-server";
+import { ErrorCode } from "@/share/model/error-code";
 
 // Profile errors
 export const ErrUserNotFound = new NotFoundError("User");

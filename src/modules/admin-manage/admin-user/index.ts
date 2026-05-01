@@ -9,13 +9,13 @@ import { HashService } from "@/modules/admin-manage/admin-user/shared/hash";
 import { UserNotificationService } from "@/modules/admin-manage/admin-user/shared/notification";
 import { AvatarColorService } from "@/share/common/avatar-color";
 import { IUserUseCase, IAdminUserUseCase } from "@/modules/admin-manage/admin-user/interface";
-import { prisma } from "../../share/component/prisma";
-import { mailService } from "../../share/component/mail";
-import { authenticate, protect, requirePermission } from "../../share/middleware/auth";
-import { setupSettingHexagon, createSettingUseCase } from "../system/setting";
-import { PERMISSIONS } from "../../share/security/permissions";
-import { AuthNotificationService } from "../auth/shared/notification";
-import { TokenService } from "../auth/shared/token";
+import { prisma } from "@/share/component/prisma";
+import { mailService } from "@/share/component/mail";
+import { authenticate, protect, requirePermission } from "@/share/middleware/auth";
+import { setupSettingHexagon, createSettingUseCase } from "@/modules/system/setting";
+import { PERMISSIONS } from "@/share/security/permissions";
+import { AuthNotificationService } from "@/modules/auth/shared/notification";
+import { TokenService } from "@/modules/auth/shared/token";
 
 const buildUserRouter = (useCase: IUserUseCase) => {
   const httpService = new UserHttpService(useCase);
@@ -36,6 +36,7 @@ const buildUserRouter = (useCase: IUserUseCase) => {
     ...protect(requirePermission(PERMISSIONS.DELETE_OWN_ACCOUNT)),
     httpService.deleteAccount.bind(httpService),
   );
+  router.post('/confirm-password', ...protect(), httpService.checkPassword.bind(httpService))
   router.post(
     "/change-password",
     ...protect(requirePermission(PERMISSIONS.CHANGE_OWN_PASSWORD)),

@@ -8,12 +8,12 @@ import {
 } from "@prisma/client";
 import { PrismaClient } from "@prisma/client";
 import { randomUUID } from "crypto";
-import { logger } from "../../system/log/logger";
+import { logger } from "@/modules/system/log/logger";
 import {
   enqueueBroadcastJob,
   enqueueBroadcastJobWithDelay,
-} from "../../../queue/config/broadcast.queue";
-import { ValidationError, NotFoundError } from "../../../share/transport/http-server";
+} from "@/queue/config/broadcast.queue";
+import { ValidationError, NotFoundError } from "@/share/transport/http-server";
 import { CreateBroadcastSchema, ListBroadcastsSchema } from "@/modules/admin-manage/admin-notifications/model/dto";
 import type { IBroadcastRepository, ListResult } from "@/modules/admin-manage/admin-notifications/interface";
 

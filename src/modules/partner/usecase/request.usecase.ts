@@ -14,7 +14,7 @@ import { MyPartnerStatusResponse, PartnerRequestRow, StaffRole } from "@/modules
 import { IWalletRepository } from "@/modules/partner/interface/finance.interface";
 import { IPartnerRepository } from "@/modules/partner/interface/profile.interface";
 import { IStaffRepo } from "@/modules/partner/interface/staff.interface";
-import { ISessionRepository, IUserRepository } from "../../user/interface";
+import { ISessionRepository, IUserRepository } from "@/modules/user/interface";
 
 export class RequestUseCase implements IPartnerRequestUseCase {
   constructor(

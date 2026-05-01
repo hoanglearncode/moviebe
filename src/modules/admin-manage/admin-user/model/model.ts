@@ -1,5 +1,5 @@
 import { Role, UserStatus } from "@prisma/client";
-import { PermissionCode } from "../../../share/security/permissions";
+import { PermissionCode } from "@/share/security/permissions";
 
 /**
  * ==========================================

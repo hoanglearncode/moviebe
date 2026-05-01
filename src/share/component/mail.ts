@@ -40,7 +40,7 @@ export class MailService {
     // Falls through to ENV when the service is not initialised (e.g., at test
     // time) or when no SMTP keys have been set in the DB yet.
     try {
-      const { getSystemSettingsService } = await import("../../modules/admin-system-settings");
+      const { getSystemSettingsService } = await import("@/modules/admin-system-settings");
       const svc = getSystemSettingsService();
       const [host, port, user, pass, fromName, fromEmail] = await Promise.all([
         svc.get("smtpHost"),

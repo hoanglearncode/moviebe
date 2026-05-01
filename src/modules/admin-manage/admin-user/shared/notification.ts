@@ -1,9 +1,9 @@
 import { PrismaClient, EmailNotificationEvent } from "@prisma/client";
 import { IUserNotificationService } from "@/modules/admin-manage/admin-user/interface";
-import { MailService, mailService } from "../../../share/component/mail";
-import { enqueueEmailJob, isQueueEnabled } from "../../../queue";
-import { logger } from "../../system/log/logger";
-import { ENV } from "../../../share/common/value";
+import { MailService, mailService } from "@/share/component/mail";
+import { enqueueEmailJob, isQueueEnabled } from "@/queue";
+import { logger } from "@/modules/system/log/logger";
+import { ENV } from "@/share/common/value";
 
 const prisma = new PrismaClient();
 

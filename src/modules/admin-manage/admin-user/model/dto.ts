@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isPermissionCode } from "../../../share/security/permissions";
+import { isPermissionCode } from "@/share/security/permissions";
 
 // ── UPDATE PROFILE ─────────────────────────────────────────────────────────────
 

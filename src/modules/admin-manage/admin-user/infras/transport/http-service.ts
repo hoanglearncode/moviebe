@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { BaseHttpService, UnauthorizedError } from "../../../../share/transport/http-server";
+import { BaseHttpService, UnauthorizedError } from "@/share/transport/http-server";
 import { IAdminUserUseCase, IUserUseCase } from "@/modules/admin-manage/admin-user/interface";
 import {
   ChangePasswordDTO,
@@ -13,7 +13,7 @@ import {
   SeedUsersDTO,
   SeedUsersPayloadSchema,
 } from "@/modules/admin-manage/admin-user/model/dto";
-import { prisma } from "../../../../share/component/prisma";
+import { prisma } from "@/share/component/prisma";
 import { writeAuditLog } from "@/modules/admin-manage/admin-audit-logs/helper";
 
 type AuthenticatedRequest = Request & {
@@ -81,6 +81,12 @@ export class UserHttpService extends BaseHttpService<any, any, any, any> {
     });
   }
 
+  async checkPassword(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      return this.userUseCase.checkPassword(this.getAuthenticatedUserId(req), req.body.password);
+    });
+  }
+
   private getAuthenticatedUserId(req: Request): string {
     const userId = (req as AuthenticatedRequest).user?.id;
 
@@ -90,6 +96,7 @@ export class UserHttpService extends BaseHttpService<any, any, any, any> {
 
     return userId;
   }
+
 }
 
 export class AdminUserHttpService extends BaseHttpService<any, any, any, any> {
