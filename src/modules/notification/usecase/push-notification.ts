@@ -284,4 +284,37 @@ export const NotificationFactory = {
     message,
     data: data ?? {},
   }),
+
+  partnerRequestApproved: (userId: string, cinemaName: string) => ({
+    userId,
+    type: NotificationType.SYSTEM,
+    title: "Đơn đăng ký được phê duyệt",
+    message: `Chúc mừng! Đơn đăng ký của "${cinemaName}" đã được chấp thuận. Bạn có thể bắt đầu hoạt động.`,
+    data: { cinemaName, broadcastType: "SUCCESS" },
+  }),
+
+  partnerRequestRejected: (userId: string, cinemaName: string, reason: string) => ({
+    userId,
+    type: NotificationType.SYSTEM,
+    title: "Đơn đăng ký bị từ chối",
+    message: `Đơn đăng ký của "${cinemaName}" chưa được chấp thuận. Lý do: ${reason}`,
+    data: { cinemaName, reason, broadcastType: "WARNING" },
+  }),
+
+  newPartnerRequestAdmin: (adminUserId: string, cinemaName: string, requestId: string) => ({
+    adminUserId,
+    userId: adminUserId,
+    type: NotificationType.SYSTEM,
+    title: "Đơn đăng ký đối tác mới",
+    message: `"${cinemaName}" vừa nộp đơn đăng ký trở thành đối tác.`,
+    data: { cinemaName, requestId, broadcastType: "INFO" },
+  }),
+
+  partnerRequestReceived: (userId: string, cinemaName: string) => ({
+    userId,
+    type: NotificationType.SYSTEM,
+    title: "Đã nhận đơn đăng ký",
+    message: `Đơn đăng ký đối tác của "${cinemaName}" đã được ghi nhận. Chúng tôi sẽ xem xét và phản hồi trong thời gian sớm nhất.`,
+    data: { cinemaName, broadcastType: "SUCCESS" },
+  }),
 } as const;

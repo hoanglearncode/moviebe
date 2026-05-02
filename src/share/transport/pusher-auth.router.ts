@@ -20,9 +20,16 @@ router.post("/pusher/auth", authMiddleware, (req: Request, res: Response) => {
   }
 
   const userId = req.user!.id;
-  const allowedChannel = `private-user-${userId}`;
+  const userRole = (req.user as any).role as string | undefined;
 
-  if (channel_name !== allowedChannel) {
+  const isAdminChannel = channel_name === "private-admin";
+  const isOwnUserChannel = channel_name === `private-user-${userId}`;
+
+  if (isAdminChannel && userRole !== "ADMIN") {
+    return errorResponse(res, 403, "Channel access denied");
+  }
+
+  if (!isAdminChannel && !isOwnUserChannel) {
     return errorResponse(res, 403, "Channel access denied");
   }
 

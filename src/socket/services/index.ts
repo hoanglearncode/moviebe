@@ -4,6 +4,7 @@ import { pusher } from "@/socket/config";
 export type PusherChannel =
   | "public-auth"
   | "public-notifications"
+  | "private-admin"
   | `private-user-${string}`
   | `presence-room-${string}`;
 
@@ -49,9 +50,57 @@ export type PusherEventMap = {
     reason: string;
   };
 
+  // Partner — Request lifecycle
+  "partner.request.submitted": {
+    requestId: string;
+    userId: string;
+    cinemaName: string;
+    email: string;
+    submittedAt: string;
+    timestamp: string;
+  };
+  "partner.request.approved": {
+    requestId: string;
+    userId: string;
+    partnerName: string;
+    email: string;
+    approvedBy: string;
+    approvedAt: string;
+    timestamp: string;
+  };
+  "partner.request.rejected": {
+    requestId: string;
+    userId: string;
+    rejectedBy: string;
+    rejectedAt: string;
+    reason: string;
+    timestamp: string;
+  };
+
   // Partner — Movie
   "partner.movie.approved": { movieId: string; title: string };
   "partner.movie.rejected": { movieId: string; title: string; reason: string };
+
+  // Admin — Badge updates
+  "admin.badges.updated": {
+    badges: {
+      pendingPartners: number;
+      reportedContent: number;
+      flaggedComments: number;
+      pendingPayouts: number;
+      pendingReviews: number;
+    };
+    changedKeys: Array<
+      "pendingPartners" | "reportedContent" | "flaggedComments" | "pendingPayouts" | "pendingReviews"
+    >;
+    delta: Partial<
+      Record<
+        "pendingPartners" | "reportedContent" | "flaggedComments" | "pendingPayouts" | "pendingReviews",
+        number
+      >
+    >;
+    timestamp: string;
+  };
 
   // Showtime
   "showtime.cancelled": {
