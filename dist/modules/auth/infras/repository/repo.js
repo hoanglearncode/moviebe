@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.createAuthUserRepository = exports.PrismaAuthUserRepository = void 0;
-const client_1 = require("@prisma/client");
-const dto_1 = require("./dto");
+import { UserStatus } from "@prisma/client";
+import { getUserModel } from "@/modules/auth/infras/repository/dto";
 const toAuthUser = (raw) => ({
     id: raw.id,
     email: raw.email,
@@ -82,9 +79,9 @@ const toUpdateInput = (data) => {
         updateData.updatedAt = data.updatedAt;
     return updateData;
 };
-class PrismaAuthUserRepository {
+export class PrismaAuthUserRepository {
     constructor(prisma) {
-        this.model = (0, dto_1.getUserModel)(prisma);
+        this.model = getUserModel(prisma);
     }
     async get(id) {
         const raw = await this.model.findUnique({ where: { id } });
@@ -124,7 +121,7 @@ class PrismaAuthUserRepository {
         else {
             await this.model.update({
                 where: { id },
-                data: { status: client_1.UserStatus.INACTIVE, updatedAt: new Date() },
+                data: { status: UserStatus.INACTIVE, updatedAt: new Date() },
             });
         }
         return true;
@@ -161,6 +158,4 @@ class PrismaAuthUserRepository {
         return true;
     }
 }
-exports.PrismaAuthUserRepository = PrismaAuthUserRepository;
-const createAuthUserRepository = (prisma) => new PrismaAuthUserRepository(prisma);
-exports.createAuthUserRepository = createAuthUserRepository;
+export const createAuthUserRepository = (prisma) => new PrismaAuthUserRepository(prisma);

@@ -1,39 +1,51 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.AuthUseCase = void 0;
-const uuid_1 = require("uuid");
-const client_1 = require("@prisma/client");
-const http_server_1 = require("../../../share/transport/http-server");
-const error_code_1 = require("../../../share/model/error-code");
-const value_1 = require("../../../share/common/value");
-const dto_1 = require("../model/dto");
-const authorization_usecase_1 = require("../../user/usecase/authorization.usecase");
-class AuthUseCase {
+import { v7 } from "uuid";
+import { Role, UserStatus } from "@prisma/client";
+import { NotFoundError, UnauthorizedError, ValidationError, } from "@/share/transport/http-server";
+import { ErrorCode } from "@/share/model/error-code";
+import { ENV } from "@/share/common/value";
+import { ChangePasswordPayloadDTO, FacebookLoginPayloadDTO, ForgotPasswordPayloadDTO, GoogleLoginPayloadDTO, GoogleLoginTokenCallbackPayloadDTO, LoginPayloadDTO, RegisterPayloadDTO, ResendVerificationPayloadDTO, VerifyEmailPayloadDTO, RefreshTokenPayloadDTO, } from "@/modules/auth/model/dto";
+import { AuthorizationUseCase } from "@/modules/admin-manage/admin-user/usecase/authorization.usecase";
+import { getSystemSettingsService } from "@/modules/admin-manage/admin-system-settings";
+import { PERMANENT_LOGIN_LOCK_STAGE, applyLoginLock, clearLoginLockStateOnSuccess, getLoginLockStage, incrementLoginFailCount, isLoginTemporarilyLocked, setPermanentLoginLockStage, } from "@/modules/auth/shared/lock";
+export class AuthUseCase {
     constructor(dependencies) {
         this.dependencies = dependencies;
-        this.authorizationUseCase = new authorization_usecase_1.AuthorizationUseCase();
+        this.authorizationUseCase = new AuthorizationUseCase();
     }
     isSessionAllowedStatus(status) {
-        return status === client_1.UserStatus.ACTIVE || status === client_1.UserStatus.BANNED;
+        return status === UserStatus.ACTIVE || status === UserStatus.BANNED;
     }
     async register(data) {
-        const parsedData = dto_1.RegisterPayloadDTO.safeParse(data);
+        const parsedData = RegisterPayloadDTO.safeParse(data);
         if (!parsedData.success) {
-            throw new http_server_1.ValidationError("Invalid registration data", parsedData.error.issues);
+            throw new ValidationError("Invalid registration data", parsedData.error.issues);
+        }
+        // Block new registrations when the platform has closed sign-ups.
+        // Non-fatal if SystemSettingsService is not yet initialised (defaults to open).
+        try {
+            const isOpen = await getSystemSettingsService().isRegistrationOpen();
+            if (!isOpen) {
+                throw new ValidationError("Registration is currently closed. Please try again later.", undefined, ErrorCode.VALIDATION);
+            }
+        }
+        catch (err) {
+            if (err instanceof ValidationError)
+                throw err;
+            // Settings service not available — treat as open
         }
         return this.dependencies.concurrentLockService.runExclusive(this.getRegisterLockKeys(parsedData.data.email, parsedData.data.username), async () => {
             const { userRepository, passwordHasher, tokenService, notificationService, avatarColorService, } = this.dependencies;
             const existingEmail = await userRepository.findByEmail(parsedData.data.email);
             if (existingEmail) {
-                throw new http_server_1.ValidationError("Email already exists", undefined, error_code_1.ErrorCode.EMAIL_EXISTS);
+                throw new ValidationError("Email already exists", undefined, ErrorCode.EMAIL_EXISTS);
             }
             if (parsedData.data.username) {
                 const existingUsername = await userRepository.findByUsername(parsedData.data.username);
                 if (existingUsername) {
-                    throw new http_server_1.ValidationError("Username already exists", undefined, error_code_1.ErrorCode.USERNAME_EXISTS);
+                    throw new ValidationError("Username already exists", undefined, ErrorCode.USERNAME_EXISTS);
                 }
             }
-            const newUserId = (0, uuid_1.v7)();
+            const newUserId = v7();
             const passwordHash = await passwordHasher.hash(parsedData.data.password);
             const avatarColor = avatarColorService.generateAvatarColor(parsedData.data.email);
             const user = {
@@ -48,10 +60,10 @@ class AuthUseCase {
                 bio: null,
                 location: null,
                 avatarColor,
-                role: client_1.Role.USER,
+                role: Role.USER,
                 emailVerified: false,
                 mustChangePassword: false,
-                status: client_1.UserStatus.ACTIVE,
+                status: UserStatus.ACTIVE,
                 permissions_override: parsedData.data.permissions_override,
                 lastLoginAt: new Date(),
                 createdAt: new Date(),
@@ -76,34 +88,52 @@ class AuthUseCase {
             });
             return { userId: newUserId };
         }, {
-            ttlMs: value_1.ENV.AUTH_CONCURRENT_LOCK_TTL_MS,
+            ttlMs: ENV.AUTH_CONCURRENT_LOCK_TTL_MS,
             conflictMessage: "A registration request for this account is already being processed",
         });
     }
     async login(data, context) {
-        const parsedData = dto_1.LoginPayloadDTO.safeParse(data);
+        const parsedData = LoginPayloadDTO.safeParse(data);
         if (!parsedData.success) {
-            throw new http_server_1.ValidationError("Invalid login data", parsedData.error.issues);
+            throw new ValidationError("Invalid login data", parsedData.error.issues);
         }
         return this.dependencies.concurrentLockService.runExclusive(this.getLoginLockKey(parsedData.data.emailOrUsername), async () => {
             const { userRepository, passwordHasher, tokenService } = this.dependencies;
             const user = await userRepository.findByEmailOrUsername(parsedData.data.emailOrUsername);
             if (!user) {
-                throw new http_server_1.UnauthorizedError("Invalid credentials", error_code_1.ErrorCode.INVALID_CREDENTIALS);
+                throw new UnauthorizedError("Invalid credentials", ErrorCode.INVALID_CREDENTIALS);
             }
-            if (user.status === client_1.UserStatus.INACTIVE) {
-                throw new http_server_1.UnauthorizedError("Invalid credentials", error_code_1.ErrorCode.INVALID_CREDENTIALS);
+            if (user.status === UserStatus.INACTIVE) {
+                throw new UnauthorizedError("Invalid credentials", ErrorCode.INVALID_CREDENTIALS);
             }
             if (!this.isSessionAllowedStatus(user.status)) {
-                throw new http_server_1.UnauthorizedError("Account is unavailable", error_code_1.ErrorCode.ACCOUNT_INACTIVE);
+                throw new UnauthorizedError("Account is unavailable", ErrorCode.ACCOUNT_INACTIVE);
+            }
+            if (await isLoginTemporarilyLocked(user.id)) {
+                throw new UnauthorizedError("Account is temporarily locked due to repeated failed login attempts", ErrorCode.ACCOUNT_INACTIVE);
             }
             const isPasswordMatched = await passwordHasher.compare(parsedData.data.password, user.password || "");
             if (!isPasswordMatched) {
-                throw new http_server_1.UnauthorizedError("Invalid credentials", error_code_1.ErrorCode.INVALID_CREDENTIALS);
+                const attemptCount = await incrementLoginFailCount(user.id);
+                if (attemptCount >= 5) {
+                    const currentStage = await getLoginLockStage(user.id);
+                    const nextStage = Math.min(currentStage + 1, PERMANENT_LOGIN_LOCK_STAGE);
+                    if (nextStage >= PERMANENT_LOGIN_LOCK_STAGE) {
+                        await this.dependencies.userRepository.update(user.id, {
+                            status: "LOCKED",
+                        });
+                        await setPermanentLoginLockStage(user.id);
+                        throw new UnauthorizedError("Account locked permanently due to repeated failed login attempts", ErrorCode.ACCOUNT_INACTIVE);
+                    }
+                    await applyLoginLock(user.id, nextStage);
+                    throw new UnauthorizedError("Account temporarily locked due to repeated failed login attempts", ErrorCode.ACCOUNT_INACTIVE);
+                }
+                throw new UnauthorizedError("Invalid credentials", ErrorCode.INVALID_CREDENTIALS);
             }
             if (!user.emailVerified) {
-                throw new http_server_1.UnauthorizedError("Account is not verified", error_code_1.ErrorCode.ACCOUNT_NOT_VERIFIED);
+                throw new UnauthorizedError("Account is not verified", ErrorCode.ACCOUNT_NOT_VERIFIED);
             }
+            await clearLoginLockStateOnSuccess(user.id);
             const session = await tokenService.issueAuthSession(user, context, {
                 remember: parsedData.data.remember,
             });
@@ -112,70 +142,70 @@ class AuthUseCase {
             });
             return this.buildAuthResponse(user, session);
         }, {
-            ttlMs: value_1.ENV.AUTH_CONCURRENT_LOCK_TTL_MS,
+            ttlMs: ENV.AUTH_CONCURRENT_LOCK_TTL_MS,
             conflictMessage: "A login request for this account is already being processed",
         });
     }
     async refreshToken(data) {
-        const parsedData = dto_1.RefreshTokenPayloadDTO.safeParse(data);
+        const parsedData = RefreshTokenPayloadDTO.safeParse(data);
         if (!parsedData.success) {
-            throw new http_server_1.ValidationError("Invalid refresh token data", parsedData.error.issues);
+            throw new ValidationError("Invalid refresh token data", parsedData.error.issues);
         }
         const { tokenService, userRepository } = this.dependencies;
         const session = await tokenService.refreshAuthSession(parsedData.data.refreshToken);
         const user = await userRepository.get(session.userId);
         if (!user) {
-            throw new http_server_1.NotFoundError("User");
+            throw new NotFoundError("User");
         }
         if (!this.isSessionAllowedStatus(user.status)) {
-            throw new http_server_1.UnauthorizedError("Account is unavailable", error_code_1.ErrorCode.ACCOUNT_INACTIVE);
+            throw new UnauthorizedError("Account is unavailable", ErrorCode.ACCOUNT_INACTIVE);
         }
         return this.buildAuthResponse(user, session);
     }
     async loginGoogle(data, context) {
-        const parsedData = dto_1.GoogleLoginPayloadDTO.safeParse(data);
+        const parsedData = GoogleLoginPayloadDTO.safeParse(data);
         if (!parsedData.success) {
-            throw new http_server_1.ValidationError("Invalid Google login data", parsedData.error.issues);
+            throw new ValidationError("Invalid Google login data", parsedData.error.issues);
         }
         const profile = await this.dependencies.socialAuthService.verifyGoogleCredential(parsedData.data.credential);
         return this.loginWithSocialProfile(profile, context);
     }
     async loginGoogleTokenCallback(data, context) {
-        const parsedData = dto_1.GoogleLoginTokenCallbackPayloadDTO.safeParse(data);
+        const parsedData = GoogleLoginTokenCallbackPayloadDTO.safeParse(data);
         if (!parsedData.success) {
-            throw new http_server_1.ValidationError("Invalid Google token callback data", parsedData.error.issues);
+            throw new ValidationError("Invalid Google token callback data", parsedData.error.issues);
         }
         const profile = await this.dependencies.socialAuthService.getGoogleProfile(parsedData.data.accessToken);
         return this.loginWithSocialProfile(profile, context);
     }
     async loginFacebook(data, context) {
-        const parsedData = dto_1.FacebookLoginPayloadDTO.safeParse(data);
+        const parsedData = FacebookLoginPayloadDTO.safeParse(data);
         if (!parsedData.success) {
-            throw new http_server_1.ValidationError("Invalid Facebook login data", parsedData.error.issues);
+            throw new ValidationError("Invalid Facebook login data", parsedData.error.issues);
         }
         const profile = await this.dependencies.socialAuthService.getFacebookProfile(parsedData.data.accessToken);
         return this.loginWithSocialProfile(profile, context);
     }
     async verifyEmail(data) {
         const { notificationService } = this.dependencies;
-        const parsedData = dto_1.VerifyEmailPayloadDTO.safeParse(data);
+        const parsedData = VerifyEmailPayloadDTO.safeParse(data);
         if (!parsedData.success) {
-            throw new http_server_1.ValidationError("Invalid verification data", parsedData.error.issues);
+            throw new ValidationError("Invalid verification data", parsedData.error.issues);
         }
         const { tokenService, userRepository } = this.dependencies;
         const { userId } = await tokenService.verifyActionToken(parsedData.data.token, "verify-email");
         const user = await userRepository.get(userId);
         if (!user) {
-            throw new http_server_1.NotFoundError("User");
+            throw new NotFoundError("User");
         }
         await userRepository.markVerified(userId);
         await notificationService.sendWellComeEmail(user.email);
         return { message: "Email verified successfully" };
     }
     async resendVerification(data) {
-        const parsedData = dto_1.ResendVerificationPayloadDTO.safeParse(data);
+        const parsedData = ResendVerificationPayloadDTO.safeParse(data);
         if (!parsedData.success) {
-            throw new http_server_1.ValidationError("Invalid resend verification data", parsedData.error.issues);
+            throw new ValidationError("Invalid resend verification data", parsedData.error.issues);
         }
         const { userRepository, tokenService, notificationService } = this.dependencies;
         const user = await userRepository.findByEmail(parsedData.data.email);
@@ -193,9 +223,9 @@ class AuthUseCase {
         return { message: "If the email requires verification, a new email has been sent" };
     }
     async forgotPassword(data) {
-        const parsedData = dto_1.ForgotPasswordPayloadDTO.safeParse(data);
+        const parsedData = ForgotPasswordPayloadDTO.safeParse(data);
         if (!parsedData.success) {
-            throw new http_server_1.ValidationError("Invalid forgot password data", parsedData.error.issues);
+            throw new ValidationError("Invalid forgot password data", parsedData.error.issues);
         }
         const { userRepository, tokenService, notificationService } = this.dependencies;
         const user = await userRepository.findByEmail(parsedData.data.email);
@@ -214,15 +244,15 @@ class AuthUseCase {
         return { message: "If the email exists, a reset link has been sent" };
     }
     async changePassword(data) {
-        const parsedData = dto_1.ChangePasswordPayloadDTO.safeParse(data);
+        const parsedData = ChangePasswordPayloadDTO.safeParse(data);
         if (!parsedData.success) {
-            throw new http_server_1.ValidationError("Invalid change password data", parsedData.error.issues);
+            throw new ValidationError("Invalid change password data", parsedData.error.issues);
         }
         const { tokenService, userRepository, passwordHasher, notificationService } = this.dependencies;
         const { userId } = await tokenService.verifyActionToken(parsedData.data.token, "reset-password");
         const user = await userRepository.get(userId);
         if (!user) {
-            throw new http_server_1.NotFoundError("User");
+            throw new NotFoundError("User");
         }
         const newPasswordHash = await passwordHasher.hash(parsedData.data.newPassword);
         await userRepository.updatePassword(userId, newPasswordHash);
@@ -237,7 +267,7 @@ class AuthUseCase {
             const { userRepository, tokenService, avatarColorService, notificationService } = this.dependencies;
             let user = await userRepository.findByEmail(profile.email);
             if (!user) {
-                const newUserId = (0, uuid_1.v7)();
+                const newUserId = v7();
                 const avatarColor = avatarColorService.generateAvatarColor(profile.email);
                 user = {
                     id: newUserId,
@@ -251,11 +281,11 @@ class AuthUseCase {
                     bio: null,
                     location: null,
                     avatarColor,
-                    role: client_1.Role.USER,
+                    role: Role.USER,
                     emailVerified: profile.emailVerified,
                     mustChangePassword: false,
                     permissions_override: profile.permissions_override,
-                    status: client_1.UserStatus.ACTIVE,
+                    status: UserStatus.ACTIVE,
                     lastLoginAt: new Date(),
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -273,7 +303,7 @@ class AuthUseCase {
             }
             else {
                 if (!this.isSessionAllowedStatus(user.status)) {
-                    throw new http_server_1.UnauthorizedError("Account is unavailable", error_code_1.ErrorCode.ACCOUNT_INACTIVE);
+                    throw new UnauthorizedError("Account is unavailable", ErrorCode.ACCOUNT_INACTIVE);
                 }
                 await userRepository.update(user.id, {
                     name: user.name ?? profile.name ?? null,
@@ -284,13 +314,13 @@ class AuthUseCase {
                 });
                 user = await userRepository.get(user.id);
                 if (!user) {
-                    throw new http_server_1.NotFoundError("User");
+                    throw new NotFoundError("User");
                 }
             }
             const session = await tokenService.issueAuthSession(user, context);
             return this.buildAuthResponse(user, session);
         }, {
-            ttlMs: value_1.ENV.AUTH_CONCURRENT_LOCK_TTL_MS,
+            ttlMs: ENV.AUTH_CONCURRENT_LOCK_TTL_MS,
             conflictMessage: "A social login request for this account is already being processed",
         });
     }
@@ -333,4 +363,3 @@ class AuthUseCase {
         };
     }
 }
-exports.AuthUseCase = AuthUseCase;

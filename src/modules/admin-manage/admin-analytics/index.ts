@@ -65,5 +65,14 @@ export function buildAdminAnalyticsRouter(prisma: PrismaClient): Router {
     }
   });
 
+  router.get("/badges", ...adminGuard, async (req: Request, res: Response) => {
+    try {
+      const data = await useCase.getBadgeCounts();
+      successResponse(res, data);
+    } catch (err: any) {
+      errorResponse(res, 500, err.message);
+    }
+  });
+
   return router;
 }

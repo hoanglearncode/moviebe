@@ -7,8 +7,6 @@ import {
   RevenueQueryDTO,
 } from "@/modules/partner/model/dto";
 
-
-
 export class PartnerFinanceHttpService {
   constructor(private useCase: IPartnerFinanceUseCase) {}
 

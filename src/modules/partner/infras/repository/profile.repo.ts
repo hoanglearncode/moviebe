@@ -78,7 +78,10 @@ export class PartnerRepository implements IPartnerRepository {
     return true;
   }
 
-  async update(id: string, data: UpdatePartnerDTO & { updatedAt?: Date; commissionRate?: number }): Promise<boolean> {
+  async update(
+    id: string,
+    data: UpdatePartnerDTO & { updatedAt?: Date; commissionRate?: number },
+  ): Promise<boolean> {
     await this.prisma.partner.update({
       where: { id },
       data: {

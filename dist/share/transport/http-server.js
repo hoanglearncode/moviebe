@@ -1,11 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.BaseHttpService = exports.ConflictError = exports.ForbiddenError = exports.UnauthorizedError = exports.NotFoundError = exports.ValidationError = exports.AppError = void 0;
-exports.successResponse = successResponse;
-exports.errorResponse = errorResponse;
-const paging_1 = require("../model/paging");
-const error_code_1 = require("../model/error-code");
-class AppError extends Error {
+import { PagingDTOSchema } from "@/share/model/paging";
+import { ErrorCode } from "@/share/model/error-code";
+export class AppError extends Error {
     constructor(message, code, status, details) {
         super(message);
         this.code = code;
@@ -14,43 +9,37 @@ class AppError extends Error {
         this.name = "AppError";
     }
 }
-exports.AppError = AppError;
-class ValidationError extends AppError {
-    constructor(message, details, code = error_code_1.ErrorCode.VALIDATION) {
+export class ValidationError extends AppError {
+    constructor(message, details, code = ErrorCode.VALIDATION) {
         super(message, code, 400, details);
         this.name = "ValidationError";
     }
 }
-exports.ValidationError = ValidationError;
-class NotFoundError extends AppError {
-    constructor(resource, code = error_code_1.ErrorCode.NOT_FOUND) {
+export class NotFoundError extends AppError {
+    constructor(resource, code = ErrorCode.NOT_FOUND) {
         super(`${resource} not found`, code, 404);
         this.name = "NotFoundError";
     }
 }
-exports.NotFoundError = NotFoundError;
-class UnauthorizedError extends AppError {
-    constructor(message = "Unauthorized", code = error_code_1.ErrorCode.UNAUTHORIZED) {
+export class UnauthorizedError extends AppError {
+    constructor(message = "Unauthorized", code = ErrorCode.UNAUTHORIZED) {
         super(message, code, 401);
         this.name = "UnauthorizedError";
     }
 }
-exports.UnauthorizedError = UnauthorizedError;
-class ForbiddenError extends AppError {
-    constructor(message = "Forbidden", code = error_code_1.ErrorCode.UNAUTHORIZED) {
+export class ForbiddenError extends AppError {
+    constructor(message = "Forbidden", code = ErrorCode.UNAUTHORIZED) {
         super(message, code, 403);
         this.name = "ForbiddenError";
     }
 }
-exports.ForbiddenError = ForbiddenError;
-class ConflictError extends AppError {
-    constructor(message = "Conflict", code = error_code_1.ErrorCode.CONCURRENT_TASK_LOCKED, details) {
+export class ConflictError extends AppError {
+    constructor(message = "Conflict", code = ErrorCode.CONCURRENT_TASK_LOCKED, details) {
         super(message, code, 409, details);
         this.name = "ConflictError";
     }
 }
-exports.ConflictError = ConflictError;
-class BaseHttpService {
+export class BaseHttpService {
     constructor(useCase) {
         this.useCase = useCase;
     }
@@ -81,7 +70,7 @@ class BaseHttpService {
         }
         console.error("Unhandled error:", error);
         res.status(500).json({
-            code: error_code_1.ErrorCode.INTERNAL,
+            code: ErrorCode.INTERNAL,
             message: "Internal server error",
         });
     }
@@ -95,7 +84,7 @@ class BaseHttpService {
     }
     async listAPI(req, res) {
         await this.handleRequest(res, async () => {
-            const pagingResult = paging_1.PagingDTOSchema.safeParse(req.query);
+            const pagingResult = PagingDTOSchema.safeParse(req.query);
             if (!pagingResult.success) {
                 throw new ValidationError("Invalid paging parameters", pagingResult.error.issues);
             }
@@ -114,11 +103,10 @@ class BaseHttpService {
         });
     }
 }
-exports.BaseHttpService = BaseHttpService;
 /**
  * Send success response
  */
-function successResponse(res, data, message = "Success", statusCode = 200, paging = null) {
+export function successResponse(res, data, message = "Success", statusCode = 200, paging = null) {
     res.status(statusCode).json({
         success: true,
         data,
@@ -129,7 +117,7 @@ function successResponse(res, data, message = "Success", statusCode = 200, pagin
 /**
  * Send error response
  */
-function errorResponse(res, statusCode = 500, message = "Internal server error", code = error_code_1.ErrorCode.INTERNAL.toString(), details) {
+export function errorResponse(res, statusCode = 500, message = "Internal server error", code = ErrorCode.INTERNAL.toString(), details) {
     res.status(statusCode).json({
         success: false,
         error: {

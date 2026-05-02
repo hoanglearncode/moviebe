@@ -50,8 +50,20 @@ export const GROUP_KEY_MAP = {
     "timezone",
     "defaultLanguage",
   ]),
-  email: new Set<SettingKey>(["smtpHost", "smtpPort", "smtpUser", "smtpPassword", "fromName", "fromEmail"]),
-  storage: new Set<SettingKey>(["storageProvider", "storageBucketName", "storageRegion", "storageCdnUrl"]),
+  email: new Set<SettingKey>([
+    "smtpHost",
+    "smtpPort",
+    "smtpUser",
+    "smtpPassword",
+    "fromName",
+    "fromEmail",
+  ]),
+  storage: new Set<SettingKey>([
+    "storageProvider",
+    "storageBucketName",
+    "storageRegion",
+    "storageCdnUrl",
+  ]),
   security: new Set<SettingKey>([
     "enforceAdmin2FA",
     "apiRateLimitEnabled",
@@ -95,7 +107,12 @@ export const BOOLEAN_KEYS = new Set<SettingKey>([
 
 export const URL_KEYS = new Set<SettingKey>(["siteUrl", "storageCdnUrl"]);
 export const EMAIL_KEYS = new Set<SettingKey>(["supportEmail", "fromEmail"]);
-export const NULLABLE_STRING_KEYS = new Set<SettingKey>(["smtpHost", "smtpUser", "smtpPassword", "adminIpWhitelist"]);
+export const NULLABLE_STRING_KEYS = new Set<SettingKey>([
+  "smtpHost",
+  "smtpUser",
+  "smtpPassword",
+  "adminIpWhitelist",
+]);
 
 export interface QueueStats {
   waiting: number;

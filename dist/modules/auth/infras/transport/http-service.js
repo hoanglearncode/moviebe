@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.AuthHttpService = void 0;
-const http_server_1 = require("../../../../share/transport/http-server");
-class AuthHttpService extends http_server_1.BaseHttpService {
+import { BaseHttpService } from "@/share/transport/http-server";
+export class AuthHttpService extends BaseHttpService {
     constructor(useCase) {
         super(useCase);
         this.authUseCase = useCase;
@@ -50,4 +47,3 @@ class AuthHttpService extends http_server_1.BaseHttpService {
         await this.handleRequest(res, () => this.authUseCase.changePassword(req.body));
     }
 }
-exports.AuthHttpService = AuthHttpService;

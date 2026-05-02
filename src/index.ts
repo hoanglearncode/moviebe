@@ -1,7 +1,11 @@
 import { setupCategoryHexagon } from "@/modules/category";
 import { setupAuthHexagon } from "@/modules/auth";
 import { setupUserHexagon } from "./modules/admin-manage/admin-user";
-import { setupPartnerHexagon, setupAdminPartnerHexagon, setupUserPartnerHexagon } from "@/modules/partner";
+import {
+  setupPartnerHexagon,
+  setupAdminPartnerHexagon,
+  setupUserPartnerHexagon,
+} from "@/modules/partner";
 
 import { createCategoryRepository } from "@/modules/category/infras/repository/repo";
 import { prisma } from "@/share/component/prisma";
@@ -36,7 +40,10 @@ import { buildAdminReportsRouter } from "./modules/admin-manage/admin-reports";
 import { buildAdminFeatureFlagsRouter } from "./modules/admin-manage/admin-feature-flags";
 import { buildAdminAuditLogsRouter } from "./modules/admin-manage/admin-audit-logs";
 import { buildAdminPlansRouter } from "./modules/admin-manage/admin-plans";
-import { buildAdminSystemSettingsRouter, getSystemSettingsService } from "./modules/admin-manage/admin-system-settings";
+import {
+  buildAdminSystemSettingsRouter,
+  getSystemSettingsService,
+} from "./modules/admin-manage/admin-system-settings";
 import { maintenanceModeGuard } from "@/share/middleware/maintenance";
 
 config();
@@ -59,7 +66,12 @@ config();
   app.use(requestLogger);
   app.use(
     cors({
-      origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:5173"],
+      origin: [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "http://localhost:5173",
+      ],
       credentials: true,
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
       allowedHeaders: ["Content-Type", "Authorization"],
@@ -69,13 +81,14 @@ config();
   app.get("/v1/settings", async (req, res) => {
     try {
       const svc = getSystemSettingsService();
-      const [siteName, defaultLanguage, timezone, maintenanceMode, registrationOpen] = await Promise.all([
-        svc.get("siteName"),
-        svc.get("defaultLanguage"),
-        svc.get("timezone"),
-        svc.get("maintenanceMode"),
-        svc.get("registrationOpen"),
-      ]);
+      const [siteName, defaultLanguage, timezone, maintenanceMode, registrationOpen] =
+        await Promise.all([
+          svc.get("siteName"),
+          svc.get("defaultLanguage"),
+          svc.get("timezone"),
+          svc.get("maintenanceMode"),
+          svc.get("registrationOpen"),
+        ]);
       res.json({
         success: true,
         data: {
@@ -89,13 +102,18 @@ config();
     } catch {
       res.json({
         success: true,
-        data: { siteName: "CineMax", defaultLanguage: "vi", timezone: "Asia/Ho_Chi_Minh", maintenanceMode: false, registrationOpen: true },
+        data: {
+          siteName: "CineMax",
+          defaultLanguage: "vi",
+          timezone: "Asia/Ho_Chi_Minh",
+          maintenanceMode: false,
+          registrationOpen: true,
+        },
       });
     }
   });
 
   app.use(maintenanceModeGuard);
-
 
   app.use("/v1", createUploadRouter());
   app.use("/v1", pusherAuthRouter);
@@ -112,7 +130,6 @@ config();
   app.use("/v1/payment", buildPaymentRouter(prisma));
   app.use("/v1/tickets", buildTicketRouter(prisma));
 
-  
   app.use("/v1/admin/email", adminEmailRouter);
   app.use("/v1/admin/analytics", buildAdminAnalyticsRouter(prisma));
   app.use("/v1/admin/finance", buildAdminFinanceRouter(prisma));

@@ -55,7 +55,6 @@ export interface CastMember {
   photo?: string | null;
 }
 
-
 export interface Movie {
   id: string;
   partnerId: string;
@@ -72,7 +71,7 @@ export interface Movie {
   backdropUrl?: string | null;
   trailerUrl?: string | null;
   altTitle?: string | null;
-  director?: string | null; 
+  director?: string | null;
   year?: number | null;
   country?: string | null;
   tags: string[];

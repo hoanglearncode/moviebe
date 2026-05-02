@@ -19,10 +19,10 @@ export class PublicMovieHttpService extends BaseHttpService<any, Movie, any, any
 
   async getListMovies(req: Request, res: Response): Promise<void> {
     try {
-      const paging = PagingDTOSchema.parse(req.query)
+      const paging = PagingDTOSchema.parse(req.query);
       const cond = MovieCondDTOSchema.parse(req.query);
-      const result  = await this.movieUseCase.getListMovies(cond, paging)
-      successResponse(res, result, "Success", 200, result.pagination);   
+      const result = await this.movieUseCase.getListMovies(cond, paging);
+      successResponse(res, result, "Success", 200, result.pagination);
     } catch (err: any) {
       errorResponse(res, 500, err.message);
     }

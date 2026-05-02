@@ -4,7 +4,10 @@ import { IAdminUserUseCase, IUserUseCase } from "@/modules/admin-manage/admin-us
 import {
   ChangePasswordDTO,
   ChangeUserStatusDTO,
+  CreateReviewDTO,
+  CreateReviewPayloadDTO,
   CreateUserDTO,
+  GetBillingQueryPayloadSchema,
   GetSessionsQueryDTO,
   ResetUserPasswordDTO,
   UpdateProfileDTO,
@@ -66,6 +69,40 @@ export class UserHttpService extends BaseHttpService<any, any, any, any> {
     });
   }
 
+  async getBilling(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      const query = GetBillingQueryPayloadSchema.parse(req.query);
+      return this.userUseCase.getBillingHistory(this.getAuthenticatedUserId(req), query);
+    });
+  }
+
+  async getBillingSummary(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      return this.userUseCase.getBillingSummary(this.getAuthenticatedUserId(req));
+    });
+  }
+
+  async getWatchHistory(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      const query = GetBillingQueryPayloadSchema.parse(req.query);
+      return this.userUseCase.getWatchHistory(this.getAuthenticatedUserId(req), query);
+    });
+  }
+
+  async getReviews(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      const query = GetBillingQueryPayloadSchema.parse(req.query);
+      return this.userUseCase.getReviews(this.getAuthenticatedUserId(req), query);
+    });
+  }
+
+  async createReview(req: Request<any, any, CreateReviewDTO>, res: Response) {
+    await this.handleRequest(res, async () => {
+      const payload = CreateReviewPayloadDTO.parse(req.body);
+      return this.userUseCase.createReview(this.getAuthenticatedUserId(req), payload);
+    });
+  }
+
   async revokeSession(req: Request, res: Response) {
     await this.handleRequest(res, async () => {
       return this.userUseCase.revokeSession(
@@ -96,7 +133,6 @@ export class UserHttpService extends BaseHttpService<any, any, any, any> {
 
     return userId;
   }
-
 }
 
 export class AdminUserHttpService extends BaseHttpService<any, any, any, any> {
@@ -265,6 +301,26 @@ export class AdminUserHttpService extends BaseHttpService<any, any, any, any> {
   async getStats(req: Request, res: Response) {
     await this.handleRequest(res, async () => {
       return await this.adminUserUseCase.getStats();
+    });
+  }
+
+  async getUserBilling(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      const query = GetBillingQueryPayloadSchema.parse(req.query);
+      return await this.adminUserUseCase.getUserBillingHistory(String(req.params.id || ""), query);
+    });
+  }
+
+  async getUserBillingSummary(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      return await this.adminUserUseCase.getUserBillingSummary(String(req.params.id || ""));
+    });
+  }
+
+  async getUserWatchHistory(req: Request, res: Response) {
+    await this.handleRequest(res, async () => {
+      const query = GetBillingQueryPayloadSchema.parse(req.query);
+      return await this.adminUserUseCase.getUserWatchHistory(String(req.params.id || ""), query);
     });
   }
 

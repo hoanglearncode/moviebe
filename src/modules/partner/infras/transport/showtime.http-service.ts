@@ -1,8 +1,6 @@
 import { Request, Response } from "express";
 import { successResponse, errorResponse } from "@/share/transport/http-server";
-import {
-  IShowtimeManagementUseCase,
-} from "@/modules/partner/interface";
+import { IShowtimeManagementUseCase } from "@/modules/partner/interface";
 import {
   CreateShowtimeDTO,
   UpdateShowtimeDTO,

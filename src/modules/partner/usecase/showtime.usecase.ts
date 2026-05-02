@@ -1,10 +1,16 @@
 import { randomUUID } from "crypto";
 import { IPartnerRepository } from "@/modules/partner/interface/profile.interface";
 import { IMovieRepository } from "@/modules/partner/interface/movie.interface";
-import { IShowtimeRepository, IShowtimeManagementUseCase } from "@/modules/partner/interface/showtime.interface";
+import {
+  IShowtimeRepository,
+  IShowtimeManagementUseCase,
+} from "@/modules/partner/interface/showtime.interface";
 import { ISeatRepository } from "@/modules/partner/interface/seat.interface";
 import { ITicketRepository } from "@/modules/partner/interface/ticket.interface";
-import { IWalletRepository, ITransactionRepository } from "@/modules/partner/interface/finance.interface";
+import {
+  IWalletRepository,
+  ITransactionRepository,
+} from "@/modules/partner/interface/finance.interface";
 import {
   PartnerProfile,
   Showtime,
@@ -15,7 +21,11 @@ import {
   TransactionType,
   TransactionStatus,
 } from "@/modules/partner/model/model";
-import { CreateShowtimeDTO, UpdateShowtimeDTO, ListShowtimesQueryDTO } from "@/modules/partner/model/dto";
+import {
+  CreateShowtimeDTO,
+  UpdateShowtimeDTO,
+  ListShowtimesQueryDTO,
+} from "@/modules/partner/model/dto";
 
 export class ShowtimeManagementUseCase implements IShowtimeManagementUseCase {
   constructor(

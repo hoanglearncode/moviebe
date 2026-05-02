@@ -9,10 +9,7 @@ export class MovieRepository implements IPublicMovieRepository {
     getMovieRepo(this.prisma);
   }
 
-  async getListMovies(
-    cond: any,
-    paging: PagingDTO
-  ): Promise<MovieSectionsResponse> {
+  async getListMovies(cond: any, paging: PagingDTO): Promise<MovieSectionsResponse> {
     const { page = 1, limit = 10 } = paging;
     const skip = (page - 1) * limit;
     const now = new Date();
@@ -39,13 +36,7 @@ export class MovieRepository implements IPublicMovieRepository {
       },
     };
 
-    const [
-      coming,
-      showing,
-      trend,
-      totalComing,
-      totalShowing,
-    ] = await Promise.all([
+    const [coming, showing, trend, totalComing, totalShowing] = await Promise.all([
       // 🎬 phim sắp chiếu
       this.prisma.movie.findMany({
         where: {
@@ -149,11 +140,11 @@ export class MovieRepository implements IPublicMovieRepository {
       dayStart.setHours(0, 0, 0, 0);
       const dayEnd = new Date(date);
       dayEnd.setHours(23, 59, 59, 999);
-    //   where.startTime = { gte: dayStart, lte: dayEnd };
+      //   where.startTime = { gte: dayStart, lte: dayEnd };
     }
 
     const rows = await this.prisma.showtime.findMany({
-    //   where,
+      //   where,
       include: {
         movie: {
           select: {

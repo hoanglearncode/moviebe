@@ -9,7 +9,7 @@ const adminGuard = [...protect(requireRole("ADMIN"))];
 export function buildAdminReportsRouter(prisma: PrismaClient): Router {
   const router = Router();
   const paramId = (value: string | string[] | undefined): string =>
-    Array.isArray(value) ? value[0] ?? "" : (value ?? "");
+    Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
 
   // GET /v1/admin/reports — list with filter/pagination
   router.get("/", ...adminGuard, async (req: Request, res: Response) => {
@@ -53,7 +53,13 @@ export function buildAdminReportsRouter(prisma: PrismaClient): Router {
       const reportId = paramId(req.params.id);
 
       const validActions: ReportAction[] = [
-        "NONE", "WARN_USER", "DELETE_CONTENT", "BAN_USER", "BAN_OWNER", "FLAG_CONTENT", "ESCALATE",
+        "NONE",
+        "WARN_USER",
+        "DELETE_CONTENT",
+        "BAN_USER",
+        "BAN_OWNER",
+        "FLAG_CONTENT",
+        "ESCALATE",
       ];
       if (action && !validActions.includes(action)) {
         return errorResponse(res, 400, `action must be one of: ${validActions.join(", ")}`);

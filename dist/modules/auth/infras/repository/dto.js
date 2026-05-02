@@ -1,11 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getEmailTokenModel = exports.getPasswordTokenModel = exports.getSessionModel = exports.getUserModel = void 0;
-const getUserModel = (prisma) => prisma.user;
-exports.getUserModel = getUserModel;
-const getSessionModel = (prisma) => prisma.session;
-exports.getSessionModel = getSessionModel;
-const getPasswordTokenModel = (prisma) => prisma.passwordResetToken;
-exports.getPasswordTokenModel = getPasswordTokenModel;
-const getEmailTokenModel = (prisma) => prisma.emailVerificationToken;
-exports.getEmailTokenModel = getEmailTokenModel;
+export const getUserModel = (prisma) => prisma.user;
+export const getSessionModel = (prisma) => prisma.session;
+export const getPasswordTokenModel = (prisma) => prisma.passwordResetToken;
+export const getEmailTokenModel = (prisma) => prisma.emailVerificationToken;

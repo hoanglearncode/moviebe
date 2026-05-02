@@ -4,8 +4,12 @@ import { getSystemSettingsService } from "@/modules/admin-manage/admin-system-se
 import { ENV } from "@/share/common/value";
 import { logger } from "@/modules/system/log/logger";
 
-
-const BYPASS_PREFIXES = ["/v1/auth/login", "/v1/auth/refresh-token", "/v1/auth/google", "/v1/auth/facebook"];
+const BYPASS_PREFIXES = [
+  "/v1/auth/login",
+  "/v1/auth/refresh-token",
+  "/v1/auth/google",
+  "/v1/auth/facebook",
+];
 
 function extractRoleFromToken(req: Request): string | null {
   try {
@@ -19,7 +23,11 @@ function extractRoleFromToken(req: Request): string | null {
   }
 }
 
-export const maintenanceModeGuard = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const maintenanceModeGuard = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const service = getSystemSettingsService();
     const isMaintenance = await service.isMaintenanceMode();

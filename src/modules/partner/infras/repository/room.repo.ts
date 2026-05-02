@@ -56,10 +56,7 @@ export class RoomRepository implements IRoomRepository {
     return room ? this.formatRoom(room) : null;
   }
 
-  async findMany(
-    partnerId: string,
-    paging: PagingDTO,
-  ): Promise<{ items: Room[]; total: number }> {
+  async findMany(partnerId: string, paging: PagingDTO): Promise<{ items: Room[]; total: number }> {
     const [rooms, total] = await Promise.all([
       this.prisma.room.findMany({
         where: { partnerId },
@@ -162,4 +159,5 @@ export class RoomRepository implements IRoomRepository {
   }
 }
 
-export const createRoomRepository = (prisma: PrismaClient): IRoomRepository => new RoomRepository(prisma);
+export const createRoomRepository = (prisma: PrismaClient): IRoomRepository =>
+  new RoomRepository(prisma);

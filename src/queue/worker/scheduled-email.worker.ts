@@ -68,9 +68,11 @@ const processScheduledEmails = async (
   }
 };
 
-export const startScheduledEmailWorker = async (): Promise<
-  Worker<ScheduledEmailJobData, void, ScheduledEmailJobName> | null
-> => {
+export const startScheduledEmailWorker = async (): Promise<Worker<
+  ScheduledEmailJobData,
+  void,
+  ScheduledEmailJobName
+> | null> => {
   if (!isQueueEnabled || !areQueueWorkersEnabled) {
     logger.info("[ScheduledEmailWorker] Disabled");
     return null;

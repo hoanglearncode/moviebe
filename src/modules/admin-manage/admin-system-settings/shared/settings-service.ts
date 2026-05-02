@@ -1,5 +1,8 @@
 import { PrismaClient } from "@prisma/client";
-import { DEFAULT_SETTINGS, SettingKey } from "@/modules/admin-manage/admin-system-settings/model/model";
+import {
+  DEFAULT_SETTINGS,
+  SettingKey,
+} from "@/modules/admin-manage/admin-system-settings/model/model";
 
 const CACHE_TTL_MS = 30_000;
 

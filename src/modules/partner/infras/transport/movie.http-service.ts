@@ -2,11 +2,7 @@ import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { successResponse, errorResponse } from "@/share/transport/http-server";
 import { IMovieManagementUseCase } from "@/modules/partner/interface/movie.interface";
-import {
-  UpdateMovieDTO,
-  CreateMovieDTO,
-  ListMoviesQueryDTO,
-} from "@/modules/partner/model/dto";
+import { UpdateMovieDTO, CreateMovieDTO, ListMoviesQueryDTO } from "@/modules/partner/model/dto";
 import { writeAuditLog } from "@/modules/admin-manage/admin-audit-logs/helper";
 
 export class MovieManagementHttpService {

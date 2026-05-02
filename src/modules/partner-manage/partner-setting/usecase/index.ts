@@ -1,4 +1,7 @@
-import { IPartnerSettingRepository, IPartnerSettingUseCase } from "@/modules/partner-manage/partner-setting/interface";
+import {
+  IPartnerSettingRepository,
+  IPartnerSettingUseCase,
+} from "@/modules/partner-manage/partner-setting/interface";
 import {
   PartnerSetting,
   PartnerSettingUpdate,

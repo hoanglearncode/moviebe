@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.BaseRepositoryPrisma = exports.BaseCommandRepositoryPrisma = exports.BaseQueryRepositoryPrisma = void 0;
-const base_model_1 = require("../model/base-model");
-class BaseQueryRepositoryPrisma {
+import { ModelStatus } from "@/share/model/base-model";
+export class BaseQueryRepositoryPrisma {
     constructor(model, options = {}) {
         this.model = model;
         this.options = options;
@@ -29,7 +26,7 @@ class BaseQueryRepositoryPrisma {
     buildWhere(cond) {
         const where = { ...cond };
         const softDelete = this.options.softDelete === undefined
-            ? { field: "status", deletedValue: base_model_1.ModelStatus.DELETED }
+            ? { field: "status", deletedValue: ModelStatus.DELETED }
             : this.options.softDelete;
         if (!softDelete) {
             return where;
@@ -40,8 +37,7 @@ class BaseQueryRepositoryPrisma {
         };
     }
 }
-exports.BaseQueryRepositoryPrisma = BaseQueryRepositoryPrisma;
-class BaseCommandRepositoryPrisma {
+export class BaseCommandRepositoryPrisma {
     constructor(model, options = {}) {
         this.model = model;
         this.options = options;
@@ -59,7 +55,7 @@ class BaseCommandRepositoryPrisma {
     }
     async delete(id, isHard = false) {
         const softDelete = this.options.softDelete === undefined
-            ? { field: "status", deletedValue: base_model_1.ModelStatus.DELETED }
+            ? { field: "status", deletedValue: ModelStatus.DELETED }
             : this.options.softDelete;
         if (!isHard && softDelete) {
             await this.model.update({
@@ -84,8 +80,7 @@ class BaseCommandRepositoryPrisma {
         };
     }
 }
-exports.BaseCommandRepositoryPrisma = BaseCommandRepositoryPrisma;
-class BaseRepositoryPrisma {
+export class BaseRepositoryPrisma {
     constructor(queryRepo, cmdRepo) {
         this.queryRepo = queryRepo;
         this.cmdRepo = cmdRepo;
@@ -109,4 +104,3 @@ class BaseRepositoryPrisma {
         return this.cmdRepo.delete(id, isHard);
     }
 }
-exports.BaseRepositoryPrisma = BaseRepositoryPrisma;

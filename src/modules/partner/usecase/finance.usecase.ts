@@ -16,7 +16,11 @@ import {
   WithdrawalStatus,
   WithdrawalListResponse,
 } from "@/modules/partner/model/model";
-import { CreateWithdrawalDTO, ListWithdrawalsQueryDTO, RevenueQueryDTO } from "@/modules/partner/model/dto";
+import {
+  CreateWithdrawalDTO,
+  ListWithdrawalsQueryDTO,
+  RevenueQueryDTO,
+} from "@/modules/partner/model/dto";
 
 export class PartnerFinanceUseCase implements IPartnerFinanceUseCase {
   constructor(

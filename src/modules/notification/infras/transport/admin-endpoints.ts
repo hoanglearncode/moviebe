@@ -6,11 +6,7 @@ import {
 } from "@/modules/notification";
 import { prisma } from "@/share/component/prisma";
 import { logger } from "@/modules/system/log/logger";
-import {
-  authMiddleware,
-  requireActiveUser,
-  requirePermission,
-} from "@/share/middleware/auth";
+import { authMiddleware, requireActiveUser, requirePermission } from "@/share/middleware/auth";
 import { PERMISSIONS } from "@/share/security/permissions";
 
 const router = Router();

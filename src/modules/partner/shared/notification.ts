@@ -50,7 +50,9 @@ export class PartnerNotificationService implements IPartnerNotificationService {
     }
 
     await pushNotificationService
-      .send(NotificationFactory.partnerWithdrawalPending(input.userId, input.reference, input.amount))
+      .send(
+        NotificationFactory.partnerWithdrawalPending(input.userId, input.reference, input.amount),
+      )
       .catch((err) => logger.warn("[PartnerNotif] push failed", { err: err.message }));
   }
 
@@ -77,7 +79,9 @@ export class PartnerNotificationService implements IPartnerNotificationService {
     }
 
     await pushNotificationService
-      .send(NotificationFactory.partnerWithdrawalCompleted(input.userId, input.reference, input.amount))
+      .send(
+        NotificationFactory.partnerWithdrawalCompleted(input.userId, input.reference, input.amount),
+      )
       .catch((err) => logger.warn("[PartnerNotif] push failed", { err: err.message }));
   }
 
@@ -98,7 +102,14 @@ export class PartnerNotificationService implements IPartnerNotificationService {
     // Withdrawal failure is always delivered — partner needs to know about failures
     // regardless of their preference so they can take action.
     await pushNotificationService
-      .send(NotificationFactory.partnerWithdrawalFailed(input.userId, "unknown", input.amount, input.reason))
+      .send(
+        NotificationFactory.partnerWithdrawalFailed(
+          input.userId,
+          "unknown",
+          input.amount,
+          input.reason,
+        ),
+      )
       .catch((err) => logger.warn("[PartnerNotif] push failed", { err: err.message }));
   }
 
@@ -121,7 +132,13 @@ export class PartnerNotificationService implements IPartnerNotificationService {
     }
 
     await pushNotificationService
-      .send(NotificationFactory.partnerMovieApproved(input.userId, input.movieId ?? "", input.movieTitle))
+      .send(
+        NotificationFactory.partnerMovieApproved(
+          input.userId,
+          input.movieId ?? "",
+          input.movieTitle,
+        ),
+      )
       .catch((err) => logger.warn("[PartnerNotif] push failed", { err: err.message }));
   }
 
@@ -142,7 +159,14 @@ export class PartnerNotificationService implements IPartnerNotificationService {
 
     // Rejections are always delivered — partner must know their movie was rejected.
     await pushNotificationService
-      .send(NotificationFactory.partnerMovieRejected(input.userId, input.movieId ?? "", input.movieTitle, input.reason))
+      .send(
+        NotificationFactory.partnerMovieRejected(
+          input.userId,
+          input.movieId ?? "",
+          input.movieTitle,
+          input.reason,
+        ),
+      )
       .catch((err) => logger.warn("[PartnerNotif] push failed", { err: err.message }));
   }
 

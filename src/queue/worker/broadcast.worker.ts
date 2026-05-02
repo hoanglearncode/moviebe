@@ -30,41 +30,26 @@ const BATCH_SIZE = 100;
  * Build Prisma `where` clause for the target segment, adding setting filters based on
  * the delivery channel so we only reach users/partners who opted in.
  */
-function buildUserWhere(
-  target: string,
-  channel: string,
-): Prisma.UserWhereInput {
+function buildUserWhere(target: string, channel: string): Prisma.UserWhereInput {
   const activeOnly = { status: UserStatus.ACTIVE };
 
   const wantsPush: Prisma.UserWhereInput = {
-    OR: [
-      { settings: { is: null } },
-      { settings: { notifications: true } },
-    ],
+    OR: [{ settings: { is: null } }, { settings: { notifications: true } }],
   };
 
   const wantsEmail: Prisma.UserWhereInput = {
-    OR: [
-      { settings: { is: null } },
-      { settings: { marketingEmails: true } },
-    ],
+    OR: [{ settings: { is: null } }, { settings: { marketingEmails: true } }],
   };
 
   const partnerWantsPush: Prisma.UserWhereInput = {
     partner: {
-      OR: [
-        { setting: { is: null } },
-        { setting: { notifySystemAlerts: true } },
-      ],
+      OR: [{ setting: { is: null } }, { setting: { notifySystemAlerts: true } }],
     },
   };
 
   const partnerWantsEmail: Prisma.UserWhereInput = {
     partner: {
-      OR: [
-        { setting: { is: null } },
-        { setting: { emailSystemAlerts: true } },
-      ],
+      OR: [{ setting: { is: null } }, { setting: { emailSystemAlerts: true } }],
     },
   };
 
@@ -151,8 +136,7 @@ const processBroadcastJob = async (
     channel === BroadcastChannel.DESKTOP ||
     channel === BroadcastChannel.MOBILE;
 
-  const shouldSendEmail =
-    channel === BroadcastChannel.ALL || channel === BroadcastChannel.EMAIL;
+  const shouldSendEmail = channel === BroadcastChannel.ALL || channel === BroadcastChannel.EMAIL;
 
   const notifData = {
     broadcastId,
@@ -246,9 +230,7 @@ const processBroadcastJob = async (
   logger.info("[BroadcastWorker] Delivery complete", { broadcastId, totalSent });
 };
 
-export const startBroadcastWorker = ():
-  | Worker<BroadcastJobData, void, BroadcastJobName>
-  | null => {
+export const startBroadcastWorker = (): Worker<BroadcastJobData, void, BroadcastJobName> | null => {
   if (!isQueueEnabled || !areQueueWorkersEnabled) {
     logger.info("[BroadcastWorker] Disabled");
     return null;

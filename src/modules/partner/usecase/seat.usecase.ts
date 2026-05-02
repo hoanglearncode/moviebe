@@ -1,5 +1,8 @@
 import { IShowtimeRepository } from "@/modules/partner/interface/showtime.interface";
-import { ISeatRepository, ISeatManagementUseCase } from "@/modules/partner/interface/seat.interface";
+import {
+  ISeatRepository,
+  ISeatManagementUseCase,
+} from "@/modules/partner/interface/seat.interface";
 import { IMovieRepository } from "@/modules/partner/interface/movie.interface";
 import { Seat, SeatType, SeatStatus } from "@/modules/partner/model/model";
 import { UpdateSeatDTO } from "@/modules/partner/model/dto";

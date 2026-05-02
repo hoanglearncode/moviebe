@@ -56,9 +56,7 @@ export class BookingRepository implements IBookingRepository {
     return true;
   }
 
-  async lockSeatsAtomic(
-    params: { userId: string } & LockSeatsDTO,
-  ): Promise<LockSeatsResult> {
+  async lockSeatsAtomic(params: { userId: string } & LockSeatsDTO): Promise<LockSeatsResult> {
     const { userId, showtimeId, seatIds } = params;
 
     return this.prisma.$transaction(async (tx) => {

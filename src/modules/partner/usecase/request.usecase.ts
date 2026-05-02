@@ -10,11 +10,15 @@ import {
   SubmitPartnerRequestSchema,
   UpdatePartnerDTO,
 } from "@/modules/partner/model/dto";
-import { MyPartnerStatusResponse, PartnerRequestRow, StaffRole } from "@/modules/partner/model/model";
+import {
+  MyPartnerStatusResponse,
+  PartnerRequestRow,
+  StaffRole,
+} from "@/modules/partner/model/model";
 import { IWalletRepository } from "@/modules/partner/interface/finance.interface";
 import { IPartnerRepository } from "@/modules/partner/interface/profile.interface";
 import { IStaffRepo } from "@/modules/partner/interface/staff.interface";
-import { ISessionRepository, IUserRepository } from "@/modules/user/interface";
+import { ISessionRepository, IUserRepository } from "@/modules/admin-manage/admin-user/interface";
 
 export class RequestUseCase implements IPartnerRequestUseCase {
   constructor(

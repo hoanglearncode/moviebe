@@ -200,6 +200,41 @@ export class AdminAnalyticsUseCase {
     };
   }
 
+  async getBadgeCounts() {
+    const [pendingPartners, reportedContent, flaggedComments, pendingPayouts, pendingReviews] =
+      await Promise.all([
+        this.prisma.partnerRequest.count({
+          where: { status: "PENDING" },
+        }),
+        this.prisma.report.count({
+          where: {
+            status: { in: ["PENDING", "REVIEWING"] },
+            target: { in: ["MOVIE", "REVIEW", "USER", "OWNER"] },
+          },
+        }),
+        this.prisma.report.count({
+          where: {
+            status: { in: ["PENDING", "REVIEWING"] },
+            target: "COMMENT",
+          },
+        }),
+        this.prisma.withdrawal.count({
+          where: { status: "PENDING" },
+        }),
+        this.prisma.review.count({
+          where: { status: "PENDING" },
+        }),
+      ]);
+
+    return {
+      pendingPartners,
+      reportedContent,
+      flaggedComments,
+      pendingPayouts,
+      pendingReviews,
+    };
+  }
+
   private periodToRange(period: Period): { startDate: Date; groupBy: "DAY" | "MONTH" } {
     const now = new Date();
     let startDate: Date;

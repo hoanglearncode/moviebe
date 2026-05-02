@@ -1,293 +1,287 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.RequestCondDTOSchema = exports.RevenueQueryPayloadDTO = exports.ListWithdrawalsQueryPayloadDTO = exports.ListTicketsQueryPayloadDTO = exports.ListShowtimesQueryPayloadDTO = exports.ListMoviesQueryPayloadDTO = exports.ServiceCondDTOSchema = exports.CreateServicePayloadDTO = exports.UpdateServicePayloadDTO = exports.CreateWithdrawalPayloadDTO = exports.CheckInPayloadDTO = exports.UnlockSeatPayloadDTO = exports.LockSeatPayloadDTO = exports.UpdateSeatPayloadDTO = exports.UpdateRoomPayloadDTO = exports.CreateRoomPayloadDTO = exports.UpdateShowtimePayloadDTO = exports.CreateShowtimePayloadDTO = exports.UpdateMoviePayloadDTO = exports.CreateMoviePayloadDTO = exports.UpdatePartnerPayloadDTO = exports.SubmitPartnerRequestSchema = void 0;
-const zod_1 = __importDefault(require("zod"));
+import z from "zod";
 /**
  * ==========================================
  * PARTNER PROFILE DTOs
  * ==========================================
  */
-exports.SubmitPartnerRequestSchema = zod_1.default.object({
-    cinemaName: zod_1.default.string().trim().min(1, "Cinema name is required").max(255),
-    address: zod_1.default.string().trim().min(5, "Address is required"),
-    city: zod_1.default.string().trim().min(1, "City is required"),
-    phone: zod_1.default.string().trim().regex(/^\+?[0-9\s\-()]{9,}$/, "Invalid phone number"),
-    email: zod_1.default.string().trim().email("Invalid email"),
-    logo: zod_1.default.string().trim().url().optional(),
-    taxCode: zod_1.default.string().trim().min(1, "Tax code is required"),
-    businessLicense: zod_1.default.string().trim().min(1, "Business license is required"),
-    businessLicenseFile: zod_1.default.string().trim().url("Invalid license file URL"),
-    representativeName: zod_1.default.string().trim().min(1, "Representative name is required"),
-    representativeIdNumber: zod_1.default.string().trim().min(9, "Invalid ID number"),
-    representativeIdFile: zod_1.default.string().trim().url("Invalid ID file URL"),
-    taxCertificateFile: zod_1.default.string().trim().url("Invalid tax certificate file URL"),
-    bankAccountName: zod_1.default.string().trim().min(1, "Bank account name is required"),
-    bankAccountNumber: zod_1.default.string().trim().min(10, "Invalid bank account number"),
-    bankName: zod_1.default.string().trim().min(1, "Bank name is required"),
+export const SubmitPartnerRequestSchema = z.object({
+    cinemaName: z.string().trim().min(1, "Cinema name is required").max(255),
+    address: z.string().trim().min(5, "Address is required"),
+    city: z.string().trim().min(1, "City is required"),
+    phone: z.string().trim().regex(/^\+?[0-9\s\-()]{9,}$/, "Invalid phone number"),
+    email: z.string().trim().email("Invalid email"),
+    logo: z.string().trim().url().optional(),
+    taxCode: z.string().trim().min(1, "Tax code is required"),
+    businessLicense: z.string().trim().min(1, "Business license is required"),
+    businessLicenseFile: z.string().trim().url("Invalid license file URL"),
+    representativeName: z.string().trim().min(1, "Representative name is required"),
+    representativeIdNumber: z.string().trim().min(9, "Invalid ID number"),
+    representativeIdFile: z.string().trim().url("Invalid ID file URL"),
+    taxCertificateFile: z.string().trim().url("Invalid tax certificate file URL"),
+    bankAccountName: z.string().trim().min(1, "Bank account name is required"),
+    bankAccountNumber: z.string().trim().min(10, "Invalid bank account number"),
+    bankName: z.string().trim().min(1, "Bank name is required"),
 });
-exports.UpdatePartnerPayloadDTO = zod_1.default.object({
-    cinemaName: zod_1.default.string().trim().min(1).max(255).optional(),
-    address: zod_1.default.string().trim().min(5).optional(),
-    city: zod_1.default.string().trim().min(1).optional(),
-    country: zod_1.default.string().trim().min(1).optional(),
-    postalCode: zod_1.default.string().trim().optional().nullable(),
-    phone: zod_1.default.string().trim().regex(/^\+?[0-9\s\-()]{9,}$/).optional(),
-    email: zod_1.default.string().trim().email().optional(),
-    website: zod_1.default.string().trim().url().optional().nullable(),
-    logo: zod_1.default.string().trim().url().optional().nullable(),
-    taxCode: zod_1.default.string().trim().min(1).optional(),
-    businessLicense: zod_1.default.string().trim().min(1).optional(),
-    businessLicenseFile: zod_1.default.string().trim().url().optional(),
-    representativeName: zod_1.default.string().trim().min(1).optional(),
-    representativeIdNumber: zod_1.default.string().trim().min(9).optional(),
-    representativeIdFile: zod_1.default.string().trim().url().optional(),
-    taxCertificateFile: zod_1.default.string().trim().url().optional(),
-    bankAccountName: zod_1.default.string().trim().min(1).optional(),
-    bankAccountNumber: zod_1.default.string().trim().min(10).optional(),
-    bankName: zod_1.default.string().trim().min(1).optional(),
-    bankCode: zod_1.default.string().trim().min(1).optional(),
+export const UpdatePartnerPayloadDTO = z.object({
+    cinemaName: z.string().trim().min(1).max(255).optional(),
+    address: z.string().trim().min(5).optional(),
+    city: z.string().trim().min(1).optional(),
+    country: z.string().trim().min(1).optional(),
+    postalCode: z.string().trim().optional().nullable(),
+    phone: z.string().trim().regex(/^\+?[0-9\s\-()]{9,}$/).optional(),
+    email: z.string().trim().email().optional(),
+    website: z.string().trim().url().optional().nullable(),
+    logo: z.string().trim().url().optional().nullable(),
+    taxCode: z.string().trim().min(1).optional(),
+    businessLicense: z.string().trim().min(1).optional(),
+    businessLicenseFile: z.string().trim().url().optional(),
+    representativeName: z.string().trim().min(1).optional(),
+    representativeIdNumber: z.string().trim().min(9).optional(),
+    representativeIdFile: z.string().trim().url().optional(),
+    taxCertificateFile: z.string().trim().url().optional(),
+    bankAccountName: z.string().trim().min(1).optional(),
+    bankAccountNumber: z.string().trim().min(10).optional(),
+    bankName: z.string().trim().min(1).optional(),
+    bankCode: z.string().trim().min(1).optional(),
 });
 /**
  * ==========================================
  * MOVIE DTOs
  * ==========================================
  */
-const CastMemberDTOSchema = zod_1.default.object({
-    name: zod_1.default.string().trim().min(1),
-    role: zod_1.default.string().trim().optional(),
-    photo: zod_1.default.string().trim().url().optional(),
+const CastMemberDTOSchema = z.object({
+    name: z.string().trim().min(1),
+    role: z.string().trim().optional(),
+    photo: z.string().trim().url().optional(),
 });
-const ShowtimePlanDTOSchema = zod_1.default.object({
-    date: zod_1.default.string().min(1, "Date required"), // "YYYY-MM-DD"
-    time: zod_1.default.string().min(1, "Time required"), // "HH:mm"
-    roomId: zod_1.default.string().min(1, "Room ID required"),
-    prices: zod_1.default.object({
-        standard: zod_1.default.number().min(1000).optional(),
-        vip: zod_1.default.number().min(1000).optional(),
-        premium: zod_1.default.number().min(1000).optional(),
-        couple: zod_1.default.number().min(1000).optional(),
+const ShowtimePlanDTOSchema = z.object({
+    date: z.string().min(1, "Date required"), // "YYYY-MM-DD"
+    time: z.string().min(1, "Time required"), // "HH:mm"
+    roomId: z.string().min(1, "Room ID required"),
+    prices: z.object({
+        standard: z.number().min(1000).optional(),
+        vip: z.number().min(1000).optional(),
+        premium: z.number().min(1000).optional(),
+        couple: z.number().min(1000).optional(),
     }),
 });
-exports.CreateMoviePayloadDTO = zod_1.default.object({
+export const CreateMoviePayloadDTO = z.object({
     // Core
-    title: zod_1.default.string().trim().min(1, "Title required").max(255),
-    description: zod_1.default.string().trim().optional(),
-    genre: zod_1.default.array(zod_1.default.string().trim().min(1, "Genre required")).min(1, "Genre required"),
-    language: zod_1.default.string().trim().min(1, "Language required").default("en"),
-    duration: zod_1.default.number().int().min(30, "Duration at least 30 minutes"),
-    releaseDate: zod_1.default.string().datetime("Invalid date"),
-    endDate: zod_1.default.string().datetime("Invalid date"),
-    rating: zod_1.default.string().trim().optional(),
+    title: z.string().trim().min(1, "Title required").max(255),
+    description: z.string().trim().optional(),
+    genre: z.array(z.string().trim().min(1, "Genre required")).min(1, "Genre required"),
+    language: z.string().trim().min(1, "Language required").default("en"),
+    duration: z.number().int().min(30, "Duration at least 30 minutes"),
+    releaseDate: z.string().datetime("Invalid date"),
+    endDate: z.string().datetime("Invalid date"),
+    rating: z.string().trim().optional(),
     // Media
-    posterUrl: zod_1.default.string().trim().url("Invalid poster URL").optional(),
-    backdropUrl: zod_1.default.string().trim().url("Invalid backdrop URL").optional(),
-    trailerUrl: zod_1.default.string().trim().url("Invalid trailer URL").optional(),
+    posterUrl: z.string().trim().url("Invalid poster URL").optional(),
+    backdropUrl: z.string().trim().url("Invalid backdrop URL").optional(),
+    trailerUrl: z.string().trim().url("Invalid trailer URL").optional(),
     // Extended metadata
-    altTitle: zod_1.default.string().trim().optional(),
-    director: zod_1.default.string().trim().optional(),
-    year: zod_1.default.number().int().optional(),
-    country: zod_1.default.string().trim().optional(),
-    tags: zod_1.default.array(zod_1.default.string().trim()).optional(),
-    cast: zod_1.default.array(CastMemberDTOSchema).optional(),
+    altTitle: z.string().trim().optional(),
+    director: z.string().trim().optional(),
+    year: z.number().int().optional(),
+    country: z.string().trim().optional(),
+    tags: z.array(z.string().trim()).optional(),
+    cast: z.array(CastMemberDTOSchema).optional(),
     // Showtime plans (created atomically alongside the movie)
-    showtimes: zod_1.default.array(ShowtimePlanDTOSchema).optional(),
+    showtimes: z.array(ShowtimePlanDTOSchema).optional(),
     // Settings
-    allowComments: zod_1.default.boolean().optional(),
+    allowComments: z.boolean().optional(),
 });
-exports.UpdateMoviePayloadDTO = zod_1.default.object({
-    title: zod_1.default.string().trim().min(1).max(255).optional(),
-    description: zod_1.default.string().trim().nullable().optional(),
-    genre: zod_1.default.array(zod_1.default.string().trim().min(1)).min(1).optional(),
-    language: zod_1.default.string().trim().min(1).optional(),
-    duration: zod_1.default.number().int().min(30).optional(),
-    releaseDate: zod_1.default.string().datetime().optional(),
-    endDate: zod_1.default.string().datetime().optional(),
-    posterUrl: zod_1.default.string().trim().url().optional(),
-    trailerUrl: zod_1.default.string().trim().url().optional(),
-    rating: zod_1.default.string().trim().optional(),
+export const UpdateMoviePayloadDTO = z.object({
+    title: z.string().trim().min(1).max(255).optional(),
+    description: z.string().trim().nullable().optional(),
+    genre: z.array(z.string().trim().min(1)).min(1).optional(),
+    language: z.string().trim().min(1).optional(),
+    duration: z.number().int().min(30).optional(),
+    releaseDate: z.string().datetime().optional(),
+    endDate: z.string().datetime().optional(),
+    posterUrl: z.string().trim().url().optional(),
+    trailerUrl: z.string().trim().url().optional(),
+    rating: z.string().trim().optional(),
 });
 /**
  * ==========================================
  * SHOWTIME & SEAT DTOs
  * ==========================================
  */
-exports.CreateShowtimePayloadDTO = zod_1.default.object({
-    movieId: zod_1.default.string().min(1, "Movie ID required"),
-    roomId: zod_1.default.string().min(1, "Room ID required"),
-    startTime: zod_1.default.string().datetime("Invalid datetime"),
-    basePrice: zod_1.default.number().min(1000, "Price too low"),
-    totalSeats: zod_1.default.number().int().min(1, "At least 1 seat"),
+export const CreateShowtimePayloadDTO = z.object({
+    movieId: z.string().min(1, "Movie ID required"),
+    roomId: z.string().min(1, "Room ID required"),
+    startTime: z.string().datetime("Invalid datetime"),
+    basePrice: z.number().min(1000, "Price too low"),
+    totalSeats: z.number().int().min(1, "At least 1 seat"),
 });
-exports.UpdateShowtimePayloadDTO = zod_1.default.object({
-    basePrice: zod_1.default.number().min(1000).optional(),
-    status: zod_1.default.enum(["SCHEDULED", "STARTED", "ENDED", "CANCELLED"]).optional(),
+export const UpdateShowtimePayloadDTO = z.object({
+    basePrice: z.number().min(1000).optional(),
+    status: z.enum(["SCHEDULED", "STARTED", "ENDED", "CANCELLED"]).optional(),
 });
 /**
  * ==========================================
  * ROOM DTOs
  * ==========================================
  */
-exports.CreateRoomPayloadDTO = zod_1.default.object({
-    name: zod_1.default.string().trim().min(1, "Room name required").max(100),
-    type: zod_1.default.enum(["TWO_D", "THREE_D", "IMAX", "VIP", "FOUR_DX"]),
-    status: zod_1.default.enum(["ACTIVE", "INACTIVE", "MAINTENANCE"]).default("ACTIVE"),
-    rows: zod_1.default.number().int().min(1, "At least 1 row"),
-    seatsPerRow: zod_1.default.number().int().min(1, "At least 1 seat per row"),
-    tech: zod_1.default.array(zod_1.default.string().trim()).default([]),
-    screenWidth: zod_1.default.number().min(1, "Screen width required"),
-    screenHeight: zod_1.default.number().min(1, "Screen height required"),
-    screenPos: zod_1.default.string().min(1, "Screen position required"),
-    aspectRatio: zod_1.default.string().min(1, "Aspect ratio required"),
-    entrancePos: zod_1.default.string().min(1, "Entrance position required"),
-    aislePos: zod_1.default.string().optional().nullable(),
-    layoutSeat: zod_1.default.array(zod_1.default.array(zod_1.default.number())).default([]),
-    allowOnlineBooking: zod_1.default.boolean().default(true),
-    allowSeatSelection: zod_1.default.boolean().default(true),
-    maxBookingDays: zod_1.default.number().int().min(1).default(14),
-    maxSeatsPerTransaction: zod_1.default.number().int().min(1).default(10),
-    buildYear: zod_1.default.number().int().optional().nullable(),
-    lastRenovated: zod_1.default.number().int().optional().nullable(),
-    description: zod_1.default.string().trim().optional().nullable(),
-    internalNotes: zod_1.default.string().trim().optional().nullable(),
-    services: zod_1.default.array(zod_1.default.number().int()).default([]),
+export const CreateRoomPayloadDTO = z.object({
+    name: z.string().trim().min(1, "Room name required").max(100),
+    type: z.enum(["TWO_D", "THREE_D", "IMAX", "VIP", "FOUR_DX"]),
+    status: z.enum(["ACTIVE", "INACTIVE", "MAINTENANCE"]).default("ACTIVE"),
+    rows: z.number().int().min(1, "At least 1 row"),
+    seatsPerRow: z.number().int().min(1, "At least 1 seat per row"),
+    tech: z.array(z.string().trim()).default([]),
+    screenWidth: z.number().min(1, "Screen width required"),
+    screenHeight: z.number().min(1, "Screen height required"),
+    screenPos: z.string().min(1, "Screen position required"),
+    aspectRatio: z.string().min(1, "Aspect ratio required"),
+    entrancePos: z.string().min(1, "Entrance position required"),
+    aislePos: z.string().optional().nullable(),
+    layoutSeat: z.array(z.array(z.number())).default([]),
+    allowOnlineBooking: z.boolean().default(true),
+    allowSeatSelection: z.boolean().default(true),
+    maxBookingDays: z.number().int().min(1).default(14),
+    maxSeatsPerTransaction: z.number().int().min(1).default(10),
+    buildYear: z.number().int().optional().nullable(),
+    lastRenovated: z.number().int().optional().nullable(),
+    description: z.string().trim().optional().nullable(),
+    internalNotes: z.string().trim().optional().nullable(),
+    services: z.array(z.number().int()).default([]),
 });
-exports.UpdateRoomPayloadDTO = zod_1.default.object({
-    name: zod_1.default.string().trim().min(1).max(100).optional(),
-    type: zod_1.default.enum(["TWO_D", "THREE_D", "IMAX", "VIP", "FOUR_DX"]).optional(),
-    status: zod_1.default.enum(["ACTIVE", "INACTIVE", "MAINTENANCE"]).optional(),
-    rows: zod_1.default.number().int().min(1).optional(),
-    seatsPerRow: zod_1.default.number().int().min(1).optional(),
-    tech: zod_1.default.array(zod_1.default.string().trim()).optional(),
-    screenWidth: zod_1.default.number().min(1).optional(),
-    screenHeight: zod_1.default.number().min(1).optional(),
-    screenPos: zod_1.default.string().min(1).optional(),
-    aspectRatio: zod_1.default.string().min(1).optional(),
-    entrancePos: zod_1.default.string().min(1).optional(),
-    aislePos: zod_1.default.string().optional().nullable(),
-    layoutSeat: zod_1.default.array(zod_1.default.array(zod_1.default.number())).optional(),
-    allowOnlineBooking: zod_1.default.boolean().optional(),
-    allowSeatSelection: zod_1.default.boolean().optional(),
-    maxBookingDays: zod_1.default.number().int().min(1).optional(),
-    maxSeatsPerTransaction: zod_1.default.number().int().min(1).optional(),
-    buildYear: zod_1.default.number().int().optional().nullable(),
-    lastRenovated: zod_1.default.number().int().optional().nullable(),
-    description: zod_1.default.string().trim().optional().nullable(),
-    internalNotes: zod_1.default.string().trim().optional().nullable(),
-    services: zod_1.default.array(zod_1.default.number().int()).optional(),
+export const UpdateRoomPayloadDTO = z.object({
+    name: z.string().trim().min(1).max(100).optional(),
+    type: z.enum(["TWO_D", "THREE_D", "IMAX", "VIP", "FOUR_DX"]).optional(),
+    status: z.enum(["ACTIVE", "INACTIVE", "MAINTENANCE"]).optional(),
+    rows: z.number().int().min(1).optional(),
+    seatsPerRow: z.number().int().min(1).optional(),
+    tech: z.array(z.string().trim()).optional(),
+    screenWidth: z.number().min(1).optional(),
+    screenHeight: z.number().min(1).optional(),
+    screenPos: z.string().min(1).optional(),
+    aspectRatio: z.string().min(1).optional(),
+    entrancePos: z.string().min(1).optional(),
+    aislePos: z.string().optional().nullable(),
+    layoutSeat: z.array(z.array(z.number())).optional(),
+    allowOnlineBooking: z.boolean().optional(),
+    allowSeatSelection: z.boolean().optional(),
+    maxBookingDays: z.number().int().min(1).optional(),
+    maxSeatsPerTransaction: z.number().int().min(1).optional(),
+    buildYear: z.number().int().optional().nullable(),
+    lastRenovated: z.number().int().optional().nullable(),
+    description: z.string().trim().optional().nullable(),
+    internalNotes: z.string().trim().optional().nullable(),
+    services: z.array(z.number().int()).optional(),
 });
-exports.UpdateSeatPayloadDTO = zod_1.default.object({
-    type: zod_1.default.enum(["STANDARD", "VIP", "COUPLE", "BLOCKED"]).optional(),
-    status: zod_1.default.enum(["AVAILABLE", "LOCKED", "BOOKED", "MAINTENANCE"]).optional(),
-    price: zod_1.default.number().min(1000).optional(),
+export const UpdateSeatPayloadDTO = z.object({
+    type: z.enum(["STANDARD", "VIP", "COUPLE", "BLOCKED"]).optional(),
+    status: z.enum(["AVAILABLE", "LOCKED", "BOOKED", "MAINTENANCE"]).optional(),
+    price: z.number().min(1000).optional(),
 });
-exports.LockSeatPayloadDTO = zod_1.default.object({
-    showtimeId: zod_1.default.string().min(1),
-    seatIds: zod_1.default.array(zod_1.default.string()).min(1, "Select at least one seat"),
-    durationMinutes: zod_1.default.number().int().min(5).max(30).default(10),
+export const LockSeatPayloadDTO = z.object({
+    showtimeId: z.string().min(1),
+    seatIds: z.array(z.string()).min(1, "Select at least one seat"),
+    durationMinutes: z.number().int().min(5).max(30).default(10),
 });
-exports.UnlockSeatPayloadDTO = zod_1.default.object({
-    seatIds: zod_1.default.array(zod_1.default.string()).min(1),
+export const UnlockSeatPayloadDTO = z.object({
+    seatIds: z.array(z.string()).min(1),
 });
 /**
  * ==========================================
  * TICKET DTOs
  * ==========================================
  */
-exports.CheckInPayloadDTO = zod_1.default.object({
-    qrCode: zod_1.default.string().min(1, "QR code required"),
-    scannedBy: zod_1.default.string().min(1, "Scanner ID required"),
-    ipAddress: zod_1.default.string().optional(),
+export const CheckInPayloadDTO = z.object({
+    qrCode: z.string().min(1, "QR code required"),
+    scannedBy: z.string().min(1, "Scanner ID required"),
+    ipAddress: z.string().optional(),
 });
 /**
  * ==========================================
  * FINANCE DTOs
  * ==========================================
  */
-exports.CreateWithdrawalPayloadDTO = zod_1.default.object({
-    amount: zod_1.default.number().min(100000, "Minimum withdrawal 100k VND"),
-    bankAccountNumber: zod_1.default.string().trim().min(10, "Invalid account"),
-    bankName: zod_1.default.string().trim().min(1, "Bank name required"),
-    bankCode: zod_1.default.string().trim().min(1, "Bank code required"),
-    note: zod_1.default.string().trim().optional(),
+export const CreateWithdrawalPayloadDTO = z.object({
+    amount: z.number().min(100000, "Minimum withdrawal 100k VND"),
+    bankAccountNumber: z.string().trim().min(10, "Invalid account"),
+    bankName: z.string().trim().min(1, "Bank name required"),
+    bankCode: z.string().trim().min(1, "Bank code required"),
+    note: z.string().trim().optional(),
 });
 /**
  * ==========================================
  * SERVICE DTOs
  * ==========================================
  */
-exports.UpdateServicePayloadDTO = zod_1.default.object({
-    name: zod_1.default.string().trim().min(1, "Name is required").optional(),
-    price: zod_1.default.coerce.number().min(0, "Price must > 0").optional(),
-    category: zod_1.default.string().trim().min(1, "Category is required").optional(),
-    icon: zod_1.default.string().nullable().optional(),
-    description: zod_1.default.string().nullable().optional(),
-    roomIds: zod_1.default.array(zod_1.default.string().trim().min(1, "Room ID is required")).optional(),
+export const UpdateServicePayloadDTO = z.object({
+    name: z.string().trim().min(1, "Name is required").optional(),
+    price: z.coerce.number().min(0, "Price must > 0").optional(),
+    category: z.string().trim().min(1, "Category is required").optional(),
+    icon: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    roomIds: z.array(z.string().trim().min(1, "Room ID is required")).optional(),
 });
-exports.CreateServicePayloadDTO = zod_1.default.object({
-    name: zod_1.default.string().trim().min(1, "Name is required"),
-    price: zod_1.default.coerce.number().min(0, "Price must > 0"),
-    category: zod_1.default.string().trim().min(1, "Category is required"),
-    icon: zod_1.default.string().nullable().optional(),
-    description: zod_1.default.string().nullable().optional(),
-    roomIds: zod_1.default.array(zod_1.default.string().trim().min(1, "Room ID is required")).default([]),
+export const CreateServicePayloadDTO = z.object({
+    name: z.string().trim().min(1, "Name is required"),
+    price: z.coerce.number().min(0, "Price must > 0"),
+    category: z.string().trim().min(1, "Category is required"),
+    icon: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    roomIds: z.array(z.string().trim().min(1, "Room ID is required")).default([]),
 });
-exports.ServiceCondDTOSchema = zod_1.default.object({
-    name: zod_1.default.string().trim().min(2, "name must be at least 2 characters").optional(),
-    price: zod_1.default.coerce.number().min(0, "Price must > 0").optional(),
-    category: zod_1.default.string().trim().min(1, "Category is required").optional(),
-    roomId: zod_1.default.string().trim().min(1, "Room ID is required").optional(),
+export const ServiceCondDTOSchema = z.object({
+    name: z.string().trim().min(2, "name must be at least 2 characters").optional(),
+    price: z.coerce.number().min(0, "Price must > 0").optional(),
+    category: z.string().trim().min(1, "Category is required").optional(),
+    roomId: z.string().trim().min(1, "Room ID is required").optional(),
 });
 /**
  * ==========================================
  * QUERY DTOs
  * ==========================================
  */
-exports.ListMoviesQueryPayloadDTO = zod_1.default.object({
-    page: zod_1.default.number().int().min(1).default(1),
-    limit: zod_1.default.number().int().min(1).max(100).default(20),
-    status: zod_1.default.enum(["DRAFT", "SUBMITTED", "APPROVED", "REJECTED", "ACTIVE", "INACTIVE"]).optional(),
-    keyword: zod_1.default.string().trim().optional(),
-    sortBy: zod_1.default.enum(["createdAt", "title", "releaseDate"]).default("createdAt"),
-    sortOrder: zod_1.default.enum(["asc", "desc"]).default("desc"),
+export const ListMoviesQueryPayloadDTO = z.object({
+    page: z.number().int().min(1).default(1),
+    limit: z.number().int().min(1).max(100).default(20),
+    status: z.enum(["DRAFT", "SUBMITTED", "APPROVED", "REJECTED", "ACTIVE", "INACTIVE"]).optional(),
+    keyword: z.string().trim().optional(),
+    sortBy: z.enum(["createdAt", "title", "releaseDate"]).default("createdAt"),
+    sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
-exports.ListShowtimesQueryPayloadDTO = zod_1.default.object({
-    page: zod_1.default.number().int().min(1).default(1),
-    limit: zod_1.default.number().int().min(1).max(100).default(20),
-    movieId: zod_1.default.string().optional(),
-    startDate: zod_1.default.string().datetime().optional(),
-    endDate: zod_1.default.string().datetime().optional(),
-    status: zod_1.default.enum(["SCHEDULED", "STARTED", "ENDED", "CANCELLED"]).optional(),
-    sortBy: zod_1.default.enum(["startTime", "createdAt"]).default("startTime"),
-    sortOrder: zod_1.default.enum(["asc", "desc"]).default("asc"),
+export const ListShowtimesQueryPayloadDTO = z.object({
+    page: z.number().int().min(1).default(1),
+    limit: z.number().int().min(1).max(100).default(20),
+    movieId: z.string().optional(),
+    startDate: z.string().datetime().optional(),
+    endDate: z.string().datetime().optional(),
+    status: z.enum(["SCHEDULED", "STARTED", "ENDED", "CANCELLED"]).optional(),
+    sortBy: z.enum(["startTime", "createdAt"]).default("startTime"),
+    sortOrder: z.enum(["asc", "desc"]).default("asc"),
 });
-exports.ListTicketsQueryPayloadDTO = zod_1.default.object({
-    page: zod_1.default.number().int().min(1).default(1),
-    limit: zod_1.default.number().int().min(1).max(100).default(20),
-    showtimeId: zod_1.default.string().optional(),
-    status: zod_1.default.enum(["RESERVED", "CONFIRMED", "USED", "CANCELLED", "REFUNDED", "PASSED"]).optional(),
-    startDate: zod_1.default.string().datetime().optional(),
-    endDate: zod_1.default.string().datetime().optional(),
+export const ListTicketsQueryPayloadDTO = z.object({
+    page: z.number().int().min(1).default(1),
+    limit: z.number().int().min(1).max(100).default(20),
+    showtimeId: z.string().optional(),
+    status: z.enum(["RESERVED", "CONFIRMED", "USED", "CANCELLED", "REFUNDED", "PASSED"]).optional(),
+    startDate: z.string().datetime().optional(),
+    endDate: z.string().datetime().optional(),
 });
-exports.ListWithdrawalsQueryPayloadDTO = zod_1.default.object({
-    page: zod_1.default.number().int().min(1).default(1),
-    limit: zod_1.default.number().int().min(1).max(100).default(20),
-    status: zod_1.default.enum(["PENDING", "PROCESSING", "COMPLETED", "FAILED", "CANCELLED"]).optional(),
-    startDate: zod_1.default.string().datetime().optional(),
-    endDate: zod_1.default.string().datetime().optional(),
+export const ListWithdrawalsQueryPayloadDTO = z.object({
+    page: z.number().int().min(1).default(1),
+    limit: z.number().int().min(1).max(100).default(20),
+    status: z.enum(["PENDING", "PROCESSING", "COMPLETED", "FAILED", "CANCELLED"]).optional(),
+    startDate: z.string().datetime().optional(),
+    endDate: z.string().datetime().optional(),
 });
-exports.RevenueQueryPayloadDTO = zod_1.default.object({
-    startDate: zod_1.default.string().datetime(),
-    endDate: zod_1.default.string().datetime(),
-    groupBy: zod_1.default.enum(["DAY", "MONTH", "MOVIE"]).default("DAY"),
+export const RevenueQueryPayloadDTO = z.object({
+    startDate: z.string().datetime(),
+    endDate: z.string().datetime(),
+    groupBy: z.enum(["DAY", "MONTH", "MOVIE"]).default("DAY"),
 });
-exports.RequestCondDTOSchema = zod_1.default.object({
-    page: zod_1.default.coerce.number().default(1),
-    limit: zod_1.default.coerce.number().default(10),
-    status: zod_1.default
+export const RequestCondDTOSchema = z.object({
+    page: z.coerce.number().default(1),
+    limit: z.coerce.number().default(10),
+    status: z
         .enum(["PENDING", "APPROVED", "REJECTED", "SUSPENDED"])
         .optional(),
-    search: zod_1.default.string().optional()
+    search: z.string().optional()
 });

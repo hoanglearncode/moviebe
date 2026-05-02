@@ -147,6 +147,23 @@ export const ListUsersQueryPayloadSchema = z.object({
 export type ListUsersQueryDTO = z.infer<typeof ListUsersQueryPayloadSchema>;
 export const ListUsersQueryPayloadDTO = ListUsersQueryPayloadSchema;
 
+export const GetBillingQueryPayloadSchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+export type GetBillingQueryDTO = z.infer<typeof GetBillingQueryPayloadSchema>;
+export const GetBillingQueryPayloadDTO = GetBillingQueryPayloadSchema;
+
+export const CreateReviewPayloadSchema = z.object({
+  movieId: z.string().trim().min(1, "movieId is required"),
+  score: z.coerce.number().int().min(1).max(10),
+  content: z.string().trim().max(1000).optional(),
+});
+
+export type CreateReviewDTO = z.infer<typeof CreateReviewPayloadSchema>;
+export const CreateReviewPayloadDTO = CreateReviewPayloadSchema;
+
 // ── SEED DATA ──────────────────────────────────────────────────────────────────
 
 export const SeedUsersPayloadSchema = z.object({

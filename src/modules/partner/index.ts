@@ -1,10 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
-import {
-  authMiddleware,
-  requireActiveUser,
-  requireRole,
-} from "@/share/middleware/auth";
+import { authMiddleware, requireActiveUser, requireRole } from "@/share/middleware/auth";
 import { resolvePartnerIdMiddleware } from "@/modules/partner/shared/middleware";
 import {
   createPartnerRepository,
@@ -108,18 +104,32 @@ export const buildPartnerRequestAdminRouter = (prisma: PrismaClient): Router => 
   const adminGuard = [authMiddleware, requireRole("ADMIN")];
 
   // ── Partner requests ──────────────────────────────────────────────────────
-  router.get("/partner-requests", ...adminGuard, (req, res) => requestSvc.adminListRequests(req, res));
+  router.get("/partner-requests", ...adminGuard, (req, res) =>
+    requestSvc.adminListRequests(req, res),
+  );
   router.get("/partner-requests/stats", ...adminGuard, (req, res) => requestSvc.stats(req, res));
-  router.get("/partner-requests/:id", ...adminGuard, (req, res) => requestSvc.adminGetRequest(req, res));
-  router.put("/partner-requests/:id/approve", ...adminGuard, (req, res) => requestSvc.adminApprove(req, res));
-  router.put("/partner-requests/:id/reject", ...adminGuard, (req, res) => requestSvc.adminReject(req, res));
-  router.put("/partner-requests/:id/reset", ...adminGuard, (req, res) => requestSvc.adminReset(req, res));
+  router.get("/partner-requests/:id", ...adminGuard, (req, res) =>
+    requestSvc.adminGetRequest(req, res),
+  );
+  router.put("/partner-requests/:id/approve", ...adminGuard, (req, res) =>
+    requestSvc.adminApprove(req, res),
+  );
+  router.put("/partner-requests/:id/reject", ...adminGuard, (req, res) =>
+    requestSvc.adminReject(req, res),
+  );
+  router.put("/partner-requests/:id/reset", ...adminGuard, (req, res) =>
+    requestSvc.adminReset(req, res),
+  );
 
   // ── Admin movies ──────────────────────────────────────────────────────────
   router.get("/movies/stats", ...adminGuard, (req, res) => movieSvc.adminGetMovieStats(req, res));
   router.get("/movies", ...adminGuard, (req, res) => movieSvc.adminListMovies(req, res));
-  router.put("/movies/:movieId/approve", ...adminGuard, (req, res) => movieSvc.adminApproveMovie(req, res));
-  router.put("/movies/:movieId/reject", ...adminGuard, (req, res) => movieSvc.adminRejectMovie(req, res));
+  router.put("/movies/:movieId/approve", ...adminGuard, (req, res) =>
+    movieSvc.adminApproveMovie(req, res),
+  );
+  router.put("/movies/:movieId/reject", ...adminGuard, (req, res) =>
+    movieSvc.adminRejectMovie(req, res),
+  );
 
   // ── Admin partners (fee management) ───────────────────────────────────────
   router.get("/partners", ...adminGuard, async (req, res) => {
@@ -184,7 +194,13 @@ export default function buildPartnerRouter(prisma: PrismaClient): Router {
 
   const profileUC = new PartnerProfileUseCase(partnerRepo);
   const serviceUC = new ServicePartnerUser(serviceRepo);
-  const movieUC = new MovieManagementUseCase(partnerRepo, movieRepo, showtimeRepo, seatRepo, roomRepo);
+  const movieUC = new MovieManagementUseCase(
+    partnerRepo,
+    movieRepo,
+    showtimeRepo,
+    seatRepo,
+    roomRepo,
+  );
   const showtimeUC = new ShowtimeManagementUseCase(
     partnerRepo,
     movieRepo,
@@ -226,45 +242,57 @@ export default function buildPartnerRouter(prisma: PrismaClient): Router {
     resolvePartnerIdMiddleware(partnerRepo),
   ];
 
-  router.get("/me", ...guard, (req, res) => profileSvc.getProfile(req, res)); 
-  router.put("/me", ...guard, (req, res) => profileSvc.updateProfile(req, res)); 
-  router.get("/status", ...guard, (req, res) => profileSvc.getStatus(req, res)); 
+  router.get("/me", ...guard, (req, res) => profileSvc.getProfile(req, res));
+  router.put("/me", ...guard, (req, res) => profileSvc.updateProfile(req, res));
+  router.get("/status", ...guard, (req, res) => profileSvc.getStatus(req, res));
 
-  router.post("/movies", ...guard, (req, res) => movieSvc.createMovie(req, res)); 
-  router.get("/movies", ...guard, (req, res) => movieSvc.getMovies(req, res)); 
-  router.get("/movies/:movieId", ...guard, (req, res) => movieSvc.getMovieDetail(req, res)); 
-  router.put("/movies/:movieId", ...guard, (req, res) => movieSvc.updateMovie(req, res)); 
-  router.delete("/movies/:movieId", ...guard, (req, res) => movieSvc.deleteMovie(req, res)); 
-  router.post("/movies/:movieId/submit", ...guard, (req, res) => movieSvc.submitMovie(req, res)); 
-  
-  router.post("/showtimes", ...guard, (req, res) => showtimeSvc.createShowtime(req, res)); 
-  router.get("/showtimes", ...guard, (req, res) => showtimeSvc.getShowtimes(req, res)); 
-  router.get("/showtimes/:showtimeId", ...guard, (req, res) => showtimeSvc.getShowtimeDetail(req, res)); 
-  router.put("/showtimes/:showtimeId", ...guard, (req, res) => showtimeSvc.updateShowtime(req, res)); 
-  router.delete("/showtimes/:showtimeId", ...guard, (req, res) => showtimeSvc.cancelShowtime(req, res)); 
-  router.get("/showtimes/:showtimeId/seats", ...guard, (req, res) => seatSvc.getSeats(req, res)); 
-  router.get("/showtimes/:showtimeId/seat-map", ...guard, (req, res) => seatSvc.getSeatMap(req, res)); 
-  router.get("/showtimes/:showtimeId/check-ins", ...guard, (req, res) => ticketSvc.getCheckInHistory(req, res), ); 
-  router.put("/seats/:seatId", ...guard, (req, res) => seatSvc.updateSeat(req, res)); 
-  router.get("/tickets", ...guard, (req, res) => ticketSvc.getTickets(req, res)); 
-  router.get("/tickets/:ticketId", ...guard, (req, res) => ticketSvc.getTicketDetail(req, res)); 
-  router.post("/tickets/check-in", ...guard, (req, res) => ticketSvc.checkIn(req, res)); 
-  router.get("/wallet", ...guard, (req, res) => financeSvc.getWallet(req, res)); 
-  router.get("/transactions", ...guard, (req, res) => financeSvc.getTransactions(req, res)); 
-  router.get("/revenue", ...guard, (req, res) => financeSvc.getRevenue(req, res)); 
-  router.post("/withdrawals", ...guard, (req, res) => financeSvc.createWithdrawal(req, res)); 
-  router.get("/withdrawals", ...guard, (req, res) => financeSvc.getWithdrawals(req, res)); 
-  router.get("/withdrawals/:withdrawalId", ...guard, (req, res) => financeSvc.getWithdrawalDetail(req, res), ); 
-  router.get("/dashboard", ...guard, (req, res) => dashboardSvc.getDashboard(req, res)); 
-  router.get("/stats/top-movies", ...guard, (req, res) => dashboardSvc.getTopMovies(req, res)); 
-  router.get("/stats/occupancy", ...guard, (req, res) => dashboardSvc.getOccupancy(req, res)); 
-  
+  router.post("/movies", ...guard, (req, res) => movieSvc.createMovie(req, res));
+  router.get("/movies", ...guard, (req, res) => movieSvc.getMovies(req, res));
+  router.get("/movies/:movieId", ...guard, (req, res) => movieSvc.getMovieDetail(req, res));
+  router.put("/movies/:movieId", ...guard, (req, res) => movieSvc.updateMovie(req, res));
+  router.delete("/movies/:movieId", ...guard, (req, res) => movieSvc.deleteMovie(req, res));
+  router.post("/movies/:movieId/submit", ...guard, (req, res) => movieSvc.submitMovie(req, res));
+
+  router.post("/showtimes", ...guard, (req, res) => showtimeSvc.createShowtime(req, res));
+  router.get("/showtimes", ...guard, (req, res) => showtimeSvc.getShowtimes(req, res));
+  router.get("/showtimes/:showtimeId", ...guard, (req, res) =>
+    showtimeSvc.getShowtimeDetail(req, res),
+  );
+  router.put("/showtimes/:showtimeId", ...guard, (req, res) =>
+    showtimeSvc.updateShowtime(req, res),
+  );
+  router.delete("/showtimes/:showtimeId", ...guard, (req, res) =>
+    showtimeSvc.cancelShowtime(req, res),
+  );
+  router.get("/showtimes/:showtimeId/seats", ...guard, (req, res) => seatSvc.getSeats(req, res));
+  router.get("/showtimes/:showtimeId/seat-map", ...guard, (req, res) =>
+    seatSvc.getSeatMap(req, res),
+  );
+  router.get("/showtimes/:showtimeId/check-ins", ...guard, (req, res) =>
+    ticketSvc.getCheckInHistory(req, res),
+  );
+  router.put("/seats/:seatId", ...guard, (req, res) => seatSvc.updateSeat(req, res));
+  router.get("/tickets", ...guard, (req, res) => ticketSvc.getTickets(req, res));
+  router.get("/tickets/:ticketId", ...guard, (req, res) => ticketSvc.getTicketDetail(req, res));
+  router.post("/tickets/check-in", ...guard, (req, res) => ticketSvc.checkIn(req, res));
+  router.get("/wallet", ...guard, (req, res) => financeSvc.getWallet(req, res));
+  router.get("/transactions", ...guard, (req, res) => financeSvc.getTransactions(req, res));
+  router.get("/revenue", ...guard, (req, res) => financeSvc.getRevenue(req, res));
+  router.post("/withdrawals", ...guard, (req, res) => financeSvc.createWithdrawal(req, res));
+  router.get("/withdrawals", ...guard, (req, res) => financeSvc.getWithdrawals(req, res));
+  router.get("/withdrawals/:withdrawalId", ...guard, (req, res) =>
+    financeSvc.getWithdrawalDetail(req, res),
+  );
+  router.get("/dashboard", ...guard, (req, res) => dashboardSvc.getDashboard(req, res));
+  router.get("/stats/top-movies", ...guard, (req, res) => dashboardSvc.getTopMovies(req, res));
+  router.get("/stats/occupancy", ...guard, (req, res) => dashboardSvc.getOccupancy(req, res));
+
   router.post("/rooms", ...guard, (req, res) => roomSvc.createRoom(req, res));
-  router.get("/rooms", ...guard, (req, res) => roomSvc.getRooms(req, res)); 
-  router.get("/rooms/:roomId", ...guard, (req, res) => roomSvc.getRoomDetail(req, res)); 
-  router.put("/rooms/:roomId", ...guard, (req, res) => roomSvc.updateRoom(req, res)); 
-  router.delete("/rooms/:roomId", ...guard, (req, res) => roomSvc.deleteRoom(req, res)); 
-  
+  router.get("/rooms", ...guard, (req, res) => roomSvc.getRooms(req, res));
+  router.get("/rooms/:roomId", ...guard, (req, res) => roomSvc.getRoomDetail(req, res));
+  router.put("/rooms/:roomId", ...guard, (req, res) => roomSvc.updateRoom(req, res));
+  router.delete("/rooms/:roomId", ...guard, (req, res) => roomSvc.deleteRoom(req, res));
+
   router.get("/services", ...guard, (req, res) => serviceSvc.list(req, res));
   router.get("/services/search", ...guard, (req, res) => serviceSvc.findByCond(req, res));
   router.get("/services/:id", ...guard, (req, res) => serviceSvc.findById(req, res));
@@ -277,7 +305,8 @@ export default function buildPartnerRouter(prisma: PrismaClient): Router {
   return router;
 }
 
-
 export const setupPartnerHexagon = (prisma: PrismaClient) => buildPartnerRouter(prisma);
-export const setupUserPartnerHexagon = (prisma: PrismaClient) => buildPartnerRequestUserRouter(prisma);
-export const setupAdminPartnerHexagon = (prisma: PrismaClient) => buildPartnerRequestAdminRouter(prisma);
+export const setupUserPartnerHexagon = (prisma: PrismaClient) =>
+  buildPartnerRequestUserRouter(prisma);
+export const setupAdminPartnerHexagon = (prisma: PrismaClient) =>
+  buildPartnerRequestAdminRouter(prisma);

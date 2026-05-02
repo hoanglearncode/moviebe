@@ -1,4 +1,9 @@
-import type { BroadcastStatus, BroadcastType, BroadcastTarget, BroadcastChannel } from "@prisma/client";
+import type {
+  BroadcastStatus,
+  BroadcastType,
+  BroadcastTarget,
+  BroadcastChannel,
+} from "@prisma/client";
 
 export interface BroadcastCreatedBy {
   id: string;

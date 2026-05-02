@@ -1,9 +1,6 @@
-"use strict";
 /**
  * Seed Data Generator - Tạo dữ liệu ngẫu nhiên cho users
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.SeedGenerator = void 0;
 const FIRST_NAMES = [
     "Nguyễn",
     "Trần",
@@ -164,7 +161,7 @@ const BIO_TEMPLATES = [
     "Enjoy everything related to movies and series",
     "Cinephile by heart ❤️",
 ];
-class SeedGenerator {
+export class SeedGenerator {
     /**
      * Sinh số ngẫu nhiên trong khoảng [min, max]
      */
@@ -273,7 +270,6 @@ class SeedGenerator {
         return users;
     }
 }
-exports.SeedGenerator = SeedGenerator;
 SeedGenerator.MIN_ID = 1000;
 SeedGenerator.MAX_ID = 999999;
 SeedGenerator.DEFAULT_DOMAIN = "seeduser.local";

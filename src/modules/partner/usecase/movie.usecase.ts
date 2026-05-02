@@ -1,6 +1,9 @@
 import { randomUUID } from "crypto";
 import { IPartnerRepository } from "@/modules/partner/interface/profile.interface";
-import { IMovieRepository, IMovieManagementUseCase } from "@/modules/partner/interface/movie.interface";
+import {
+  IMovieRepository,
+  IMovieManagementUseCase,
+} from "@/modules/partner/interface/movie.interface";
 import { IShowtimeRepository } from "@/modules/partner/interface/showtime.interface";
 import { ISeatRepository } from "@/modules/partner/interface/seat.interface";
 import { IRoomRepository } from "@/modules/partner/infras/repository/room.repo";
@@ -14,7 +17,12 @@ import {
   SeatType,
   SeatStatus,
 } from "@/modules/partner/model/model";
-import { CreateMovieDTO, UpdateMovieDTO, ListMoviesQueryDTO, ShowtimePlanDTO } from "@/modules/partner/model/dto";
+import {
+  CreateMovieDTO,
+  UpdateMovieDTO,
+  ListMoviesQueryDTO,
+  ShowtimePlanDTO,
+} from "@/modules/partner/model/dto";
 
 export class MovieManagementUseCase implements IMovieManagementUseCase {
   constructor(
@@ -106,12 +114,7 @@ export class MovieManagementUseCase implements IMovieManagementUseCase {
 
     // Persist showtime plans if provided and repos are available
     if (data.showtimes?.length && this.showtimeRepo && this.seatRepo && this.roomRepo) {
-      await this._createShowtimesFromPlans(
-        movieId,
-        partnerId,
-        movie.duration,
-        data.showtimes,
-      );
+      await this._createShowtimesFromPlans(movieId, partnerId, movie.duration, data.showtimes);
     }
 
     return { movieId };
@@ -156,8 +159,7 @@ export class MovieManagementUseCase implements IMovieManagementUseCase {
 
       // basePrice = standard price, or lowest provided price, or 50000
       const allPrices = Object.values(priceConfig).filter((p) => p > 0);
-      const basePrice =
-        priceConfig.standard ?? (allPrices.length ? Math.min(...allPrices) : 50000);
+      const basePrice = priceConfig.standard ?? (allPrices.length ? Math.min(...allPrices) : 50000);
 
       // Count actual (non-blocked) seats from layout
       const totalSeats = layout.flat().filter((cell) => cell !== -1).length;
@@ -240,7 +242,8 @@ export class MovieManagementUseCase implements IMovieManagementUseCase {
     if (!movie) throw new Error("Movie not found");
 
     const editableStatuses = ["DRAFT", "SUBMITTED"];
-    if (!editableStatuses.includes(movie.status)) throw new Error("Only DRAFT or SUBMITTED movies can be updated");
+    if (!editableStatuses.includes(movie.status))
+      throw new Error("Only DRAFT or SUBMITTED movies can be updated");
 
     const { releaseDate, endDate, cast, showtimes: _showtimes, ...scalarFields } = data;
 

@@ -21,9 +21,7 @@ export const buildPublicShowtimeRouter = (prisma: PrismaClient): Router => {
   const movieController = new PublicMovieHttpService(movieUseCase);
 
   const router = Router();
-  router.get("/:showtimeId", (req: any, res: any) =>
-    movieController.getShowtimeDetail(req, res),
-  );
+  router.get("/:showtimeId", (req: any, res: any) => movieController.getShowtimeDetail(req, res));
   router.get("/:showtimeId/seats", (req: any, res: any) =>
     movieController.getShowtimeSeatMap(req, res),
   );
@@ -32,4 +30,5 @@ export const buildPublicShowtimeRouter = (prisma: PrismaClient): Router => {
 };
 
 export const setupPublicMovieRoutes = (prisma: PrismaClient) => buildPublicMovieRouter(prisma);
-export const setupPublicShowtimeRoutes = (prisma: PrismaClient) => buildPublicShowtimeRouter(prisma);
+export const setupPublicShowtimeRoutes = (prisma: PrismaClient) =>
+  buildPublicShowtimeRouter(prisma);

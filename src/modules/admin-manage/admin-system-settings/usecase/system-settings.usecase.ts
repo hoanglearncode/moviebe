@@ -15,7 +15,10 @@ import {
   URL_KEYS,
   UpdateResult,
 } from "@/modules/admin-manage/admin-system-settings/model/model";
-import type { ISystemSettingsRepository, ISystemSettingsUseCase } from "@/modules/admin-manage/admin-system-settings/interface";
+import type {
+  ISystemSettingsRepository,
+  ISystemSettingsUseCase,
+} from "@/modules/admin-manage/admin-system-settings/interface";
 import { getQueueHealth } from "@/queue/health";
 import { ValidationError } from "@/share/transport/http-server";
 
@@ -170,7 +173,9 @@ export class SystemSettingsUseCase implements ISystemSettingsUseCase {
     const currentRaw = await this.repo.findAll();
     const current = normalizeSettings(currentRaw);
 
-    const changedEntries = Object.entries(updates).filter(([k, v]) => current[k as SettingKey] !== v);
+    const changedEntries = Object.entries(updates).filter(
+      ([k, v]) => current[k as SettingKey] !== v,
+    );
 
     if (changedEntries.length > 0) {
       await this.repo.upsertMany(
@@ -220,7 +225,7 @@ export class SystemSettingsUseCase implements ISystemSettingsUseCase {
             totalFailed: 0,
           };
 
-    const raw = await this.repo.findAll().catch(() => ({} as Record<string, string>));
+    const raw = await this.repo.findAll().catch(() => ({}) as Record<string, string>);
     const maintenanceMode = (raw["maintenanceMode"] ?? "false") === "true";
 
     const memUsage = process.memoryUsage();

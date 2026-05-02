@@ -1,5 +1,9 @@
 import { IPaymentRepository, IPaymentUseCase } from "@/modules/payment/interface";
-import { CreatePaymentResult, ConfirmMockResult, PaymentMethod } from "@/modules/payment/model/model";
+import {
+  CreatePaymentResult,
+  ConfirmMockResult,
+  PaymentMethod,
+} from "@/modules/payment/model/model";
 import { OrderWithDetails } from "@/modules/booking/model/model";
 
 export class PaymentUseCase implements IPaymentUseCase {

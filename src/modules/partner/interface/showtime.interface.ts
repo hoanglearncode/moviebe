@@ -1,6 +1,10 @@
 import { IRepository } from "@/share/interface";
 import { Showtime } from "@/modules/partner/model/model";
-import { CreateShowtimeDTO, UpdateShowtimeDTO, ListShowtimesQueryDTO } from "@/modules/partner/model/dto";
+import {
+  CreateShowtimeDTO,
+  UpdateShowtimeDTO,
+  ListShowtimesQueryDTO,
+} from "@/modules/partner/model/dto";
 
 // ─── Repository Port ──────────────────────────────────────────────────────────
 

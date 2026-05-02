@@ -8,7 +8,12 @@ import { mailService } from "@/share/component/mail";
 import { logger } from "@/modules/system/log/logger";
 
 const SMTP_KEYS = new Set([
-  "smtpHost", "smtpPort", "smtpUser", "smtpPassword", "fromName", "fromEmail",
+  "smtpHost",
+  "smtpPort",
+  "smtpUser",
+  "smtpPassword",
+  "fromName",
+  "fromEmail",
 ]);
 
 function buildAuditDescription(
@@ -18,9 +23,12 @@ function buildAuditDescription(
 ): string {
   if (changedKeys.length === 1) {
     const key = changedKeys[0];
-    if (key === "maintenanceMode") return currentValues[key] === "true" ? "Bật chế độ bảo trì" : "Tắt chế độ bảo trì";
-    if (key === "siteName") return `Đổi tên nền tảng: "${previousValues[key]}" → "${currentValues[key]}"`;
-    if (key === "registrationOpen") return currentValues[key] === "true" ? "Mở đăng ký tài khoản" : "Đóng đăng ký tài khoản";
+    if (key === "maintenanceMode")
+      return currentValues[key] === "true" ? "Bật chế độ bảo trì" : "Tắt chế độ bảo trì";
+    if (key === "siteName")
+      return `Đổi tên nền tảng: "${previousValues[key]}" → "${currentValues[key]}"`;
+    if (key === "registrationOpen")
+      return currentValues[key] === "true" ? "Mở đăng ký tài khoản" : "Đóng đăng ký tài khoản";
   }
   if (changedKeys.includes("siteName")) {
     const extra = changedKeys.length > 1 ? ` (và ${changedKeys.length - 1} thay đổi khác)` : "";
@@ -58,7 +66,11 @@ export class SystemSettingsHttpService {
         return;
       }
 
-      const description = buildAuditDescription(result.changedKeys, result.previousValues, result.currentValues);
+      const description = buildAuditDescription(
+        result.changedKeys,
+        result.previousValues,
+        result.currentValues,
+      );
       const toggledMaintenance = result.changedKeys.includes("maintenanceMode");
 
       await writeAuditLog(this.prisma, req, {

@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.CategoryHttpService = void 0;
-const dto_1 = require("../../../../modules/category/model/dto");
-const http_server_1 = require("../../../../share/transport/http-server");
-class CategoryHttpService extends http_server_1.BaseHttpService {
+import { CategoryCondDTOSchema, } from "@/modules/category/model/dto";
+import { BaseHttpService } from "@/share/transport/http-server";
+export class CategoryHttpService extends BaseHttpService {
     constructor(useCase) {
         super(useCase);
     }
@@ -13,7 +10,7 @@ class CategoryHttpService extends http_server_1.BaseHttpService {
                 page: 1,
                 limit: 200,
             };
-            const cond = dto_1.CategoryCondDTOSchema.parse(req.query);
+            const cond = CategoryCondDTOSchema.parse(req.query);
             const result = await this.useCase.list(req.query, paging);
             const categoriesTree = this.buildTree(result);
             res.status(200).json({ data: categoriesTree, paging, filter: cond });
@@ -44,4 +41,3 @@ class CategoryHttpService extends http_server_1.BaseHttpService {
         return categoriesTree;
     }
 }
-exports.CategoryHttpService = CategoryHttpService;

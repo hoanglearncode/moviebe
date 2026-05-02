@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.BaseCommandRepositoryPrisma = exports.BaseQueryRepositoryPrisma = exports.BaseRepositoryPrisma = void 0;
-const base_model_1 = require("../model/base-model");
-class BaseRepositoryPrisma {
+import { ModelStatus } from "@/share/model/base-model";
+export class BaseRepositoryPrisma {
     constructor(queryRepo, cmdRepo) {
         this.queryRepo = queryRepo;
         this.cmdRepo = cmdRepo;
@@ -26,8 +23,7 @@ class BaseRepositoryPrisma {
         return this.cmdRepo.delete(id, isHard);
     }
 }
-exports.BaseRepositoryPrisma = BaseRepositoryPrisma;
-class BaseQueryRepositoryPrisma {
+export class BaseQueryRepositoryPrisma {
     constructor(model) {
         this.model = model;
     }
@@ -48,7 +44,7 @@ class BaseQueryRepositoryPrisma {
         const where = {
             ...cond,
             status: {
-                not: base_model_1.ModelStatus.DELETED,
+                not: ModelStatus.DELETED,
             },
         };
         const total = await this.model.count({ where });
@@ -64,8 +60,7 @@ class BaseQueryRepositoryPrisma {
         return rows;
     }
 }
-exports.BaseQueryRepositoryPrisma = BaseQueryRepositoryPrisma;
-class BaseCommandRepositoryPrisma {
+export class BaseCommandRepositoryPrisma {
     constructor(model) {
         this.model = model;
     }
@@ -87,7 +82,7 @@ class BaseCommandRepositoryPrisma {
             await this.model.update({
                 where: { id },
                 data: {
-                    status: base_model_1.ModelStatus.DELETED,
+                    status: ModelStatus.DELETED,
                 },
             });
         }
@@ -99,4 +94,3 @@ class BaseCommandRepositoryPrisma {
         return true;
     }
 }
-exports.BaseCommandRepositoryPrisma = BaseCommandRepositoryPrisma;

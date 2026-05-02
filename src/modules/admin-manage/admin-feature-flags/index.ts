@@ -9,7 +9,7 @@ const adminGuard = [...protect(requireRole("ADMIN"))];
 export function buildAdminFeatureFlagsRouter(prisma: PrismaClient): Router {
   const router = Router();
   const paramId = (value: string | string[] | undefined): string =>
-    Array.isArray(value) ? value[0] ?? "" : (value ?? "");
+    Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
 
   // GET /v1/admin/feature-flags
   router.get("/", ...adminGuard, async (req: Request, res: Response) => {
@@ -221,12 +221,16 @@ export function buildAdminFeatureFlagsRouter(prisma: PrismaClient): Router {
         },
       });
 
-      successResponse(res, {
-        env,
-        affected: activeFlags.length,
-        affectedIds: activeFlags.map((flag) => flag.id),
-        affectedKeys: activeFlags.map((flag) => flag.key),
-      }, `Emergency shutdown applied for ${env}`);
+      successResponse(
+        res,
+        {
+          env,
+          affected: activeFlags.length,
+          affectedIds: activeFlags.map((flag) => flag.id),
+          affectedKeys: activeFlags.map((flag) => flag.key),
+        },
+        `Emergency shutdown applied for ${env}`,
+      );
     } catch (err: any) {
       errorResponse(res, 500, err.message);
     }

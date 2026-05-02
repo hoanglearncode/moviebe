@@ -1,5 +1,10 @@
 import { Queue } from "bullmq";
-import { createRedisConnection, defaultJobOptions, isQueueEnabled, queuePrefix } from "@/queue/config/config";
+import {
+  createRedisConnection,
+  defaultJobOptions,
+  isQueueEnabled,
+  queuePrefix,
+} from "@/queue/config/config";
 import { BroadcastJobData, BroadcastJobName, QueueName } from "@/queue/modules/types";
 
 let broadcastQueue: Queue<BroadcastJobData, void, BroadcastJobName> | null = null;

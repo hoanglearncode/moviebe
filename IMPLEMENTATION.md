@@ -78,13 +78,13 @@ src/modules/<module-name>/
 
 ### 2.3 SOLID mapping
 
-| Nguyên tắc | Áp dụng |
-|---|---|
+| Nguyên tắc                | Áp dụng                                                                |
+| ------------------------- | ---------------------------------------------------------------------- |
 | S — Single Responsibility | usecase (business), transport (HTTP), repository (persistence) độc lập |
-| O — Open/Closed | Thêm adapter mới bằng cách implement interface, không sửa use case |
-| L — Liskov | Adapter phải thỏa mãn port interface contract |
-| I — Interface Segregation | Interface nhỏ, focused (IAuthUserRepository, ITokenService...) |
-| D — Dependency Inversion | UseCase phụ thuộc interface, không phụ thuộc Prisma trực tiếp |
+| O — Open/Closed           | Thêm adapter mới bằng cách implement interface, không sửa use case     |
+| L — Liskov                | Adapter phải thỏa mãn port interface contract                          |
+| I — Interface Segregation | Interface nhỏ, focused (IAuthUserRepository, ITokenService...)         |
+| D — Dependency Inversion  | UseCase phụ thuộc interface, không phụ thuộc Prisma trực tiếp          |
 
 ---
 
@@ -199,66 +199,73 @@ CLOUDINARY_API_SECRET=
 ### 5.1 Các nhóm model chính (24 bảng)
 
 #### User & Auth
-| Model | Mô tả |
-|---|---|
-| `User` | Tài khoản người dùng — role: USER / ADMIN / PARTNER |
-| `UserSetting` | Tùy chọn thông báo của user |
-| `Session` | Phiên đăng nhập, tracking thiết bị & IP |
-| `PasswordResetToken` | Token reset mật khẩu (single-use) |
-| `EmailVerificationToken` | Token xác thực email |
+
+| Model                    | Mô tả                                               |
+| ------------------------ | --------------------------------------------------- |
+| `User`                   | Tài khoản người dùng — role: USER / ADMIN / PARTNER |
+| `UserSetting`            | Tùy chọn thông báo của user                         |
+| `Session`                | Phiên đăng nhập, tracking thiết bị & IP             |
+| `PasswordResetToken`     | Token reset mật khẩu (single-use)                   |
+| `EmailVerificationToken` | Token xác thực email                                |
 
 #### Partner & Cinema
-| Model | Mô tả |
-|---|---|
-| `Partner` | Thông tin rạp chiếu phim (tên, địa chỉ, ngân hàng, hoa hồng) |
-| `PartnerRequest` | Yêu cầu đăng ký làm partner — cần admin duyệt |
-| `PartnerStaff` | Nhân viên rạp (OWNER / MANAGER / CASHIER / SCANNER / STAFF) |
-| `PartnerSetting` | Cài đặt thông báo & rút tiền tự động |
-| `PartnerWallet` | Ví điện tử của partner |
+
+| Model            | Mô tả                                                        |
+| ---------------- | ------------------------------------------------------------ |
+| `Partner`        | Thông tin rạp chiếu phim (tên, địa chỉ, ngân hàng, hoa hồng) |
+| `PartnerRequest` | Yêu cầu đăng ký làm partner — cần admin duyệt                |
+| `PartnerStaff`   | Nhân viên rạp (OWNER / MANAGER / CASHIER / SCANNER / STAFF)  |
+| `PartnerSetting` | Cài đặt thông báo & rút tiền tự động                         |
+| `PartnerWallet`  | Ví điện tử của partner                                       |
 
 #### Movie & Showtime
-| Model | Mô tả |
-|---|---|
-| `Movie` | Phim — status: DRAFT → SUBMITTED → APPROVED → ACTIVE |
-| `Category` | Thể loại phim (có hierarchy parent_id) |
-| `Cast` | Diễn viên của phim |
-| `Showtime` | Lịch chiếu — giá vé, số ghế còn lại |
-| `Room` | Phòng chiếu (2D / 3D / IMAX / VIP / 4DX) |
-| `Seat` | Ghế ngồi — status: AVAILABLE / LOCKED / BOOKED / MAINTENANCE |
-| `SeatTemplate` | Template layout ghế cho phòng |
+
+| Model          | Mô tả                                                        |
+| -------------- | ------------------------------------------------------------ |
+| `Movie`        | Phim — status: DRAFT → SUBMITTED → APPROVED → ACTIVE         |
+| `Category`     | Thể loại phim (có hierarchy parent_id)                       |
+| `Cast`         | Diễn viên của phim                                           |
+| `Showtime`     | Lịch chiếu — giá vé, số ghế còn lại                          |
+| `Room`         | Phòng chiếu (2D / 3D / IMAX / VIP / 4DX)                     |
+| `Seat`         | Ghế ngồi — status: AVAILABLE / LOCKED / BOOKED / MAINTENANCE |
+| `SeatTemplate` | Template layout ghế cho phòng                                |
 
 #### Booking & Ticket
-| Model | Mô tả |
-|---|---|
-| `Order` | Đơn đặt vé — status: PENDING → COMPLETED / CANCELLED / REFUNDED |
-| `Ticket` | Vé lẻ — status: RESERVED → CONFIRMED → USED / PASSED |
-| `Transaction` | Giao dịch tài chính (bán vé, rút tiền, hoàn tiền) |
-| `CheckIn` | Lịch sử quét vé vào rạp |
-| `PassHistory` | Lịch sử chuyển nhượng vé giữa users |
+
+| Model         | Mô tả                                                           |
+| ------------- | --------------------------------------------------------------- |
+| `Order`       | Đơn đặt vé — status: PENDING → COMPLETED / CANCELLED / REFUNDED |
+| `Ticket`      | Vé lẻ — status: RESERVED → CONFIRMED → USED / PASSED            |
+| `Transaction` | Giao dịch tài chính (bán vé, rút tiền, hoàn tiền)               |
+| `CheckIn`     | Lịch sử quét vé vào rạp                                         |
+| `PassHistory` | Lịch sử chuyển nhượng vé giữa users                             |
 
 #### Finance
-| Model | Mô tả |
-|---|---|
-| `Withdrawal` | Yêu cầu rút tiền của partner |
-| `Service` | Dịch vụ phụ trợ của rạp (bỏng ngô, nước,...) |
-| `Plan` | Gói subscription |
+
+| Model        | Mô tả                                        |
+| ------------ | -------------------------------------------- |
+| `Withdrawal` | Yêu cầu rút tiền của partner                 |
+| `Service`    | Dịch vụ phụ trợ của rạp (bỏng ngô, nước,...) |
+| `Plan`       | Gói subscription                             |
 
 #### Moderation
-| Model | Mô tả |
-|---|---|
+
+| Model    | Mô tả                                                         |
+| -------- | ------------------------------------------------------------- |
 | `Review` | Đánh giá phim — status: PENDING / APPROVED / HIDDEN / REMOVED |
-| `Report` | Báo cáo vi phạm nội dung |
+| `Report` | Báo cáo vi phạm nội dung                                      |
 
 #### Platform Config
-| Model | Mô tả |
-|---|---|
-| `SystemSetting` | Cài đặt hệ thống dạng key-value |
-| `FeatureFlag` | Feature toggle (RELEASE / EXPERIMENT / BETA / OPS) |
-| `AuditLog` | Audit trail mọi hành động admin |
-| `Notification` | Thông báo in-app cho user |
-| `EmailTemplate` | Template email theo event |
-| `ScheduledEmailNotification` | Email đã được lên lịch gửi |
-| `BroadcastNotification` | Thông báo broadcast tới nhóm user |
+
+| Model                        | Mô tả                                              |
+| ---------------------------- | -------------------------------------------------- |
+| `SystemSetting`              | Cài đặt hệ thống dạng key-value                    |
+| `FeatureFlag`                | Feature toggle (RELEASE / EXPERIMENT / BETA / OPS) |
+| `AuditLog`                   | Audit trail mọi hành động admin                    |
+| `Notification`               | Thông báo in-app cho user                          |
+| `EmailTemplate`              | Template email theo event                          |
+| `ScheduledEmailNotification` | Email đã được lên lịch gửi                         |
+| `BroadcastNotification`      | Thông báo broadcast tới nhóm user                  |
 
 ### 5.2 Enum trạng thái quan trọng
 
@@ -286,20 +293,21 @@ UserStatus:    ACTIVE | INACTIVE | BANNED | PENDING
 
 ### 6.1 Authentication — `/v1/auth`
 
-| Method | Endpoint | Auth | Mô tả |
-|---|---|---|---|
-| POST | `/register` | — | Đăng ký tài khoản |
-| POST | `/login` | — | Đăng nhập email/password |
-| POST | `/google/callback` | — | Google OAuth2 |
-| POST | `/google/callback/token` | — | Google ID Token login |
-| POST | `/facebook/callback` | — | Facebook OAuth2 |
-| POST | `/refresh-token` | — | Làm mới access token |
-| POST | `/verify-email` | — | Xác thực email qua token |
-| POST | `/resend-verification` | — | Gửi lại email xác thực |
-| POST | `/forgot-password` | — | Yêu cầu reset mật khẩu |
-| POST | `/change-password` | ✓ | Đổi mật khẩu |
+| Method | Endpoint                 | Auth | Mô tả                    |
+| ------ | ------------------------ | ---- | ------------------------ |
+| POST   | `/register`              | —    | Đăng ký tài khoản        |
+| POST   | `/login`                 | —    | Đăng nhập email/password |
+| POST   | `/google/callback`       | —    | Google OAuth2            |
+| POST   | `/google/callback/token` | —    | Google ID Token login    |
+| POST   | `/facebook/callback`     | —    | Facebook OAuth2          |
+| POST   | `/refresh-token`         | —    | Làm mới access token     |
+| POST   | `/verify-email`          | —    | Xác thực email qua token |
+| POST   | `/resend-verification`   | —    | Gửi lại email xác thực   |
+| POST   | `/forgot-password`       | —    | Yêu cầu reset mật khẩu   |
+| POST   | `/change-password`       | ✓    | Đổi mật khẩu             |
 
 **Token flow**:
+
 - `accessToken`: JWT ngắn hạn (default 15m), gửi qua `Authorization: Bearer <token>`
 - `refreshToken`: JWT dài hạn (default 7d), dùng để lấy access token mới
 - Concurrent lock (Redis) ngăn race condition khi register/login đồng thời
@@ -308,73 +316,74 @@ UserStatus:    ACTIVE | INACTIVE | BANNED | PENDING
 
 ### 6.2 User — `/v1/user`
 
-| Method | Endpoint | Auth | Mô tả |
-|---|---|---|---|
-| GET | `/me` | ✓ | Lấy thông tin profile |
-| PUT | `/me` | ✓ | Cập nhật profile |
-| DELETE | `/me` | ✓ | Xóa tài khoản |
-| POST | `/change-password` | ✓ | Đổi mật khẩu |
-| GET | `/sessions` | ✓ | Danh sách phiên đăng nhập |
-| DELETE | `/sessions/:sessionId` | ✓ | Thu hồi phiên cụ thể |
-| DELETE | `/sessions` | ✓ | Thu hồi tất cả phiên |
+| Method | Endpoint               | Auth | Mô tả                     |
+| ------ | ---------------------- | ---- | ------------------------- |
+| GET    | `/me`                  | ✓    | Lấy thông tin profile     |
+| PUT    | `/me`                  | ✓    | Cập nhật profile          |
+| DELETE | `/me`                  | ✓    | Xóa tài khoản             |
+| POST   | `/change-password`     | ✓    | Đổi mật khẩu              |
+| GET    | `/sessions`            | ✓    | Danh sách phiên đăng nhập |
+| DELETE | `/sessions/:sessionId` | ✓    | Thu hồi phiên cụ thể      |
+| DELETE | `/sessions`            | ✓    | Thu hồi tất cả phiên      |
 
 **Admin quản lý user** — `/v1/admin/users`:
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/` | Danh sách user (filter, phân trang) |
-| GET | `/:id` | Chi tiết user |
-| PATCH | `/:id` | Cập nhật thông tin user |
-| DELETE | `/:id` | Xóa user |
-| GET | `/stats` | Thống kê user |
-| POST | `/:id/ban` | Ban user |
-| POST | `/:id/unban` | Unban user |
+| Method | Endpoint     | Mô tả                               |
+| ------ | ------------ | ----------------------------------- |
+| GET    | `/`          | Danh sách user (filter, phân trang) |
+| GET    | `/:id`       | Chi tiết user                       |
+| PATCH  | `/:id`       | Cập nhật thông tin user             |
+| DELETE | `/:id`       | Xóa user                            |
+| GET    | `/stats`     | Thống kê user                       |
+| POST   | `/:id/ban`   | Ban user                            |
+| POST   | `/:id/unban` | Unban user                          |
 
 ---
 
 ### 6.3 Movie & Showtime — Public, `/v1/movies`, `/v1/showtimes`
 
-| Method | Endpoint | Auth | Mô tả |
-|---|---|---|---|
-| GET | `/movies/` | — | Danh sách phim (search, filter thể loại, phân trang) |
-| GET | `/movies/:id` | — | Chi tiết phim |
-| GET | `/movies/:id/showtimes` | — | Lịch chiếu của phim |
-| GET | `/showtimes/:showtimeId` | — | Chi tiết suất chiếu |
-| GET | `/showtimes/:showtimeId/seats` | — | Sơ đồ ghế ngồi |
+| Method | Endpoint                       | Auth | Mô tả                                                |
+| ------ | ------------------------------ | ---- | ---------------------------------------------------- |
+| GET    | `/movies/`                     | —    | Danh sách phim (search, filter thể loại, phân trang) |
+| GET    | `/movies/:id`                  | —    | Chi tiết phim                                        |
+| GET    | `/movies/:id/showtimes`        | —    | Lịch chiếu của phim                                  |
+| GET    | `/showtimes/:showtimeId`       | —    | Chi tiết suất chiếu                                  |
+| GET    | `/showtimes/:showtimeId/seats` | —    | Sơ đồ ghế ngồi                                       |
 
 ---
 
 ### 6.4 Category — `/v1/categories`
 
-| Method | Endpoint | Auth | Mô tả |
-|---|---|---|---|
-| GET | `/` | — | Danh sách thể loại |
-| GET | `/:id` | — | Chi tiết thể loại |
-| POST | `/` | Admin | Tạo thể loại |
-| PATCH | `/:id` | Admin | Cập nhật thể loại |
-| DELETE | `/:id` | Admin | Xóa thể loại |
+| Method | Endpoint | Auth  | Mô tả              |
+| ------ | -------- | ----- | ------------------ |
+| GET    | `/`      | —     | Danh sách thể loại |
+| GET    | `/:id`   | —     | Chi tiết thể loại  |
+| POST   | `/`      | Admin | Tạo thể loại       |
+| PATCH  | `/:id`   | Admin | Cập nhật thể loại  |
+| DELETE | `/:id`   | Admin | Xóa thể loại       |
 
 ---
 
 ### 6.5 Cinema — Public, `/v1/cinemas`
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/` | Danh sách rạp (filter: city, search, phân trang) |
-| GET | `/cities` | Danh sách thành phố có rạp |
-| GET | `/:id` | Chi tiết rạp |
+| Method | Endpoint  | Mô tả                                            |
+| ------ | --------- | ------------------------------------------------ |
+| GET    | `/`       | Danh sách rạp (filter: city, search, phân trang) |
+| GET    | `/cities` | Danh sách thành phố có rạp                       |
+| GET    | `/:id`    | Chi tiết rạp                                     |
 
 ---
 
 ### 6.6 Booking — `/v1/booking`
 
-| Method | Endpoint | Auth | Mô tả |
-|---|---|---|---|
-| POST | `/lock-seats` | ✓ Active | Khóa ghế & tạo đơn hàng |
-| GET | `/:orderId` | ✓ Active | Chi tiết đơn hàng |
-| DELETE | `/:orderId` | ✓ Active | Hủy đơn hàng |
+| Method | Endpoint      | Auth     | Mô tả                   |
+| ------ | ------------- | -------- | ----------------------- |
+| POST   | `/lock-seats` | ✓ Active | Khóa ghế & tạo đơn hàng |
+| GET    | `/:orderId`   | ✓ Active | Chi tiết đơn hàng       |
+| DELETE | `/:orderId`   | ✓ Active | Hủy đơn hàng            |
 
 **Booking flow**:
+
 1. `POST /lock-seats` → tạo `Order` (PENDING) + `Ticket` (RESERVED) + khóa `Seat`
 2. `POST /payment/create` → chuyển order sang PAYMENT_PROCESSING
 3. Webhook payment → chuyển order sang COMPLETED, ticket sang CONFIRMED
@@ -384,11 +393,11 @@ UserStatus:    ACTIVE | INACTIVE | BANNED | PENDING
 
 ### 6.7 Payment — `/v1/payment`
 
-| Method | Endpoint | Auth | Mô tả |
-|---|---|---|---|
-| POST | `/create` | ✓ Active | Khởi tạo thanh toán (PayOS) |
-| GET | `/status/:orderId` | ✓ Active | Trạng thái thanh toán |
-| POST | `/confirm-mock` | ✓ Active | Xác nhận thanh toán giả (dev) |
+| Method | Endpoint           | Auth     | Mô tả                         |
+| ------ | ------------------ | -------- | ----------------------------- |
+| POST   | `/create`          | ✓ Active | Khởi tạo thanh toán (PayOS)   |
+| GET    | `/status/:orderId` | ✓ Active | Trạng thái thanh toán         |
+| POST   | `/confirm-mock`    | ✓ Active | Xác nhận thanh toán giả (dev) |
 
 **Payment gateway**: PayOS (`@payos/node`)
 
@@ -396,21 +405,21 @@ UserStatus:    ACTIVE | INACTIVE | BANNED | PENDING
 
 ### 6.8 Ticket — `/v1/tickets`
 
-| Method | Endpoint | Auth | Mô tả |
-|---|---|---|---|
-| GET | `/` | ✓ Active | Danh sách vé của user |
-| GET | `/:ticketId` | ✓ Active | Chi tiết vé + QR code |
-| GET | `/pass-history` | ✓ Active | Lịch sử chuyển nhượng vé |
+| Method | Endpoint        | Auth     | Mô tả                    |
+| ------ | --------------- | -------- | ------------------------ |
+| GET    | `/`             | ✓ Active | Danh sách vé của user    |
+| GET    | `/:ticketId`    | ✓ Active | Chi tiết vé + QR code    |
+| GET    | `/pass-history` | ✓ Active | Lịch sử chuyển nhượng vé |
 
 ---
 
 ### 6.9 Partner Request — `/v1/user/partner-request`
 
-| Method | Endpoint | Auth | Mô tả |
-|---|---|---|---|
-| POST | `/partner-request` | ✓ | Nộp đơn đăng ký làm partner |
-| PATCH | `/partner-request` | ✓ | Chỉnh sửa đơn đang chờ |
-| GET | `/partner-request` | ✓ | Xem trạng thái đơn |
+| Method | Endpoint           | Auth | Mô tả                       |
+| ------ | ------------------ | ---- | --------------------------- |
+| POST   | `/partner-request` | ✓    | Nộp đơn đăng ký làm partner |
+| PATCH  | `/partner-request` | ✓    | Chỉnh sửa đơn đang chờ      |
+| GET    | `/partner-request` | ✓    | Xem trạng thái đơn          |
 
 ---
 
@@ -418,77 +427,77 @@ UserStatus:    ACTIVE | INACTIVE | BANNED | PENDING
 
 **Profile**
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/me` | Thông tin partner |
-| PUT | `/me` | Cập nhật thông tin |
-| GET | `/status` | Trạng thái partner |
+| Method | Endpoint  | Mô tả              |
+| ------ | --------- | ------------------ |
+| GET    | `/me`     | Thông tin partner  |
+| PUT    | `/me`     | Cập nhật thông tin |
+| GET    | `/status` | Trạng thái partner |
 
 **Phim**
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| POST | `/movies/` | Tạo phim mới (DRAFT) |
-| GET | `/movies/` | Danh sách phim của partner |
-| PUT | `/movies/:id` | Cập nhật phim |
-| DELETE | `/movies/:id` | Xóa phim |
-| POST | `/movies/:id/submit` | Nộp phim để admin duyệt |
+| Method | Endpoint             | Mô tả                      |
+| ------ | -------------------- | -------------------------- |
+| POST   | `/movies/`           | Tạo phim mới (DRAFT)       |
+| GET    | `/movies/`           | Danh sách phim của partner |
+| PUT    | `/movies/:id`        | Cập nhật phim              |
+| DELETE | `/movies/:id`        | Xóa phim                   |
+| POST   | `/movies/:id/submit` | Nộp phim để admin duyệt    |
 
 **Lịch chiếu**
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| POST | `/showtimes/` | Tạo lịch chiếu |
-| GET | `/showtimes/` | Danh sách lịch chiếu |
-| PUT | `/showtimes/:id` | Cập nhật lịch chiếu |
-| DELETE | `/showtimes/:id` | Xóa lịch chiếu |
-| GET | `/showtimes/:id/seats` | Danh sách ghế |
-| GET | `/showtimes/:id/seat-map` | Sơ đồ ghế |
-| GET | `/showtimes/:id/check-ins` | Lịch sử check-in |
+| Method | Endpoint                   | Mô tả                |
+| ------ | -------------------------- | -------------------- |
+| POST   | `/showtimes/`              | Tạo lịch chiếu       |
+| GET    | `/showtimes/`              | Danh sách lịch chiếu |
+| PUT    | `/showtimes/:id`           | Cập nhật lịch chiếu  |
+| DELETE | `/showtimes/:id`           | Xóa lịch chiếu       |
+| GET    | `/showtimes/:id/seats`     | Danh sách ghế        |
+| GET    | `/showtimes/:id/seat-map`  | Sơ đồ ghế            |
+| GET    | `/showtimes/:id/check-ins` | Lịch sử check-in     |
 
 **Phòng chiếu**
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| POST | `/rooms/` | Tạo phòng chiếu |
-| GET | `/rooms/` | Danh sách phòng |
-| PUT | `/rooms/:id` | Cập nhật phòng |
-| DELETE | `/rooms/:id` | Xóa phòng |
+| Method | Endpoint     | Mô tả           |
+| ------ | ------------ | --------------- |
+| POST   | `/rooms/`    | Tạo phòng chiếu |
+| GET    | `/rooms/`    | Danh sách phòng |
+| PUT    | `/rooms/:id` | Cập nhật phòng  |
+| DELETE | `/rooms/:id` | Xóa phòng       |
 
 **Vé & Check-in**
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/tickets/` | Danh sách vé |
-| GET | `/tickets/:id` | Chi tiết vé |
-| POST | `/tickets/check-in` | Quét vé vào rạp |
+| Method | Endpoint            | Mô tả           |
+| ------ | ------------------- | --------------- |
+| GET    | `/tickets/`         | Danh sách vé    |
+| GET    | `/tickets/:id`      | Chi tiết vé     |
+| POST   | `/tickets/check-in` | Quét vé vào rạp |
 
 **Tài chính**
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/wallet` | Thông tin ví |
-| GET | `/transactions` | Lịch sử giao dịch |
-| GET | `/revenue` | Báo cáo doanh thu |
-| POST | `/withdrawals` | Yêu cầu rút tiền |
-| GET | `/withdrawals` | Danh sách yêu cầu rút tiền |
-| GET | `/withdrawals/:id` | Chi tiết yêu cầu rút tiền |
+| Method | Endpoint           | Mô tả                      |
+| ------ | ------------------ | -------------------------- |
+| GET    | `/wallet`          | Thông tin ví               |
+| GET    | `/transactions`    | Lịch sử giao dịch          |
+| GET    | `/revenue`         | Báo cáo doanh thu          |
+| POST   | `/withdrawals`     | Yêu cầu rút tiền           |
+| GET    | `/withdrawals`     | Danh sách yêu cầu rút tiền |
+| GET    | `/withdrawals/:id` | Chi tiết yêu cầu rút tiền  |
 
 **Dashboard & Thống kê**
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/dashboard` | Tổng quan dashboard |
-| GET | `/stats/top-movies` | Top phim theo doanh thu |
-| GET | `/stats/occupancy` | Tỷ lệ lấp đầy ghế |
+| Method | Endpoint            | Mô tả                   |
+| ------ | ------------------- | ----------------------- |
+| GET    | `/dashboard`        | Tổng quan dashboard     |
+| GET    | `/stats/top-movies` | Top phim theo doanh thu |
+| GET    | `/stats/occupancy`  | Tỷ lệ lấp đầy ghế       |
 
 **Dịch vụ & Cài đặt**
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET/POST | `/services/` | Quản lý dịch vụ phụ trợ |
-| GET/PATCH | `/settings` | Cài đặt thông báo & tự động rút tiền |
-| POST | `/settings/reset` | Reset về mặc định |
+| Method    | Endpoint          | Mô tả                                |
+| --------- | ----------------- | ------------------------------------ |
+| GET/POST  | `/services/`      | Quản lý dịch vụ phụ trợ              |
+| GET/PATCH | `/settings`       | Cài đặt thông báo & tự động rút tiền |
+| POST      | `/settings/reset` | Reset về mặc định                    |
 
 ---
 
@@ -496,73 +505,73 @@ UserStatus:    ACTIVE | INACTIVE | BANNED | PENDING
 
 **Partner Requests**
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/partner-requests` | Danh sách đơn đăng ký |
-| GET | `/partner-requests/stats` | Thống kê đơn |
-| GET | `/partner-requests/:id` | Chi tiết đơn |
-| PUT | `/partner-requests/:id/approve` | Duyệt đơn |
-| PUT | `/partner-requests/:id/reject` | Từ chối đơn |
-| PUT | `/partner-requests/:id/reset` | Reset trạng thái đơn |
+| Method | Endpoint                        | Mô tả                 |
+| ------ | ------------------------------- | --------------------- |
+| GET    | `/partner-requests`             | Danh sách đơn đăng ký |
+| GET    | `/partner-requests/stats`       | Thống kê đơn          |
+| GET    | `/partner-requests/:id`         | Chi tiết đơn          |
+| PUT    | `/partner-requests/:id/approve` | Duyệt đơn             |
+| PUT    | `/partner-requests/:id/reject`  | Từ chối đơn           |
+| PUT    | `/partner-requests/:id/reset`   | Reset trạng thái đơn  |
 
 **Quản lý phim & partner**
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/movies` | Danh sách phim đang chờ duyệt |
-| GET | `/movies/stats` | Thống kê phim |
-| PUT | `/movies/:id/approve` | Duyệt phim |
-| PUT | `/movies/:id/reject` | Từ chối phim |
-| GET | `/partners` | Danh sách partner |
-| PUT | `/partners/:id/commission` | Cập nhật tỷ lệ hoa hồng |
+| Method | Endpoint                   | Mô tả                         |
+| ------ | -------------------------- | ----------------------------- |
+| GET    | `/movies`                  | Danh sách phim đang chờ duyệt |
+| GET    | `/movies/stats`            | Thống kê phim                 |
+| PUT    | `/movies/:id/approve`      | Duyệt phim                    |
+| PUT    | `/movies/:id/reject`       | Từ chối phim                  |
+| GET    | `/partners`                | Danh sách partner             |
+| PUT    | `/partners/:id/commission` | Cập nhật tỷ lệ hoa hồng       |
 
 ---
 
 ### 6.12 Admin — Analytics — `/v1/admin/analytics`
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/overview` | Tổng quan platform |
-| GET | `/revenue` | Doanh thu theo kỳ (7d/30d/90d/1y) |
-| GET | `/users` | Thống kê người dùng |
-| GET | `/content` | Thống kê nội dung |
-| GET | `/health` | Trạng thái hệ thống |
+| Method | Endpoint    | Mô tả                             |
+| ------ | ----------- | --------------------------------- |
+| GET    | `/overview` | Tổng quan platform                |
+| GET    | `/revenue`  | Doanh thu theo kỳ (7d/30d/90d/1y) |
+| GET    | `/users`    | Thống kê người dùng               |
+| GET    | `/content`  | Thống kê nội dung                 |
+| GET    | `/health`   | Trạng thái hệ thống               |
 
 ---
 
 ### 6.13 Admin — Finance — `/v1/admin/finance`
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/summary` | Tổng hợp tài chính |
-| GET | `/revenue-trend` | Xu hướng doanh thu |
-| GET | `/transactions` | Lịch sử giao dịch toàn platform |
-| GET | `/withdrawals` | Danh sách yêu cầu rút tiền |
-| PATCH | `/withdrawals/:id/approve` | Duyệt rút tiền |
-| PATCH | `/withdrawals/:id/complete` | Hoàn tất rút tiền |
-| PATCH | `/withdrawals/:id/reject` | Từ chối rút tiền |
-| GET | `/plan-distribution` | Phân bổ gói subscription |
+| Method | Endpoint                    | Mô tả                           |
+| ------ | --------------------------- | ------------------------------- |
+| GET    | `/summary`                  | Tổng hợp tài chính              |
+| GET    | `/revenue-trend`            | Xu hướng doanh thu              |
+| GET    | `/transactions`             | Lịch sử giao dịch toàn platform |
+| GET    | `/withdrawals`              | Danh sách yêu cầu rút tiền      |
+| PATCH  | `/withdrawals/:id/approve`  | Duyệt rút tiền                  |
+| PATCH  | `/withdrawals/:id/complete` | Hoàn tất rút tiền               |
+| PATCH  | `/withdrawals/:id/reject`   | Từ chối rút tiền                |
+| GET    | `/plan-distribution`        | Phân bổ gói subscription        |
 
 ---
 
 ### 6.14 Admin — Review Moderation — `/v1/admin/reviews`
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/` | Danh sách review (filter status) |
-| PATCH | `/:id/status` | Đổi trạng thái review |
-| DELETE | `/:id` | Xóa review |
+| Method | Endpoint      | Mô tả                            |
+| ------ | ------------- | -------------------------------- |
+| GET    | `/`           | Danh sách review (filter status) |
+| PATCH  | `/:id/status` | Đổi trạng thái review            |
+| DELETE | `/:id`        | Xóa review                       |
 
 ---
 
 ### 6.15 Admin — Reports — `/v1/admin/reports`
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/` | Danh sách báo cáo vi phạm (filter: status, target, priority) |
-| PATCH | `/:id/resolve` | Giải quyết báo cáo |
-| PATCH | `/:id/dismiss` | Bỏ qua báo cáo |
-| PATCH | `/:id/status` | Cập nhật trạng thái |
+| Method | Endpoint       | Mô tả                                                        |
+| ------ | -------------- | ------------------------------------------------------------ |
+| GET    | `/`            | Danh sách báo cáo vi phạm (filter: status, target, priority) |
+| PATCH  | `/:id/resolve` | Giải quyết báo cáo                                           |
+| PATCH  | `/:id/dismiss` | Bỏ qua báo cáo                                               |
+| PATCH  | `/:id/status`  | Cập nhật trạng thái                                          |
 
 **Loại target**: COMMENT / USER / MOVIE / OWNER / REVIEW
 **Lý do**: SPAM / HARASSMENT / HATE_SPEECH / MISINFORMATION / ADULT_CONTENT / VIOLENCE / COPYRIGHT / SCAM / IMPERSONATION / OTHER
@@ -571,14 +580,14 @@ UserStatus:    ACTIVE | INACTIVE | BANNED | PENDING
 
 ### 6.16 Admin — Feature Flags — `/v1/admin/feature-flags`
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/` | Danh sách flags (filter: env, type, search) |
-| POST | `/` | Tạo flag mới |
-| PATCH | `/:id` | Cập nhật flag |
-| PATCH | `/:id/toggle` | Bật/tắt flag |
-| POST | `/emergency-shutdown` | Tắt khẩn cấp tất cả flags |
-| DELETE | `/:id` | Xóa flag |
+| Method | Endpoint              | Mô tả                                       |
+| ------ | --------------------- | ------------------------------------------- |
+| GET    | `/`                   | Danh sách flags (filter: env, type, search) |
+| POST   | `/`                   | Tạo flag mới                                |
+| PATCH  | `/:id`                | Cập nhật flag                               |
+| PATCH  | `/:id/toggle`         | Bật/tắt flag                                |
+| POST   | `/emergency-shutdown` | Tắt khẩn cấp tất cả flags                   |
+| DELETE | `/:id`                | Xóa flag                                    |
 
 **Loại**: RELEASE / EXPERIMENT / BETA / OPS / EXPERIMENTAL
 **Môi trường**: PRODUCTION / STAGING / DEVELOPMENT
@@ -588,47 +597,47 @@ Hỗ trợ: rollout percentage, target users list.
 
 ### 6.17 Admin — Audit Logs — `/v1/admin/audit-logs`
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/` | Lịch sử hành động admin (filter: category, severity, search, date range) |
+| Method | Endpoint | Mô tả                                                                    |
+| ------ | -------- | ------------------------------------------------------------------------ |
+| GET    | `/`      | Lịch sử hành động admin (filter: category, severity, search, date range) |
 
 ---
 
 ### 6.18 Admin — Plans — `/v1/admin/plans`
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/` | Danh sách gói |
-| POST | `/` | Tạo gói mới |
-| PATCH | `/:id` | Cập nhật gói |
-| PATCH | `/:id/toggle` | Bật/tắt gói |
-| DELETE | `/:id` | Xóa gói |
+| Method | Endpoint      | Mô tả         |
+| ------ | ------------- | ------------- |
+| GET    | `/`           | Danh sách gói |
+| POST   | `/`           | Tạo gói mới   |
+| PATCH  | `/:id`        | Cập nhật gói  |
+| PATCH  | `/:id/toggle` | Bật/tắt gói   |
+| DELETE | `/:id`        | Xóa gói       |
 
 ---
 
 ### 6.19 Admin — System Settings — `/v1/admin/system-settings`
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/` | Lấy tất cả cài đặt |
-| PATCH | `/` | Cập nhật cài đặt |
-| GET | `/status` | Trạng thái hệ thống |
+| Method | Endpoint  | Mô tả               |
+| ------ | --------- | ------------------- |
+| GET    | `/`       | Lấy tất cả cài đặt  |
+| PATCH  | `/`       | Cập nhật cài đặt    |
+| GET    | `/status` | Trạng thái hệ thống |
 
 **Public endpoint** (không cần auth, accessible kể cả maintenance mode):
 
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| GET | `/v1/settings` | siteName, defaultLanguage, timezone, maintenanceMode, registrationOpen |
+| Method | Endpoint       | Mô tả                                                                  |
+| ------ | -------------- | ---------------------------------------------------------------------- |
+| GET    | `/v1/settings` | siteName, defaultLanguage, timezone, maintenanceMode, registrationOpen |
 
 ---
 
 ### 6.20 Notifications — `/v1/notifications`
 
-| Method | Endpoint | Auth | Mô tả |
-|---|---|---|---|
-| GET | `/` | ✓ | Danh sách thông báo |
-| PATCH | `/:id/read` | ✓ | Đánh dấu đã đọc |
-| PATCH | `/read-all` | ✓ | Đánh dấu tất cả đã đọc |
+| Method | Endpoint    | Auth | Mô tả                  |
+| ------ | ----------- | ---- | ---------------------- |
+| GET    | `/`         | ✓    | Danh sách thông báo    |
+| PATCH  | `/:id/read` | ✓    | Đánh dấu đã đọc        |
+| PATCH  | `/read-all` | ✓    | Đánh dấu tất cả đã đọc |
 
 **Admin Email** — `/v1/admin/email`:
 Quản lý email templates và scheduled notifications.
@@ -643,22 +652,23 @@ Quản lý email templates và scheduled notifications.
 src/share/middleware/auth.ts
 ```
 
-| Middleware | Mô tả |
-|---|---|
-| `authMiddleware` | Validate JWT, gắn user vào `req.user` |
-| `authenticate` | Load full user context từ DB |
-| `protect` | Yêu cầu đăng nhập hợp lệ |
-| `requireRole(...roles)` | Kiểm tra role (USER / ADMIN / PARTNER) |
-| `requireActiveUser` | Chặn user bị BANNED / INACTIVE |
-| `requirePermission(perm)` | Kiểm tra granular permission |
-| `requireAnyPermission(...perms)` | Đủ 1 trong N permission |
-| `requireSelfOrPermission(perm)` | Chủ sở hữu hoặc có permission |
+| Middleware                       | Mô tả                                  |
+| -------------------------------- | -------------------------------------- |
+| `authMiddleware`                 | Validate JWT, gắn user vào `req.user`  |
+| `authenticate`                   | Load full user context từ DB           |
+| `protect`                        | Yêu cầu đăng nhập hợp lệ               |
+| `requireRole(...roles)`          | Kiểm tra role (USER / ADMIN / PARTNER) |
+| `requireActiveUser`              | Chặn user bị BANNED / INACTIVE         |
+| `requirePermission(perm)`        | Kiểm tra granular permission           |
+| `requireAnyPermission(...perms)` | Đủ 1 trong N permission                |
+| `requireSelfOrPermission(perm)`  | Chủ sở hữu hoặc có permission          |
 
 ### 7.2 Permission codes
 
 Định nghĩa tại `src/share/security/permissions.ts`.
 
 Nhóm chính:
+
 - `VIEW_OWN_PROFILE`, `UPDATE_OWN_PROFILE`, `DELETE_OWN_ACCOUNT`
 - `CHANGE_OWN_PASSWORD`, `VIEW_OWN_SESSIONS`, `REVOKE_OWN_SESSIONS`
 - `VIEW_USERS`, `UPDATE_USERS`, `BAN_USERS`, `VIEW_USER_STATS`
@@ -669,6 +679,7 @@ Nhóm chính:
 ### 7.3 Maintenance mode
 
 Middleware `maintenanceModeGuard` chặn tất cả request khi `maintenanceMode=true`, ngoại trừ:
+
 - `GET /v1/settings` (public config)
 - Admin endpoints (ADMIN role)
 
@@ -700,13 +711,13 @@ src/queue/
 
 ### 8.2 Các queue
 
-| Queue | Mục đích | Job retry |
-|---|---|---|
-| `email` | Gửi email giao dịch | 3 lần, exponential backoff |
-| `notification` | Push notification tới user | 3 lần |
-| `scheduled-email` | Email đã lên lịch gửi theo cron | 3 lần |
-| `broadcast` | Broadcast tới nhóm user | 3 lần |
-| `seat-cleanup` | Giải phóng ghế bị khóa quá hạn | — |
+| Queue             | Mục đích                        | Job retry                  |
+| ----------------- | ------------------------------- | -------------------------- |
+| `email`           | Gửi email giao dịch             | 3 lần, exponential backoff |
+| `notification`    | Push notification tới user      | 3 lần                      |
+| `scheduled-email` | Email đã lên lịch gửi theo cron | 3 lần                      |
+| `broadcast`       | Broadcast tới nhóm user         | 3 lần                      |
+| `seat-cleanup`    | Giải phóng ghế bị khóa quá hạn  | —                          |
 
 ### 8.3 Email event types
 
@@ -737,11 +748,11 @@ SHOWTIME_CANCELLED
 
 ### 9.1 Kênh thông báo
 
-| Kênh | Công nghệ | Mô tả |
-|---|---|---|
-| Email | Nodemailer + SMTP | Transactional & marketing emails |
-| In-app | Pusher (WebSocket) | Real-time notifications trong app |
-| Broadcast | BullMQ | Admin gửi tới nhóm user |
+| Kênh      | Công nghệ          | Mô tả                             |
+| --------- | ------------------ | --------------------------------- |
+| Email     | Nodemailer + SMTP  | Transactional & marketing emails  |
+| In-app    | Pusher (WebSocket) | Real-time notifications trong app |
+| Broadcast | BullMQ             | Admin gửi tới nhóm user           |
 
 ### 9.2 Email templates
 
@@ -767,8 +778,8 @@ Quản lý qua Admin Email API (`/v1/admin/email`).
 
 ```ts
 // Cấu hình tại
-src/share/transport/upload.router.ts
-src/share/common/cloudinary.ts
+src / share / transport / upload.router.ts;
+src / share / common / cloudinary.ts;
 ```
 
 ---
@@ -777,13 +788,13 @@ src/share/common/cloudinary.ts
 
 ### 11.1 Error classes — `src/share/model/base-error.ts`
 
-| Class | HTTP Status | Mô tả |
-|---|---|---|
-| `ValidationError` | 400 | Dữ liệu đầu vào không hợp lệ |
-| `UnauthorizedError` | 401 | Chưa xác thực |
-| `ForbiddenError` | 403 | Không có quyền |
-| `NotFoundError` | 404 | Không tìm thấy resource |
-| `ConflictError` | 409 | Xung đột (duplicate,...) |
+| Class               | HTTP Status | Mô tả                        |
+| ------------------- | ----------- | ---------------------------- |
+| `ValidationError`   | 400         | Dữ liệu đầu vào không hợp lệ |
+| `UnauthorizedError` | 401         | Chưa xác thực                |
+| `ForbiddenError`    | 403         | Không có quyền               |
+| `NotFoundError`     | 404         | Không tìm thấy resource      |
+| `ConflictError`     | 409         | Xung đột (duplicate,...)     |
 
 ### 11.2 Response envelope
 
@@ -837,6 +848,7 @@ Structured log với metadata: `userId`, `requestId`, `module`, `action`.
 ### 12.4 Audit Logs
 
 Mọi hành động admin được ghi vào bảng `AuditLog`:
+
 - actor (user thực hiện), action, target, category, severity
 - IP, device, location
 - Xem qua `GET /v1/admin/audit-logs`
@@ -872,24 +884,24 @@ npm run test:coverage    # Test + coverage report
 
 ## Phụ lục — Phụ thuộc chính
 
-| Package | Version | Mục đích |
-|---|---|---|
-| express | ^5.2.1 | Web framework |
-| typescript | ^5.9.3 | Type safety |
-| @prisma/client | ^6.19.2 | ORM — PostgreSQL |
-| bullmq | ^5.73.1 | Queue — background jobs |
-| ioredis | ^5.10.1 | Redis client |
-| jsonwebtoken | ^9.0.3 | JWT auth |
-| bcrypt | ^6.0.0 | Password hashing |
-| zod | ^4.3.6 | Schema validation |
-| nodemailer | ^8.0.2 | Email sending |
-| pusher | ^5.3.3 | Real-time notifications |
-| cloudinary | ^2.9.0 | Image storage |
-| multer | ^2.1.1 | File upload |
-| @payos/node | ^2.0.5 | Payment gateway |
-| winston | ^3.19.0 | Structured logging |
-| passport | ^0.7.0 | OAuth strategies |
-| socket.io | ^4.8.3 | WebSocket |
-| prom-client | ^15.1.3 | Prometheus metrics |
-| dayjs | ^1.11.19 | Date manipulation |
-| uuid | ^13.0.0 | UUID generation |
+| Package        | Version  | Mục đích                |
+| -------------- | -------- | ----------------------- |
+| express        | ^5.2.1   | Web framework           |
+| typescript     | ^5.9.3   | Type safety             |
+| @prisma/client | ^6.19.2  | ORM — PostgreSQL        |
+| bullmq         | ^5.73.1  | Queue — background jobs |
+| ioredis        | ^5.10.1  | Redis client            |
+| jsonwebtoken   | ^9.0.3   | JWT auth                |
+| bcrypt         | ^6.0.0   | Password hashing        |
+| zod            | ^4.3.6   | Schema validation       |
+| nodemailer     | ^8.0.2   | Email sending           |
+| pusher         | ^5.3.3   | Real-time notifications |
+| cloudinary     | ^2.9.0   | Image storage           |
+| multer         | ^2.1.1   | File upload             |
+| @payos/node    | ^2.0.5   | Payment gateway         |
+| winston        | ^3.19.0  | Structured logging      |
+| passport       | ^0.7.0   | OAuth strategies        |
+| socket.io      | ^4.8.3   | WebSocket               |
+| prom-client    | ^15.1.3  | Prometheus metrics      |
+| dayjs          | ^1.11.19 | Date manipulation       |
+| uuid           | ^13.0.0  | UUID generation         |

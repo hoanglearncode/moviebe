@@ -1,16 +1,31 @@
 import { PagingDTO } from "@/share/model/paging";
-import { IAdminUserUseCase, AdminUserHexagonDependencies } from "@/modules/admin-manage/admin-user/interface";
+import { OrderStatus, TransactionType, TransactionStatus } from "@prisma/client";
+import {
+  IAdminUserUseCase,
+  AdminUserHexagonDependencies,
+} from "@/modules/admin-manage/admin-user/interface";
 import { IUserSetting } from "@/modules/system/setting/interface";
 import {
   ChangeUserStatusDTO,
   CreateUserDTO,
+  GetBillingQueryDTO,
   ListUsersQueryDTO,
   ResetUserPasswordDTO,
   UpdateUserDTO,
   SeedUsersDTO,
 } from "@/modules/admin-manage/admin-user/model/dto";
-import { ErrEmailAlreadyExists, ErrUserNotFound, ErrUsernameAlreadyExists } from "@/modules/admin-manage/admin-user/model/errors";
-import { OwnUserProfile, UserListResponse } from "@/modules/admin-manage/admin-user/model/model";
+import {
+  ErrEmailAlreadyExists,
+  ErrUserNotFound,
+  ErrUsernameAlreadyExists,
+} from "@/modules/admin-manage/admin-user/model/errors";
+import {
+  OwnUserProfile,
+  UserBillingHistoryResponse,
+  UserBillingSummary,
+  UserListResponse,
+} from "@/modules/admin-manage/admin-user/model/model";
+import { TicketListResult } from "@/modules/ticket/model/model";
 import { SeedService, SeedSummary } from "@/modules/admin-manage/admin-user/shared/seed";
 import { IAuthNotificationService, ITokenService } from "@/modules/auth/interface";
 
@@ -317,6 +332,210 @@ export class AdminUserUseCase implements IAdminUserUseCase {
       inactive,
       banned,
       pending,
+    };
+  }
+
+  private mapOrderStatus(status: OrderStatus): "paid" | "pending" | "failed" {
+    switch (status) {
+      case OrderStatus.COMPLETED:
+        return "paid";
+      case OrderStatus.PENDING:
+      case OrderStatus.PAYMENT_PROCESSING:
+      case OrderStatus.REFUND_REQUESTED:
+        return "pending";
+      case OrderStatus.EXPIRED:
+      case OrderStatus.CANCELLED:
+      case OrderStatus.REFUNDED:
+      default:
+        return "failed";
+    }
+  }
+
+  async getUserBillingHistory(
+    userId: string,
+    query?: GetBillingQueryDTO,
+  ): Promise<UserBillingHistoryResponse> {
+    const page = query?.page ?? 1;
+    const limit = query?.limit ?? 20;
+    const offset = (page - 1) * limit;
+
+    const [total, orders] = await Promise.all([
+      this.prisma.order.count({ where: { userId } }),
+      this.prisma.order.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        skip: offset,
+        take: limit,
+        include: {
+          transactions: {
+            orderBy: { createdAt: "desc" },
+            select: {
+              id: true,
+              type: true,
+              status: true,
+              amount: true,
+              paymentMethod: true,
+              paymentGatewayRef: true,
+              createdAt: true,
+            },
+          },
+          tickets: {
+            select: {
+              purchasePrice: true,
+              partnerAmount: true,
+              platformFee: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    const items = orders.map((order) => {
+      const ticketCount = order.tickets.length;
+      const partnerAmount = order.tickets.reduce((sum, ticket) => sum + ticket.partnerAmount, 0);
+      const platformFee = order.tickets.reduce((sum, ticket) => sum + ticket.platformFee, 0);
+      const description = order.couponCode
+        ? `Đơn hàng ${order.id} - mã khuyến mãi ${order.couponCode}`
+        : `Đơn hàng ${order.id}`;
+
+      return {
+        orderId: order.id,
+        date: order.createdAt,
+        description,
+        totalAmount: order.totalAmount,
+        discountAmount: order.discountAmount,
+        finalAmount: order.finalAmount,
+        couponCode: order.couponCode,
+        status: this.mapOrderStatus(order.status),
+        transactionCount: order.transactions.length,
+        ticketCount,
+        partnerAmount,
+        platformFee,
+        transactions: order.transactions.map((transaction) => ({
+          id: transaction.id,
+          type: transaction.type,
+          status: transaction.status,
+          amount: transaction.amount,
+          paymentMethod: transaction.paymentMethod,
+          paymentGatewayRef: transaction.paymentGatewayRef,
+          createdAt: transaction.createdAt,
+        })),
+      };
+    });
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    };
+  }
+
+  async getUserWatchHistory(userId: string, query?: GetBillingQueryDTO): Promise<TicketListResult> {
+    const page = query?.page ?? 1;
+    const limit = query?.limit ?? 20;
+    const offset = (page - 1) * limit;
+    const where = { userId, status: "USED" as const };
+
+    const [total, tickets] = await Promise.all([
+      this.prisma.ticket.count({ where }),
+      this.prisma.ticket.findMany({
+        where,
+        orderBy: { purchasedAt: "desc" },
+        skip: offset,
+        take: limit,
+        include: {
+          showtime: {
+            include: {
+              movie: {
+                select: {
+                  id: true,
+                  title: true,
+                  posterUrl: true,
+                  genre: true,
+                  duration: true,
+                  rating: true,
+                  language: true,
+                },
+              },
+              partner: {
+                select: { cinemaName: true, city: true, address: true, phone: true },
+              },
+            },
+          },
+          seat: {
+            select: { seatNumber: true, rowLabel: true, columnNumber: true, seatType: true },
+          },
+          checkIn: {
+            select: { scannedAt: true, scannedBy: true },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      items: tickets as unknown as any,
+      total,
+      page,
+      limit,
+    };
+  }
+
+  async getUserBillingSummary(userId: string): Promise<UserBillingSummary> {
+    const [
+      orderTotals,
+      paidTotals,
+      refundedTotals,
+      pendingTotals,
+      transactionCount,
+      refundTransactionCount,
+      ticketTotals,
+    ] = await Promise.all([
+      this.prisma.order.aggregate({
+        where: { userId },
+        _sum: { finalAmount: true },
+        _count: { id: true },
+      }),
+      this.prisma.order.aggregate({
+        where: { userId, status: OrderStatus.COMPLETED },
+        _sum: { finalAmount: true },
+      }),
+      this.prisma.order.aggregate({
+        where: { userId, status: OrderStatus.REFUNDED },
+        _sum: { finalAmount: true },
+      }),
+      this.prisma.order.aggregate({
+        where: {
+          userId,
+          status: {
+            in: [OrderStatus.PENDING, OrderStatus.PAYMENT_PROCESSING, OrderStatus.REFUND_REQUESTED],
+          },
+        },
+        _sum: { finalAmount: true },
+      }),
+      this.prisma.transaction.count({ where: { userId } }),
+      this.prisma.transaction.count({
+        where: { userId, type: TransactionType.REFUND, status: TransactionStatus.COMPLETED },
+      }),
+      this.prisma.ticket.aggregate({
+        where: { userId },
+        _sum: { partnerAmount: true, platformFee: true },
+        _count: { id: true },
+      }),
+    ]);
+
+    return {
+      totalOrders: orderTotals._count.id,
+      totalAmount: orderTotals._sum.finalAmount ?? 0,
+      totalPaidAmount: paidTotals._sum.finalAmount ?? 0,
+      totalRefundedAmount: refundedTotals._sum.finalAmount ?? 0,
+      totalPendingAmount: pendingTotals._sum.finalAmount ?? 0,
+      totalTransactions: transactionCount,
+      totalRefundTransactions: refundTransactionCount,
+      totalTickets: ticketTotals._count.id,
+      totalPartnerAmount: ticketTotals._sum.partnerAmount ?? 0,
+      totalPlatformFee: ticketTotals._sum.platformFee ?? 0,
     };
   }
 

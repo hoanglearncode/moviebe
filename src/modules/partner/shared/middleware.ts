@@ -2,7 +2,9 @@ import { NextFunction, Request, Response } from "express";
 import { createPartnerRepository } from "@/modules/partner/infras/repository/profile.repo";
 import { errorResponse } from "@/share";
 
-export function resolvePartnerIdMiddleware(partnerRepo: ReturnType<typeof createPartnerRepository>) {
+export function resolvePartnerIdMiddleware(
+  partnerRepo: ReturnType<typeof createPartnerRepository>,
+) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userId = (req as any).user?.id;

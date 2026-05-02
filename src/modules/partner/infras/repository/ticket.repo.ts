@@ -1,5 +1,8 @@
 import { PrismaClient } from "@prisma/client";
-import { ITicketRepository, ICheckInRepository } from "@/modules/partner/interface/ticket.interface";
+import {
+  ITicketRepository,
+  ICheckInRepository,
+} from "@/modules/partner/interface/ticket.interface";
 import { Ticket, CheckIn, TicketListResponse } from "@/modules/partner/model/model";
 import { ListTicketsQueryDTO } from "@/modules/partner/model/dto";
 import { PagingDTO } from "@/share";

@@ -5,7 +5,11 @@ import { SystemSettingsRepository } from "@/modules/admin-manage/admin-system-se
 import { SystemSettingsUseCase } from "@/modules/admin-manage/admin-system-settings/usecase/system-settings.usecase";
 import { SystemSettingsHttpService } from "@/modules/admin-manage/admin-system-settings/infras/transport/http-service";
 
-export { SystemSettingsService, initSystemSettingsService, getSystemSettingsService } from "@/modules/admin-manage/admin-system-settings/shared/settings-service";
+export {
+  SystemSettingsService,
+  initSystemSettingsService,
+  getSystemSettingsService,
+} from "@/modules/admin-manage/admin-system-settings/shared/settings-service";
 
 const adminGuard = [...protect(requireRole("ADMIN"))];
 

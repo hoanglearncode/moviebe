@@ -11,9 +11,7 @@ import { LockJobData, LockJobName, QueueName } from "@/queue/modules/types";
 let lockWorker: Worker<LockJobData, void, LockJobName> | null = null;
 const redis = createRedisConnection();
 
-const processUnlockAccountJob = async (
-  job: Job<LockJobData, void, LockJobName>,
-): Promise<void> => {
+const processUnlockAccountJob = async (job: Job<LockJobData, void, LockJobName>): Promise<void> => {
   const { userId, stage } = job.data;
   const lockKey = `auth:login:lock:${userId}`;
 

@@ -37,14 +37,16 @@ function toMovieDomain(row: any): Movie {
     tags: row.tags ?? [],
 
     cast: Array.isArray(row.cast)
-      ? row.cast.map((c: any): CastMember => ({
-          id: c.id,
-          movieId: c.movieId,
-          name: c.name,
-          role: c.role,
-          photo: c.photo ?? null,
-          order: c.order ?? 0,
-        }))
+      ? row.cast.map(
+          (c: any): CastMember => ({
+            id: c.id,
+            movieId: c.movieId,
+            name: c.name,
+            role: c.role,
+            photo: c.photo ?? null,
+            order: c.order ?? 0,
+          }),
+        )
       : undefined,
 
     allowComments: row.allowComments ?? true,
@@ -245,7 +247,13 @@ export class MovieRepository implements IMovieRepository {
       this.prisma.movie.count({ where: { status: "ACTIVE" } }),
     ]);
 
-    return { submitted, approved, rejected, active, total: submitted + approved + rejected + active };
+    return {
+      submitted,
+      approved,
+      rejected,
+      active,
+      total: submitted + approved + rejected + active,
+    };
   }
 
   /**

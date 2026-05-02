@@ -1,7 +1,7 @@
-const fs = require('fs');
-const path = require('path');
-const file = 'src/modules/admin-manage/admin-finance/index.ts';
-const content = fs.readFileSync(file, 'utf8');
+const fs = require("fs");
+const path = require("path");
+const file = "src/modules/admin-manage/admin-finance/index.ts";
+const content = fs.readFileSync(file, "utf8");
 const regex = /(['"])(\.\.\/[^'"\n]+|\.\/[^'"\n]+)\1/g;
 let m;
 while ((m = regex.exec(content))) {

@@ -11,7 +11,7 @@ export function buildAdminFinanceRouter(prisma: PrismaClient): Router {
   const router = Router();
   const useCase = new AdminFinanceUseCase(prisma);
   const paramId = (value: string | string[] | undefined): string =>
-    Array.isArray(value) ? value[0] ?? "" : (value ?? "");
+    Array.isArray(value) ? (value[0] ?? "") : (value ?? "");
 
   router.get("/summary", ...adminGuard, async (req: Request, res: Response) => {
     try {
@@ -93,10 +93,7 @@ export function buildAdminFinanceRouter(prisma: PrismaClient): Router {
     try {
       const withdrawalId = paramId(req.params.id);
       const withdrawal = await prisma.withdrawal.findUnique({ where: { id: withdrawalId } });
-      const data = await useCase.completeWithdrawal(
-        withdrawalId,
-        req.body.transactionReference,
-      );
+      const data = await useCase.completeWithdrawal(withdrawalId, req.body.transactionReference);
       await writeAuditLog(prisma, req, {
         action: "complete_withdrawal",
         description: `Completed withdrawal ${withdrawalId}`,

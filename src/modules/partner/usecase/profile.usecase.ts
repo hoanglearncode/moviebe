@@ -1,4 +1,7 @@
-import { IPartnerRepository, IPartnerProfileUseCase } from "@/modules/partner/interface/profile.interface";
+import {
+  IPartnerRepository,
+  IPartnerProfileUseCase,
+} from "@/modules/partner/interface/profile.interface";
 import { PartnerProfile } from "@/modules/partner/model/model";
 import { UpdatePartnerDTO } from "@/modules/partner/model/dto";
 
@@ -33,7 +36,10 @@ export class PartnerProfileUseCase implements IPartnerProfileUseCase {
     if (!partner) throw new Error("Partner not found");
     if (rate < 0 || rate > 1) throw new Error("Commission rate must be between 0 and 1");
 
-    await this.partnerRepo.update(partnerId, { commissionRate: rate, updatedAt: new Date() } as any);
+    await this.partnerRepo.update(partnerId, {
+      commissionRate: rate,
+      updatedAt: new Date(),
+    } as any);
 
     const updated = await this.partnerRepo.findById(partnerId);
     if (!updated) throw new Error("Partner not found after update");

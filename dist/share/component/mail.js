@@ -1,46 +1,68 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.mailService = exports.MailService = void 0;
-const nodemailer_1 = __importDefault(require("nodemailer"));
-const value_1 = require("../common/value");
-class MailService {
+import nodemailer from "nodemailer";
+import { ENV } from "@/share/common/value";
+export class MailService {
     async send(input) {
-        const transporter = this.getTransporter();
+        const transporter = await this.getTransporter();
         await transporter.sendMail({
-            from: this.getFromAddress(),
+            from: this.fromAddress,
             to: input.to,
             subject: input.subject,
             html: input.html,
             text: input.text,
         });
     }
-    getTransporter() {
-        if (this.transporter) {
+    /**
+     * Clear cached transporter — called when admin updates SMTP settings so the
+     * next send() call picks up the new config from SystemSettings.
+     */
+    invalidate() {
+        this.transporter = undefined;
+        this.fromAddress = undefined;
+    }
+    async getTransporter() {
+        if (this.transporter)
             return this.transporter;
+        // Try to load SMTP config from the SystemSettings DB (admin-configured).
+        // Falls through to ENV when the service is not initialised (e.g., at test
+        // time) or when no SMTP keys have been set in the DB yet.
+        try {
+            const { getSystemSettingsService } = await import("@/modules/admin-system-settings");
+            const svc = getSystemSettingsService();
+            const [host, port, user, pass, fromName, fromEmail] = await Promise.all([
+                svc.get("smtpHost"),
+                svc.get("smtpPort"),
+                svc.get("smtpUser"),
+                svc.get("smtpPassword"),
+                svc.get("fromName"),
+                svc.get("fromEmail"),
+            ]);
+            if (host && user && pass && fromEmail) {
+                const portNum = parseInt(port, 10);
+                this.transporter = nodemailer.createTransport({
+                    host,
+                    port: portNum,
+                    secure: portNum === 465,
+                    auth: { user, pass },
+                });
+                this.fromAddress = `${fromName} <${fromEmail}>`;
+                return this.transporter;
+            }
         }
-        if (!value_1.ENV.SMTP_HOST || !value_1.ENV.SMTP_USER || !value_1.ENV.SMTP_PASS || !value_1.ENV.MAIL_FROM_EMAIL) {
-            throw new Error("Mail service is not configured. Please set SMTP_HOST, SMTP_USER, SMTP_PASS and MAIL_FROM_EMAIL.");
+        catch {
+            // Service not initialised or SMTP not configured in DB — fall through
         }
-        this.transporter = nodemailer_1.default.createTransport({
-            host: value_1.ENV.SMTP_HOST,
-            port: value_1.ENV.SMTP_PORT,
-            secure: value_1.ENV.SMTP_SECURE,
-            auth: {
-                user: value_1.ENV.SMTP_USER,
-                pass: value_1.ENV.SMTP_PASS,
-            },
+        // Fallback: ENV vars
+        if (!ENV.SMTP_HOST || !ENV.SMTP_USER || !ENV.SMTP_PASS || !ENV.MAIL_FROM_EMAIL) {
+            throw new Error("Mail service is not configured. Set SMTP settings in the admin panel or via ENV vars.");
+        }
+        this.transporter = nodemailer.createTransport({
+            host: ENV.SMTP_HOST,
+            port: ENV.SMTP_PORT,
+            secure: ENV.SMTP_SECURE,
+            auth: { user: ENV.SMTP_USER, pass: ENV.SMTP_PASS },
         });
+        this.fromAddress = `${ENV.MAIL_FROM_NAME} <${ENV.MAIL_FROM_EMAIL}>`;
         return this.transporter;
     }
-    getFromAddress() {
-        if (!value_1.ENV.MAIL_FROM_EMAIL) {
-            throw new Error("MAIL_FROM_EMAIL is not configured.");
-        }
-        return `${value_1.ENV.MAIL_FROM_NAME} <${value_1.ENV.MAIL_FROM_EMAIL}>`;
-    }
 }
-exports.MailService = MailService;
-exports.mailService = new MailService();
+export const mailService = new MailService();

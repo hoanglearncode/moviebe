@@ -1,13 +1,20 @@
 import { PrismaClient } from "@prisma/client";
 import { PagingDTO } from "@/share";
-import { IPartnerServiceRepository, AdminServiceListQuery } from "@/modules/partner/interface/services.interface";
+import {
+  IPartnerServiceRepository,
+  AdminServiceListQuery,
+} from "@/modules/partner/interface/services.interface";
 import { CreateServiceDTO, UpdateServiceDTO } from "@/modules/partner/model/dto";
 import { Services, AdminServiceRow } from "@/modules/partner/model/model";
 
 export class Service implements IPartnerServiceRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async list(partnerId: string, cond: any, paging: PagingDTO): Promise<{ items: Services[]; total: number }> {
+  async list(
+    partnerId: string,
+    cond: any,
+    paging: PagingDTO,
+  ): Promise<{ items: Services[]; total: number }> {
     const where = this.buildWhere(partnerId, cond);
 
     const [rows, total] = await Promise.all([
@@ -173,7 +180,9 @@ export class Service implements IPartnerServiceRepository {
     return this.findById(partnerId, id);
   }
 
-  async listAll(query: AdminServiceListQuery): Promise<{ items: AdminServiceRow[]; total: number }> {
+  async listAll(
+    query: AdminServiceListQuery,
+  ): Promise<{ items: AdminServiceRow[]; total: number }> {
     const { page = 1, limit = 20, keyword, category } = query;
     const skip = (page - 1) * limit;
     const where: any = {};

@@ -2,9 +2,11 @@ import { IRepository, IUseCase } from "@/share/interface";
 import { PagingDTO } from "@/share/model/paging";
 import { PrismaClient } from "@prisma/client";
 import { IUserSetting } from "@/modules/system/setting/interface";
+import { TicketListResult } from "@/modules/ticket/model/model";
 import {
   UpdateProfileDTO,
   ChangePasswordDTO,
+  GetBillingQueryDTO,
   GetSessionsQueryDTO,
   CreateUserDTO,
   UpdateUserDTO,
@@ -13,6 +15,7 @@ import {
   ListUsersQueryDTO,
   UserCondDTO,
   SeedUsersDTO,
+  CreateReviewDTO,
 } from "@/modules/admin-manage/admin-user/model/dto";
 import {
   UserProfile,
@@ -21,6 +24,10 @@ import {
   SessionListResponse,
   OwnUserProfile,
   UserListResponse,
+  UserBillingHistoryResponse,
+  UserBillingSummary,
+  UserReviewItem,
+  UserReviewListResponse,
 } from "@/modules/admin-manage/admin-user/model/model";
 import { SeedSummary } from "@/modules/admin-manage/admin-user/shared/seed";
 
@@ -28,11 +35,12 @@ import { SeedSummary } from "@/modules/admin-manage/admin-user/shared/seed";
 // REPOSITORIES
 // ==========================================
 
-export interface IUserRepository
-  // NOTE: IRepository<Entity, Cond, UpdateDTO>
-  // Cond = Partial<UserProfile> cho các method generic (get, findByCond, list, insert, update, delete)
-  extends IRepository<UserProfile, Partial<UserProfile>, Partial<UserProfile>> {
-  checkPassword(userId: string): Promise<string>
+export interface IUserRepository extends IRepository<
+  UserProfile,
+  Partial<UserProfile>,
+  Partial<UserProfile>
+> {
+  checkPassword(userId: string): Promise<string>;
   findById(userId: string): Promise<UserProfile | null>;
   findByEmail(email: string): Promise<UserProfile | null>;
   findByUsername(username: string): Promise<UserProfile | null>;
@@ -40,11 +48,6 @@ export interface IUserRepository
   updatePassword(userId: string, passwordHash: string): Promise<boolean>;
   deleteUser(userId: string): Promise<boolean>;
   countUsers(): Promise<number>;
-
-  // NOTE: Tại sao cần listUsers riêng?
-  // base IRepository.list(cond: Partial<UserProfile>, paging) quá generic
-  // Admin cần filter bằng ListUsersQueryDTO (keyword, role, status, sortBy...)
-  // Không thể dùng Partial<UserProfile> cho keyword search nhiều field.
   listUsers(cond: ListUsersQueryDTO): Promise<{ items: OwnUserProfile[]; total: number }>;
 }
 
@@ -99,6 +102,14 @@ export interface IUserUseCase {
   revokeSession(userId: string, sessionId: string): Promise<{ message: string }>;
   revokeAllSessions(userId: string): Promise<{ message: string }>;
   checkPassword(userId: string, password: string): Promise<boolean>;
+  getBillingHistory(
+    userId: string,
+    query?: GetBillingQueryDTO,
+  ): Promise<UserBillingHistoryResponse>;
+  getBillingSummary(userId: string): Promise<UserBillingSummary>;
+  getWatchHistory(userId: string, query?: GetBillingQueryDTO): Promise<TicketListResult>;
+  getReviews(userId: string, query?: GetBillingQueryDTO): Promise<UserReviewListResponse>;
+  createReview(userId: string, data: CreateReviewDTO): Promise<UserReviewItem>;
 }
 
 export interface IAdminUserUseCase extends IUseCase<
@@ -115,6 +126,12 @@ export interface IAdminUserUseCase extends IUseCase<
   ): Promise<{ temporaryPassword: string }>;
   verifyUserEmail(userId: string): Promise<{ message: string }>;
   revokeAllUserSessions(userId: string): Promise<{ message: string }>;
+  getUserBillingHistory(
+    userId: string,
+    query?: GetBillingQueryDTO,
+  ): Promise<UserBillingHistoryResponse>;
+  getUserBillingSummary(userId: string): Promise<UserBillingSummary>;
+  getUserWatchHistory(userId: string, query?: GetBillingQueryDTO): Promise<TicketListResult>;
   seedUsers(data: SeedUsersDTO): Promise<SeedSummary>;
   clearSeedUsers(): Promise<{ deletedCount: number }>;
   getSeedStatistics(): Promise<{
@@ -152,10 +169,9 @@ export interface UserHexagonDependencies {
   passwordHasher: IPasswordHasher;
   notificationService: IUserNotificationService;
   avatarColorService: IAvatarColorService;
+  prisma: PrismaClient;
 }
 
-// NOTE: Admin dùng chung dependencies với user thông thường
-// Vì cùng truy cập cùng bảng DB, chỉ khác ở logic nghiệp vụ
 export interface AdminUserHexagonDependencies extends UserHexagonDependencies {
   prisma: PrismaClient;
   userSettingService?: IUserSetting;

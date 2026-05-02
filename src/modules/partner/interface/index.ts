@@ -5,10 +5,22 @@
  * everything so existing import paths continue to work.
  */
 
-export type { IPartnerRepository, IPartnerProfileUseCase } from "@/modules/partner/interface/profile.interface";
-export type { IMovieRepository, IMovieManagementUseCase } from "@/modules/partner/interface/movie.interface";
-export type { IShowtimeRepository, IShowtimeManagementUseCase } from "@/modules/partner/interface/showtime.interface";
-export type { ISeatRepository, ISeatManagementUseCase } from "@/modules/partner/interface/seat.interface";
+export type {
+  IPartnerRepository,
+  IPartnerProfileUseCase,
+} from "@/modules/partner/interface/profile.interface";
+export type {
+  IMovieRepository,
+  IMovieManagementUseCase,
+} from "@/modules/partner/interface/movie.interface";
+export type {
+  IShowtimeRepository,
+  IShowtimeManagementUseCase,
+} from "@/modules/partner/interface/showtime.interface";
+export type {
+  ISeatRepository,
+  ISeatManagementUseCase,
+} from "@/modules/partner/interface/seat.interface";
 export type {
   ITicketRepository,
   ICheckInRepository,
@@ -29,7 +41,10 @@ import type { IPartnerRepository } from "@/modules/partner/interface/profile.int
 import type { IMovieRepository } from "@/modules/partner/interface/movie.interface";
 import type { IShowtimeRepository } from "@/modules/partner/interface/showtime.interface";
 import type { ISeatRepository } from "@/modules/partner/interface/seat.interface";
-import type { ITicketRepository, ICheckInRepository } from "@/modules/partner/interface/ticket.interface";
+import type {
+  ITicketRepository,
+  ICheckInRepository,
+} from "@/modules/partner/interface/ticket.interface";
 import type {
   ITransactionRepository,
   IWithdrawalRepository,

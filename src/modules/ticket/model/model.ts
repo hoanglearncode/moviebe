@@ -1,10 +1,4 @@
-export type TicketStatus =
-  | "RESERVED"
-  | "CONFIRMED"
-  | "USED"
-  | "CANCELLED"
-  | "REFUNDED"
-  | "PASSED";
+export type TicketStatus = "RESERVED" | "CONFIRMED" | "USED" | "CANCELLED" | "REFUNDED" | "PASSED";
 
 export interface UserTicket {
   id: string;

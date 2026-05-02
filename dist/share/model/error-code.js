@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ErrorCode = void 0;
-var ErrorCode;
+export var ErrorCode;
 (function (ErrorCode) {
     ErrorCode[ErrorCode["VALIDATION"] = 1000] = "VALIDATION";
     ErrorCode[ErrorCode["NOT_FOUND"] = 1001] = "NOT_FOUND";
@@ -21,4 +18,4 @@ var ErrorCode;
     ErrorCode[ErrorCode["SOCIAL_FACEBOOK_NO_EMAIL"] = 2201] = "SOCIAL_FACEBOOK_NO_EMAIL";
     ErrorCode[ErrorCode["SOCIAL_TOKEN_INVALID"] = 2202] = "SOCIAL_TOKEN_INVALID";
     ErrorCode[ErrorCode["Duplicate"] = 2203] = "Duplicate";
-})(ErrorCode || (exports.ErrorCode = ErrorCode = {}));
+})(ErrorCode || (ErrorCode = {}));

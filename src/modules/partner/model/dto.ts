@@ -10,7 +10,10 @@ export const SubmitPartnerRequestSchema = z.object({
   cinemaName: z.string().trim().min(1, "Cinema name is required").max(255),
   address: z.string().trim().min(5, "Address is required"),
   city: z.string().trim().min(1, "City is required"),
-  phone: z.string().trim().regex(/^\+?[0-9\s\-()]{9,}$/, "Invalid phone number"),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[0-9\s\-()]{9,}$/, "Invalid phone number"),
   email: z.string().trim().email("Invalid email"),
   logo: z.string().trim().url().optional(),
   taxCode: z.string().trim().min(1, "Tax code is required"),
@@ -31,7 +34,11 @@ export const UpdatePartnerPayloadDTO = z.object({
   city: z.string().trim().min(1).optional(),
   country: z.string().trim().min(1).optional(),
   postalCode: z.string().trim().optional().nullable(),
-  phone: z.string().trim().regex(/^\+?[0-9\s\-()]{9,}$/).optional(),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[0-9\s\-()]{9,}$/)
+    .optional(),
   email: z.string().trim().email().optional(),
   website: z.string().trim().url().optional().nullable(),
   logo: z.string().trim().url().optional().nullable(),
@@ -60,8 +67,8 @@ const CastMemberDTOSchema = z.object({
 });
 
 const ShowtimePlanDTOSchema = z.object({
-  date: z.string().min(1, "Date required"),   // "YYYY-MM-DD"
-  time: z.string().min(1, "Time required"),   // "HH:mm"
+  date: z.string().min(1, "Date required"), // "YYYY-MM-DD"
+  time: z.string().min(1, "Time required"), // "HH:mm"
   roomId: z.string().min(1, "Room ID required"),
   prices: z.object({
     standard: z.number().min(1000).optional(),
@@ -190,8 +197,6 @@ export const UpdateRoomPayloadDTO = z.object({
   services: z.array(z.number().int()).optional(),
 });
 
-
-
 export const UpdateSeatPayloadDTO = z.object({
   type: z.enum(["STANDARD", "VIP", "COUPLE", "BLOCKED"]).optional(),
   status: z.enum(["AVAILABLE", "LOCKED", "BOOKED", "MAINTENANCE"]).optional(),
@@ -315,14 +320,9 @@ export const RevenueQueryPayloadDTO = z.object({
 export const RequestCondDTOSchema = z.object({
   page: z.coerce.number().default(1),
   limit: z.coerce.number().default(10),
-  status: z
-    .enum(["PENDING", "APPROVED", "REJECTED", "SUSPENDED"])
-    .optional(),
-  search: z.string().optional()
+  status: z.enum(["PENDING", "APPROVED", "REJECTED", "SUSPENDED"]).optional(),
+  search: z.string().optional(),
 });
-
-
-
 
 export interface CastMemberDTO {
   name: string;
@@ -331,8 +331,8 @@ export interface CastMemberDTO {
 }
 
 export interface ShowtimePlanDTO {
-  date: string;   // "YYYY-MM-DD"
-  time: string;   // "HH:mm"
+  date: string; // "YYYY-MM-DD"
+  time: string; // "HH:mm"
   roomId: string;
   prices: {
     standard?: number;
@@ -394,8 +394,6 @@ export type SubmitPartnerRequestInput = RegisterPartnerDTO & {
   userId: string;
 };
 export type UpdatePartnerDTO = z.infer<typeof UpdatePartnerPayloadDTO>;
-
-
 
 export type CreateShowtimeDTO = z.infer<typeof CreateShowtimePayloadDTO>;
 export type UpdateShowtimeDTO = z.infer<typeof UpdateShowtimePayloadDTO>;

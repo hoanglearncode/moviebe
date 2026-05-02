@@ -135,6 +135,76 @@ export type UserListResponse = {
  * ==========================================
  */
 
+export type UserBillingTransaction = {
+  id: string;
+  type: string;
+  status: string;
+  amount: number;
+  paymentMethod: string | null;
+  paymentGatewayRef: string | null;
+  createdAt: Date;
+};
+
+export type UserBillingRecord = {
+  orderId: string;
+  date: Date;
+  description: string;
+  totalAmount: number;
+  discountAmount: number;
+  finalAmount: number;
+  couponCode: string | null;
+  status: "paid" | "pending" | "failed";
+  transactionCount: number;
+  ticketCount: number;
+  partnerAmount: number;
+  platformFee: number;
+  transactions: UserBillingTransaction[];
+};
+
+export type UserBillingHistoryResponse = {
+  items: UserBillingRecord[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+export type UserBillingSummary = {
+  totalOrders: number;
+  totalAmount: number;
+  totalPaidAmount: number;
+  totalRefundedAmount: number;
+  totalPendingAmount: number;
+  totalTransactions: number;
+  totalRefundTransactions: number;
+  totalTickets: number;
+  totalPartnerAmount: number;
+  totalPlatformFee: number;
+};
+
+export type UserReviewItem = {
+  id: string;
+  score: number;
+  content: string | null;
+  status: string;
+  verifiedPurchase: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  movie: {
+    id: string;
+    title: string;
+    posterUrl?: string | null;
+  };
+};
+
+export type UserReviewListResponse = {
+  items: UserReviewItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
 export type UserStatsResponse = {
   total: number;
   active: number;

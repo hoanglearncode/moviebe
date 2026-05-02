@@ -101,7 +101,11 @@ export class ServicesHttpService {
       const { id } = req.params;
       const partnerId = (req as any).partnerId;
 
-      const data = await this.useCase.update(partnerId, this.parseServiceId(id.toString()), req.body);
+      const data = await this.useCase.update(
+        partnerId,
+        this.parseServiceId(id.toString()),
+        req.body,
+      );
 
       if (!data) {
         return res.status(404).json({

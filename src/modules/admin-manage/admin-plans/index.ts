@@ -21,7 +21,20 @@ export function buildAdminPlansRouter(prisma: PrismaClient): Router {
   // POST /v1/admin/plans
   router.post("/", ...adminGuard, async (req: Request, res: Response) => {
     try {
-      const { name, slug, price, yearlyPrice, description, maxDevices, quality, isActive, isPopular, color, icon, features } = req.body;
+      const {
+        name,
+        slug,
+        price,
+        yearlyPrice,
+        description,
+        maxDevices,
+        quality,
+        isActive,
+        isPopular,
+        color,
+        icon,
+        features,
+      } = req.body;
 
       if (!name || !slug || price === undefined || !description) {
         return errorResponse(res, 400, "name, slug, price, description are required");
@@ -59,7 +72,20 @@ export function buildAdminPlansRouter(prisma: PrismaClient): Router {
       const existing = await prisma.plan.findUnique({ where: { id: req.params.id } });
       if (!existing) return errorResponse(res, 404, "Plan not found");
 
-      const { name, slug, price, yearlyPrice, description, maxDevices, quality, isActive, isPopular, color, icon, features } = req.body;
+      const {
+        name,
+        slug,
+        price,
+        yearlyPrice,
+        description,
+        maxDevices,
+        quality,
+        isActive,
+        isPopular,
+        color,
+        icon,
+        features,
+      } = req.body;
 
       if (slug && slug !== existing.slug) {
         const conflict = await prisma.plan.findUnique({ where: { slug } });

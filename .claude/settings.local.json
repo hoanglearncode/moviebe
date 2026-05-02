@@ -1,8 +1,5 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(awk '{print $NF}')",
-      "Bash(xargs -I {} basename {})"
-    ]
+    "allow": ["Bash(awk '{print $NF}')", "Bash(xargs -I {} basename {})"]
   }
 }

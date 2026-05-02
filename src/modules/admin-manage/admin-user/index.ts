@@ -2,7 +2,10 @@ import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { AdminUserUseCase } from "@/modules/admin-manage/admin-user/usecase/admin-user.usecase";
 import { UserUseCase } from "@/modules/admin-manage/admin-user/usecase/user.usecase";
-import { UserHttpService, AdminUserHttpService } from "@/modules/admin-manage/admin-user/infras/transport/http-service";
+import {
+  UserHttpService,
+  AdminUserHttpService,
+} from "@/modules/admin-manage/admin-user/infras/transport/http-service";
 import { createSessionRepository } from "@/modules/admin-manage/admin-user/infras/repository/session-repo";
 import { createUserRepository } from "@/modules/admin-manage/admin-user/infras/repository/user-repo";
 import { HashService } from "@/modules/admin-manage/admin-user/shared/hash";
@@ -36,11 +39,36 @@ const buildUserRouter = (useCase: IUserUseCase) => {
     ...protect(requirePermission(PERMISSIONS.DELETE_OWN_ACCOUNT)),
     httpService.deleteAccount.bind(httpService),
   );
-  router.post('/confirm-password', ...protect(), httpService.checkPassword.bind(httpService))
+  router.post("/confirm-password", ...protect(), httpService.checkPassword.bind(httpService));
   router.post(
     "/change-password",
     ...protect(requirePermission(PERMISSIONS.CHANGE_OWN_PASSWORD)),
     httpService.changePassword.bind(httpService),
+  );
+  router.get(
+    "/billing",
+    ...protect(requirePermission(PERMISSIONS.VIEW_OWN_PROFILE)),
+    httpService.getBilling.bind(httpService),
+  );
+  router.get(
+    "/billing/summary",
+    ...protect(requirePermission(PERMISSIONS.VIEW_OWN_PROFILE)),
+    httpService.getBillingSummary.bind(httpService),
+  );
+  router.get(
+    "/watch-history",
+    ...protect(requirePermission(PERMISSIONS.VIEW_OWN_PROFILE)),
+    httpService.getWatchHistory.bind(httpService),
+  );
+  router.get(
+    "/reviews",
+    ...protect(requirePermission(PERMISSIONS.VIEW_OWN_PROFILE)),
+    httpService.getReviews.bind(httpService),
+  );
+  router.post(
+    "/reviews",
+    ...protect(requirePermission(PERMISSIONS.VIEW_OWN_PROFILE)),
+    httpService.createReview.bind(httpService),
   );
   router.get(
     "/sessions",
@@ -82,6 +110,21 @@ const buildAdminUserRouter = (useCase: IAdminUserUseCase) => {
     "/users/:id",
     requirePermission(PERMISSIONS.VIEW_USER_DETAIL),
     httpService.getUser.bind(httpService),
+  );
+  router.get(
+    "/users/:id/billing",
+    requirePermission(PERMISSIONS.VIEW_USER_DETAIL),
+    httpService.getUserBilling.bind(httpService),
+  );
+  router.get(
+    "/users/:id/billing/summary",
+    requirePermission(PERMISSIONS.VIEW_USER_STATS),
+    httpService.getUserBillingSummary.bind(httpService),
+  );
+  router.get(
+    "/users/:id/watch-history",
+    requirePermission(PERMISSIONS.VIEW_USER_DETAIL),
+    httpService.getUserWatchHistory.bind(httpService),
   );
   router.post(
     "/users",

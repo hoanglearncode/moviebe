@@ -10,7 +10,11 @@ export interface AdminServiceListQuery {
 }
 
 export interface IPartnerServicesUseCase {
-  list(partnerId: string, cond: any, paging: PagingDTO): Promise<{
+  list(
+    partnerId: string,
+    cond: any,
+    paging: PagingDTO,
+  ): Promise<{
     items: Services[];
     total: number;
     page: number;
@@ -26,7 +30,11 @@ export interface IPartnerServicesUseCase {
 
 export interface IPartnerServiceRepository {
   get(partnerId: string, id: number): Promise<Services | null>;
-  list(partnerId: string, cond: any, paging: PagingDTO): Promise<{
+  list(
+    partnerId: string,
+    cond: any,
+    paging: PagingDTO,
+  ): Promise<{
     items: Services[];
     total: number;
   }>;

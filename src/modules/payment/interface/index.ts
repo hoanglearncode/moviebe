@@ -1,4 +1,8 @@
-import { CreatePaymentResult, ConfirmMockResult, PaymentMethod } from "@/modules/payment/model/model";
+import {
+  CreatePaymentResult,
+  ConfirmMockResult,
+  PaymentMethod,
+} from "@/modules/payment/model/model";
 import { OrderWithDetails } from "@/modules/booking/model/model";
 
 export interface IPaymentRepository {
@@ -16,7 +20,11 @@ export interface IPaymentRepository {
 }
 
 export interface IPaymentUseCase {
-  createPayment(userId: string, orderId: string, paymentMethod: PaymentMethod): Promise<CreatePaymentResult>;
+  createPayment(
+    userId: string,
+    orderId: string,
+    paymentMethod: PaymentMethod,
+  ): Promise<CreatePaymentResult>;
   getPaymentStatus(userId: string, orderId: string): Promise<OrderWithDetails>;
   confirmMockPayment(
     orderId: string,

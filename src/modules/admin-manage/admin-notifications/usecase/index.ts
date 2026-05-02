@@ -9,13 +9,16 @@ import {
 import { PrismaClient } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { logger } from "@/modules/system/log/logger";
-import {
-  enqueueBroadcastJob,
-  enqueueBroadcastJobWithDelay,
-} from "@/queue/config/broadcast.queue";
+import { enqueueBroadcastJob, enqueueBroadcastJobWithDelay } from "@/queue/config/broadcast.queue";
 import { ValidationError, NotFoundError } from "@/share/transport/http-server";
-import { CreateBroadcastSchema, ListBroadcastsSchema } from "@/modules/admin-manage/admin-notifications/model/dto";
-import type { IBroadcastRepository, ListResult } from "@/modules/admin-manage/admin-notifications/interface";
+import {
+  CreateBroadcastSchema,
+  ListBroadcastsSchema,
+} from "@/modules/admin-manage/admin-notifications/model/dto";
+import type {
+  IBroadcastRepository,
+  ListResult,
+} from "@/modules/admin-manage/admin-notifications/interface";
 
 // ─── Target → user segment mapping ───────────────────────────────────────────
 
@@ -27,9 +30,12 @@ import type { IBroadcastRepository, ListResult } from "@/modules/admin-manage/ad
 function buildTargetWhere(target: BroadcastTarget) {
   const activeOnly = { status: UserStatus.ACTIVE };
   switch (target) {
-    case BroadcastTarget.ALL:     return activeOnly;
-    case BroadcastTarget.OWNERS:  return { ...activeOnly, role: Role.PARTNER };
-    case BroadcastTarget.USERS:   return { ...activeOnly, role: Role.USER };
+    case BroadcastTarget.ALL:
+      return activeOnly;
+    case BroadcastTarget.OWNERS:
+      return { ...activeOnly, role: Role.PARTNER };
+    case BroadcastTarget.USERS:
+      return { ...activeOnly, role: Role.USER };
     case BroadcastTarget.VIP:
     case BroadcastTarget.PREMIUM:
     case BroadcastTarget.FREE:
@@ -59,9 +65,7 @@ export class BroadcastNotificationUseCase {
 
     // Compute live readCount — backfills historical records stuck at 0
     const liveReadCounts = await Promise.all(
-      items.map((n) =>
-        this.repo.computeReadCount(n.id).then((count) => ({ id: n.id, count })),
-      ),
+      items.map((n) => this.repo.computeReadCount(n.id).then((count) => ({ id: n.id, count }))),
     );
     const rcMap = new Map(liveReadCounts.map(({ id, count }) => [id, count]));
 

@@ -1,19 +1,16 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.AuthNotificationService = void 0;
-const value_1 = require("../../../share/common/value");
-const mail_1 = require("../../../share/component/mail");
-const queue_1 = require("../../../queue");
-const logger_1 = require("../../system/log/logger");
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
-class AuthNotificationService {
-    constructor(emailService = mail_1.mailService) {
+import { ENV } from "@/share/common/value";
+import { mailService } from "@/share/component/mail";
+import { enqueueEmailJob, isQueueEnabled } from "@/queue";
+import { logger } from "@/modules/system/log/logger";
+import { PrismaClient, EmailNotificationEvent } from "@prisma/client";
+const prisma = new PrismaClient();
+export class AuthNotificationService {
+    constructor(emailService = mailService) {
         this.emailService = emailService;
     }
     async sendVerifyEmail(input) {
-        const verifyUrl = `${value_1.ENV.FRONTEND_URL}/verify-email?token=${encodeURIComponent(input.token)}`;
-        const template = await this.getTemplate(client_1.EmailNotificationEvent.VERIFY_EMAIL);
+        const verifyUrl = `${ENV.FRONTEND_URL}/verify-email?token=${encodeURIComponent(input.token)}`;
+        const template = await this.getTemplate(EmailNotificationEvent.VERIFY_EMAIL);
         const html = this.render(template.body, {
             email: input.email,
             name: input.email,
@@ -31,7 +28,7 @@ class AuthNotificationService {
         });
     }
     async sendWellComeEmail(email) {
-        const template = await this.getTemplate(client_1.EmailNotificationEvent.WELCOME_NEW_ACCOUNT);
+        const template = await this.getTemplate(EmailNotificationEvent.WELCOME_NEW_ACCOUNT);
         const html = this.render(template.body, {
             email: email,
             name: email,
@@ -47,8 +44,8 @@ class AuthNotificationService {
         });
     }
     async sendResetPasswordEmail(input) {
-        const resetUrl = `${value_1.ENV.FRONTEND_URL}/reset-password?token=${encodeURIComponent(input.token)}`;
-        const template = await this.getTemplate(client_1.EmailNotificationEvent.RESET_PASSWORD);
+        const resetUrl = `${ENV.FRONTEND_URL}/reset-password?token=${encodeURIComponent(input.token)}`;
+        const template = await this.getTemplate(EmailNotificationEvent.RESET_PASSWORD);
         const html = this.render(template.body, {
             email: input.email,
             name: input.email,
@@ -66,7 +63,7 @@ class AuthNotificationService {
         });
     }
     async sendChangePasswordEmail(email) {
-        const template = await this.getTemplate(client_1.EmailNotificationEvent.PASSWORD_CHANGED);
+        const template = await this.getTemplate(EmailNotificationEvent.PASSWORD_CHANGED);
         const html = this.render(template.body, {
             email: email,
             name: email,
@@ -99,17 +96,17 @@ class AuthNotificationService {
         return result;
     }
     async dispatchEmail(input) {
-        if (!queue_1.isQueueEnabled) {
+        if (!isQueueEnabled) {
             await this.emailService.send(input);
             return;
         }
         try {
-            await (0, queue_1.enqueueEmailJob)(input, {
+            await enqueueEmailJob(input, {
                 jobId: `mail:${input.to}:${Date.now()}`,
             });
         }
         catch (error) {
-            logger_1.logger.warn("Queue email dispatch failed, falling back to direct mail send", {
+            logger.warn("Queue email dispatch failed, falling back to direct mail send", {
                 to: input.to,
                 error: error.message,
             });
@@ -117,4 +114,3 @@ class AuthNotificationService {
         }
     }
 }
-exports.AuthNotificationService = AuthNotificationService;

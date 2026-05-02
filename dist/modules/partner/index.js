@@ -1,63 +1,59 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.setupAdminPartnerHexagon = exports.setupUserPartnerHexagon = exports.setupPartnerHexagon = exports.buildPartnerRequestAdminRouter = exports.buildPartnerRequestUserRouter = void 0;
-exports.default = buildPartnerRouter;
-const express_1 = require("express");
-const auth_1 = require("../../share/middleware/auth");
-const middleware_1 = require("./shared/middleware");
-const repo_1 = require("./infras/repository/repo");
-const partner_request_repo_1 = require("./infras/repository/partner-request-repo");
-const services_repo_1 = require("./infras/repository/services.repo");
-const usecase_1 = require("./usecase");
-const service_usecase_1 = require("./usecase/service.usecase");
-const profile_http_service_1 = require("./infras/transport/profile.http-service");
-const movie_http_service_1 = require("./infras/transport/movie.http-service");
-const http_server_1 = require("../../share/transport/http-server");
-const showtime_http_service_1 = require("./infras/transport/showtime.http-service");
-const room_http_services_1 = require("./infras/transport/room.http-services");
-const seat_http_services_1 = require("./infras/transport/seat.http-services");
-const ticket_http_service_1 = require("./infras/transport/ticket.http-service");
-const finance_http_service_1 = require("./infras/transport/finance.http-service");
-const dashboard_http_service_1 = require("./infras/transport/dashboard.http-service");
-const partner_request_http_service_1 = require("./infras/transport/partner-request.http-service");
-const service_http_services_1 = require("./infras/transport/service-http-services");
-const notification_1 = require("./shared/notification");
-const session_repo_1 = require("../user/infras/repository/session-repo");
-const user_repo_1 = require("../user/infras/repository/user-repo");
-const buildPartnerRequestUserRouter = (prisma) => {
-    const router = (0, express_1.Router)();
-    const partnerRepo = (0, repo_1.createPartnerRepository)(prisma);
-    const userRepository = (0, user_repo_1.createUserRepository)(prisma);
-    const sessionRepository = (0, session_repo_1.createSessionRepository)(prisma);
-    const walletRepo = (0, repo_1.createWalletRepository)(prisma);
-    const staffRepo = (0, repo_1.createStaffRepository)(prisma);
-    const requestRepo = (0, partner_request_repo_1.createPartnerRequestRepository)(prisma);
-    const requestUseCase = new usecase_1.RequestUseCase(requestRepo, partnerRepo, userRepository, sessionRepository, walletRepo, staffRepo);
-    const service = new partner_request_http_service_1.PartnerRequestHttpService(requestUseCase, prisma);
-    const guard = [auth_1.authMiddleware, auth_1.requireActiveUser];
+import { Router } from "express";
+import { authMiddleware, requireActiveUser, requireRole, } from "@/share/middleware/auth";
+import { resolvePartnerIdMiddleware } from "@/modules/partner/shared/middleware";
+import { createPartnerRepository, createMovieRepository, createShowtimeRepository, createRoomRepository, createSeatRepository, createTicketRepository, createTransactionRepository, createWithdrawalRepository, createCheckInRepository, createWalletRepository, createStaffRepository, } from "@/modules/partner/infras/repository/repo";
+import { createPartnerRequestRepository } from "@/modules/partner/infras/repository/partner-request-repo";
+import { createServerRepository } from "@/modules/partner/infras/repository/services.repo";
+import { PartnerProfileUseCase, RequestUseCase, MovieManagementUseCase, ShowtimeManagementUseCase, SeatManagementUseCase, TicketCheckInUseCase, PartnerFinanceUseCase, PartnerDashboardUseCase, } from "@/modules/partner/usecase";
+import { ServicePartnerUser } from "@/modules/partner/usecase/service.usecase";
+import { PartnerProfileHttpService } from "@/modules/partner/infras/transport/profile.http-service";
+import { MovieManagementHttpService } from "@/modules/partner/infras/transport/movie.http-service";
+import { successResponse, errorResponse } from "@/share/transport/http-server";
+import { ShowtimeManagementHttpService } from "@/modules/partner/infras/transport/showtime.http-service";
+import { RoomManagementHttpService } from "@/modules/partner/infras/transport/room.http-services";
+import { SeatManagementHttpService } from "@/modules/partner/infras/transport/seat.http-services";
+import { TicketCheckInHttpService } from "@/modules/partner/infras/transport/ticket.http-service";
+import { PartnerFinanceHttpService } from "@/modules/partner/infras/transport/finance.http-service";
+import { PartnerDashboardHttpService } from "@/modules/partner/infras/transport/dashboard.http-service";
+import { PartnerRequestHttpService } from "@/modules/partner/infras/transport/partner-request.http-service";
+import { ServicesHttpService } from "@/modules/partner/infras/transport/service-http-services";
+import { PartnerNotificationService } from "@/modules/partner/shared/notification";
+import { createSessionRepository } from "@/modules/admin-manage/admin-user/infras/repository/session-repo";
+import { createUserRepository } from "@/modules/admin-manage/admin-user/infras/repository/user-repo";
+import { buildPartnerSettingRouter } from "@/modules/partner-manage/partner-setting";
+export const buildPartnerRequestUserRouter = (prisma) => {
+    const router = Router();
+    const partnerRepo = createPartnerRepository(prisma);
+    const userRepository = createUserRepository(prisma);
+    const sessionRepository = createSessionRepository(prisma);
+    const walletRepo = createWalletRepository(prisma);
+    const staffRepo = createStaffRepository(prisma);
+    const requestRepo = createPartnerRequestRepository(prisma);
+    const requestUseCase = new RequestUseCase(requestRepo, partnerRepo, userRepository, sessionRepository, walletRepo, staffRepo);
+    const service = new PartnerRequestHttpService(requestUseCase, prisma);
+    const guard = [authMiddleware, requireActiveUser];
     router.post("/partner-request", ...guard, (req, res) => service.submit(req, res));
     router.patch("/partner-request", ...guard, (req, res) => service.editSubmit(req, res));
     router.get("/partner-request", ...guard, (req, res) => service.getMyRequest(req, res));
     return router;
 };
-exports.buildPartnerRequestUserRouter = buildPartnerRequestUserRouter;
-const buildPartnerRequestAdminRouter = (prisma) => {
-    const router = (0, express_1.Router)();
-    const partnerRepo = (0, repo_1.createPartnerRepository)(prisma);
-    const movieRepo = (0, repo_1.createMovieRepository)(prisma);
-    const serviceRepo = (0, services_repo_1.createServerRepository)(prisma);
-    const userRepository = (0, user_repo_1.createUserRepository)(prisma);
-    const sessionRepository = (0, session_repo_1.createSessionRepository)(prisma);
-    const walletRepo = (0, repo_1.createWalletRepository)(prisma);
-    const staffRepo = (0, repo_1.createStaffRepository)(prisma);
-    const requestRepo = (0, partner_request_repo_1.createPartnerRequestRepository)(prisma);
-    const requestUseCase = new usecase_1.RequestUseCase(requestRepo, partnerRepo, userRepository, sessionRepository, walletRepo, staffRepo);
-    const profileUC = new usecase_1.PartnerProfileUseCase(partnerRepo);
-    const movieUC = new usecase_1.MovieManagementUseCase(partnerRepo, movieRepo);
-    const requestSvc = new partner_request_http_service_1.PartnerRequestHttpService(requestUseCase, prisma);
-    const profileSvc = new profile_http_service_1.PartnerProfileHttpService(profileUC);
-    const movieSvc = new movie_http_service_1.MovieManagementHttpService(movieUC, prisma);
-    const adminGuard = [auth_1.authMiddleware, (0, auth_1.requireRole)("ADMIN")];
+export const buildPartnerRequestAdminRouter = (prisma) => {
+    const router = Router();
+    const partnerRepo = createPartnerRepository(prisma);
+    const movieRepo = createMovieRepository(prisma);
+    const serviceRepo = createServerRepository(prisma);
+    const userRepository = createUserRepository(prisma);
+    const sessionRepository = createSessionRepository(prisma);
+    const walletRepo = createWalletRepository(prisma);
+    const staffRepo = createStaffRepository(prisma);
+    const requestRepo = createPartnerRequestRepository(prisma);
+    const requestUseCase = new RequestUseCase(requestRepo, partnerRepo, userRepository, sessionRepository, walletRepo, staffRepo);
+    const profileUC = new PartnerProfileUseCase(partnerRepo);
+    const movieUC = new MovieManagementUseCase(partnerRepo, movieRepo);
+    const requestSvc = new PartnerRequestHttpService(requestUseCase, prisma);
+    const profileSvc = new PartnerProfileHttpService(profileUC);
+    const movieSvc = new MovieManagementHttpService(movieUC, prisma);
+    const adminGuard = [authMiddleware, requireRole("ADMIN")];
     // ── Partner requests ──────────────────────────────────────────────────────
     router.get("/partner-requests", ...adminGuard, (req, res) => requestSvc.adminListRequests(req, res));
     router.get("/partner-requests/stats", ...adminGuard, (req, res) => requestSvc.stats(req, res));
@@ -76,10 +72,10 @@ const buildPartnerRequestAdminRouter = (prisma) => {
             const page = req.query.page ? parseInt(req.query.page) : 1;
             const limit = req.query.limit ? parseInt(req.query.limit) : 50;
             const partners = await partnerRepo.list({}, { page, limit });
-            (0, http_server_1.successResponse)(res, { items: partners, total: partners.length }, "Partners retrieved");
+            successResponse(res, { items: partners, total: partners.length }, "Partners retrieved");
         }
         catch (error) {
-            (0, http_server_1.errorResponse)(res, 500, error.message);
+            errorResponse(res, 500, error.message);
         }
     });
     router.put("/partners/:partnerId/commission", ...adminGuard, async (req, res) => {
@@ -87,13 +83,13 @@ const buildPartnerRequestAdminRouter = (prisma) => {
             const { partnerId } = req.params;
             const { commissionRate } = req.body;
             if (commissionRate === undefined || typeof commissionRate !== "number") {
-                return (0, http_server_1.errorResponse)(res, 400, "commissionRate (number) is required");
+                return errorResponse(res, 400, "commissionRate (number) is required");
             }
             const updated = await profileUC.updateCommissionRate(String(partnerId), commissionRate);
-            (0, http_server_1.successResponse)(res, updated, "Commission rate updated");
+            successResponse(res, updated, "Commission rate updated");
         }
         catch (error) {
-            (0, http_server_1.errorResponse)(res, error.statusCode || 400, error.message);
+            errorResponse(res, error.statusCode || 400, error.message);
         }
     });
     // ── Admin services ────────────────────────────────────────────────────────
@@ -105,50 +101,49 @@ const buildPartnerRequestAdminRouter = (prisma) => {
                 keyword: req.query.keyword,
                 category: req.query.category,
             });
-            (0, http_server_1.successResponse)(res, result, "Services retrieved");
+            successResponse(res, result, "Services retrieved");
         }
         catch (error) {
-            (0, http_server_1.errorResponse)(res, 500, error.message);
+            errorResponse(res, 500, error.message);
         }
     });
     return router;
 };
-exports.buildPartnerRequestAdminRouter = buildPartnerRequestAdminRouter;
-function buildPartnerRouter(prisma) {
-    const router = (0, express_1.Router)();
-    const partnerRepo = (0, repo_1.createPartnerRepository)(prisma);
-    const movieRepo = (0, repo_1.createMovieRepository)(prisma);
-    const showtimeRepo = (0, repo_1.createShowtimeRepository)(prisma);
-    const roomRepo = (0, repo_1.createRoomRepository)(prisma);
-    const seatRepo = (0, repo_1.createSeatRepository)(prisma);
-    const ticketRepo = (0, repo_1.createTicketRepository)(prisma);
-    const transactionRepo = (0, repo_1.createTransactionRepository)(prisma);
-    const withdrawalRepo = (0, repo_1.createWithdrawalRepository)(prisma);
-    const checkInRepo = (0, repo_1.createCheckInRepository)(prisma);
-    const walletRepo = (0, repo_1.createWalletRepository)(prisma);
-    const serviceRepo = (0, services_repo_1.createServerRepository)(prisma);
-    const notificationService = new notification_1.PartnerNotificationService();
-    const profileUC = new usecase_1.PartnerProfileUseCase(partnerRepo);
-    const serviceUC = new service_usecase_1.ServicePartnerUser(serviceRepo);
-    const movieUC = new usecase_1.MovieManagementUseCase(partnerRepo, movieRepo, showtimeRepo, seatRepo, roomRepo);
-    const showtimeUC = new usecase_1.ShowtimeManagementUseCase(partnerRepo, movieRepo, showtimeRepo, seatRepo, ticketRepo, walletRepo, transactionRepo);
-    const seatUC = new usecase_1.SeatManagementUseCase(showtimeRepo, seatRepo, movieRepo);
-    const ticketUC = new usecase_1.TicketCheckInUseCase(ticketRepo, checkInRepo, showtimeRepo);
-    const financeUC = new usecase_1.PartnerFinanceUseCase(walletRepo, transactionRepo, withdrawalRepo, partnerRepo, notificationService);
-    const dashboardUC = new usecase_1.PartnerDashboardUseCase(walletRepo, transactionRepo, showtimeRepo, withdrawalRepo, ticketRepo);
-    const profileSvc = new profile_http_service_1.PartnerProfileHttpService(profileUC);
-    const movieSvc = new movie_http_service_1.MovieManagementHttpService(movieUC, prisma);
-    const showtimeSvc = new showtime_http_service_1.ShowtimeManagementHttpService(showtimeUC);
-    const roomSvc = new room_http_services_1.RoomManagementHttpService(roomRepo);
-    const seatSvc = new seat_http_services_1.SeatManagementHttpService(seatUC);
-    const ticketSvc = new ticket_http_service_1.TicketCheckInHttpService(ticketUC);
-    const financeSvc = new finance_http_service_1.PartnerFinanceHttpService(financeUC);
-    const dashboardSvc = new dashboard_http_service_1.PartnerDashboardHttpService(dashboardUC);
-    const serviceSvc = new service_http_services_1.ServicesHttpService(serviceUC);
+export default function buildPartnerRouter(prisma) {
+    const router = Router();
+    const partnerRepo = createPartnerRepository(prisma);
+    const movieRepo = createMovieRepository(prisma);
+    const showtimeRepo = createShowtimeRepository(prisma);
+    const roomRepo = createRoomRepository(prisma);
+    const seatRepo = createSeatRepository(prisma);
+    const ticketRepo = createTicketRepository(prisma);
+    const transactionRepo = createTransactionRepository(prisma);
+    const withdrawalRepo = createWithdrawalRepository(prisma);
+    const checkInRepo = createCheckInRepository(prisma);
+    const walletRepo = createWalletRepository(prisma);
+    const serviceRepo = createServerRepository(prisma);
+    const notificationService = new PartnerNotificationService(prisma);
+    const profileUC = new PartnerProfileUseCase(partnerRepo);
+    const serviceUC = new ServicePartnerUser(serviceRepo);
+    const movieUC = new MovieManagementUseCase(partnerRepo, movieRepo, showtimeRepo, seatRepo, roomRepo);
+    const showtimeUC = new ShowtimeManagementUseCase(partnerRepo, movieRepo, showtimeRepo, seatRepo, ticketRepo, walletRepo, transactionRepo);
+    const seatUC = new SeatManagementUseCase(showtimeRepo, seatRepo, movieRepo);
+    const ticketUC = new TicketCheckInUseCase(ticketRepo, checkInRepo, showtimeRepo);
+    const financeUC = new PartnerFinanceUseCase(walletRepo, transactionRepo, withdrawalRepo, partnerRepo, notificationService);
+    const dashboardUC = new PartnerDashboardUseCase(walletRepo, transactionRepo, showtimeRepo, withdrawalRepo, ticketRepo);
+    const profileSvc = new PartnerProfileHttpService(profileUC);
+    const movieSvc = new MovieManagementHttpService(movieUC, prisma);
+    const showtimeSvc = new ShowtimeManagementHttpService(showtimeUC);
+    const roomSvc = new RoomManagementHttpService(roomRepo);
+    const seatSvc = new SeatManagementHttpService(seatUC);
+    const ticketSvc = new TicketCheckInHttpService(ticketUC);
+    const financeSvc = new PartnerFinanceHttpService(financeUC);
+    const dashboardSvc = new PartnerDashboardHttpService(dashboardUC);
+    const serviceSvc = new ServicesHttpService(serviceUC);
     const guard = [
-        auth_1.authMiddleware,
-        (0, auth_1.requireRole)("PARTNER", "ADMIN"),
-        (0, middleware_1.resolvePartnerIdMiddleware)(partnerRepo),
+        authMiddleware,
+        requireRole("PARTNER", "ADMIN"),
+        resolvePartnerIdMiddleware(partnerRepo),
     ];
     router.get("/me", ...guard, (req, res) => profileSvc.getProfile(req, res));
     router.put("/me", ...guard, (req, res) => profileSvc.updateProfile(req, res));
@@ -191,11 +186,9 @@ function buildPartnerRouter(prisma) {
     router.post("/services", ...guard, (req, res) => serviceSvc.create(req, res));
     router.put("/services/:id", ...guard, (req, res) => serviceSvc.update(req, res));
     router.delete("/services/:id", ...guard, (req, res) => serviceSvc.delete(req, res));
+    router.use("/", buildPartnerSettingRouter(prisma, guard));
     return router;
 }
-const setupPartnerHexagon = (prisma) => buildPartnerRouter(prisma);
-exports.setupPartnerHexagon = setupPartnerHexagon;
-const setupUserPartnerHexagon = (prisma) => (0, exports.buildPartnerRequestUserRouter)(prisma);
-exports.setupUserPartnerHexagon = setupUserPartnerHexagon;
-const setupAdminPartnerHexagon = (prisma) => (0, exports.buildPartnerRequestAdminRouter)(prisma);
-exports.setupAdminPartnerHexagon = setupAdminPartnerHexagon;
+export const setupPartnerHexagon = (prisma) => buildPartnerRouter(prisma);
+export const setupUserPartnerHexagon = (prisma) => buildPartnerRequestUserRouter(prisma);
+export const setupAdminPartnerHexagon = (prisma) => buildPartnerRequestAdminRouter(prisma);

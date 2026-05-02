@@ -19,11 +19,7 @@ export const isLoginTemporarilyLocked = async (userId: string): Promise<boolean>
 };
 
 export const clearLoginLockStateOnSuccess = async (userId: string): Promise<void> => {
-  await redis.del(
-    getLoginFailCountKey(userId),
-    getLoginLockKey(userId),
-    getLoginStageKey(userId),
-  );
+  await redis.del(getLoginFailCountKey(userId), getLoginLockKey(userId), getLoginStageKey(userId));
 };
 
 export const incrementLoginFailCount = async (userId: string): Promise<number> => {

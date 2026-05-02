@@ -1,6 +1,10 @@
 import { PrismaClient } from "@prisma/client";
 import { IUserSetting } from "@/modules/system/setting/interface";
-import { UpdateUserSettingSchema, UserSetting, UserSettingUpdate } from "@/modules/system/setting/model/model";
+import {
+  UpdateUserSettingSchema,
+  UserSetting,
+  UserSettingUpdate,
+} from "@/modules/system/setting/model/model";
 import { defaultSettings } from "@/share/common/seed-setting";
 import { getUserSettingModel } from "@/modules/system/setting/infras/repository/dto";
 import { ValidationError } from "@/share/transport/http-server";

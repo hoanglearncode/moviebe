@@ -1,12 +1,7 @@
 import { Request, Response } from "express";
 import { successResponse, errorResponse } from "@/share/transport/http-server";
 import { ITicketCheckInUseCase } from "@/modules/partner/interface";
-import {
-  CheckInDTO,
-  ListTicketsQueryDTO 
-} from "@/modules/partner/model/dto";
-
-
+import { CheckInDTO, ListTicketsQueryDTO } from "@/modules/partner/model/dto";
 
 export class TicketCheckInHttpService {
   constructor(private useCase: ITicketCheckInUseCase) {}

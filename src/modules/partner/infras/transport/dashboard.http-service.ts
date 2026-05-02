@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { successResponse, errorResponse } from "@/share/transport/http-server";
 import { IPartnerDashboardUseCase } from "@/modules/partner/interface";
 
-
 export class PartnerDashboardHttpService {
   constructor(private useCase: IPartnerDashboardUseCase) {}
 

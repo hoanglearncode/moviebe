@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.concurrentLockService = exports.InMemoryConcurrentLockService = void 0;
-const error_code_1 = require("../model/error-code");
-const http_server_1 = require("../transport/http-server");
-class InMemoryConcurrentLockService {
+import { ErrorCode } from "@/share/model/error-code";
+import { ConflictError } from "@/share/transport/http-server";
+export class InMemoryConcurrentLockService {
     constructor() {
         this.locks = new Map();
     }
@@ -14,7 +11,7 @@ class InMemoryConcurrentLockService {
         for (const key of normalizedKeys) {
             if (!this.acquire(key, ttlMs)) {
                 this.releaseMany(acquiredKeys);
-                throw new http_server_1.ConflictError(options.conflictMessage ?? "A similar request is already being processed", error_code_1.ErrorCode.CONCURRENT_TASK_LOCKED, {
+                throw new ConflictError(options.conflictMessage ?? "A similar request is already being processed", ErrorCode.CONCURRENT_TASK_LOCKED, {
                     keys: normalizedKeys,
                     ...(options.conflictDetails ?? {}),
                 });
@@ -78,5 +75,4 @@ class InMemoryConcurrentLockService {
         return Array.from(new Set(values.map((key) => key.trim()).filter(Boolean))).sort();
     }
 }
-exports.InMemoryConcurrentLockService = InMemoryConcurrentLockService;
-exports.concurrentLockService = new InMemoryConcurrentLockService();
+export const concurrentLockService = new InMemoryConcurrentLockService();

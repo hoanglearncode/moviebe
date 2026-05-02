@@ -5,7 +5,10 @@ import {
   BroadcastTarget,
   BroadcastChannel,
 } from "@prisma/client";
-import type { IBroadcastRepository, BroadcastItem } from "@/modules/admin-manage/admin-notifications/interface";
+import type {
+  IBroadcastRepository,
+  BroadcastItem,
+} from "@/modules/admin-manage/admin-notifications/interface";
 
 const CREATED_BY_SELECT = { select: { id: true, name: true, email: true } };
 

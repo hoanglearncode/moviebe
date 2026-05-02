@@ -4,10 +4,7 @@ import { PartnerSettingRepository } from "@/modules/partner-manage/partner-setti
 import { PartnerSettingUseCase } from "@/modules/partner-manage/partner-setting/usecase";
 import { PartnerSettingHttpService } from "@/modules/partner-manage/partner-setting/infras/transport/http-service";
 
-export const buildPartnerSettingRouter = (
-  prisma: PrismaClient,
-  guard: any[],
-): Router => {
+export const buildPartnerSettingRouter = (prisma: PrismaClient, guard: any[]): Router => {
   const router = Router();
 
   const repo = new PartnerSettingRepository(prisma);
@@ -22,4 +19,7 @@ export const buildPartnerSettingRouter = (
 };
 
 export { PartnerSettingUseCase, PartnerSettingRepository };
-export type { IPartnerSettingRepository, IPartnerSettingUseCase } from "@/modules/partner-manage/partner-setting/interface";
+export type {
+  IPartnerSettingRepository,
+  IPartnerSettingUseCase,
+} from "@/modules/partner-manage/partner-setting/interface";

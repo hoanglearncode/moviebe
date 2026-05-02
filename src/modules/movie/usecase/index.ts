@@ -1,7 +1,11 @@
 import { PagingDTO } from "@/share";
 import { MovieCondDTO } from "@/modules/movie/model/dto";
 import { Movie, PublicShowtime, PublicShowtimeSeatMap } from "@/modules/movie/model/model";
-import { IPublicMovieRepository, IPublicMovieUseCase, MovieSectionsResponse } from "@/modules/movie/interface";
+import {
+  IPublicMovieRepository,
+  IPublicMovieUseCase,
+  MovieSectionsResponse,
+} from "@/modules/movie/interface";
 
 export class PublicMovieUseCase implements IPublicMovieUseCase {
   constructor(private readonly repo: IPublicMovieRepository) {}

@@ -1,4 +1,9 @@
-import type { CanonicalMap, StringMap, SystemStatusData, UpdateResult } from "@/modules/admin-manage/admin-system-settings/model/model";
+import type {
+  CanonicalMap,
+  StringMap,
+  SystemStatusData,
+  UpdateResult,
+} from "@/modules/admin-manage/admin-system-settings/model/model";
 
 export interface ISystemSettingsRepository {
   findAll(): Promise<Record<string, string>>;

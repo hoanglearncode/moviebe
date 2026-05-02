@@ -92,9 +92,7 @@ export class PartnerRequestRepository implements IPartnerRequestRepository {
       this.prismaClient.partnerRequest.count({ where }),
     ]);
 
-    const items = await Promise.all(
-      rows.map((row) => this.attachUser(row))
-    );
+    const items = await Promise.all(rows.map((row) => this.attachUser(row)));
     const paging: PagingDTO = {
       page,
       limit,
@@ -127,14 +125,13 @@ export class PartnerRequestRepository implements IPartnerRequestRepository {
   async getStatsData(): Promise<any> {
     const [total, pending, reject, approve] = await Promise.all([
       this.prismaClient.partnerRequest.count(),
-      this.prismaClient.partnerRequest.count({ where: { status: "PENDING"  } }),
+      this.prismaClient.partnerRequest.count({ where: { status: "PENDING" } }),
       this.prismaClient.partnerRequest.count({ where: { status: "REJECTED" } }),
       this.prismaClient.partnerRequest.count({ where: { status: "APPROVED" } }),
     ]);
-    
-    return {total, pending, reject, approve};
-  }
 
+    return { total, pending, reject, approve };
+  }
 
   async existsByUserId(userId: string): Promise<boolean> {
     const count = await this.prismaClient.partnerRequest.count({

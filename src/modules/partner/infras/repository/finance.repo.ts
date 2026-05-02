@@ -4,7 +4,12 @@ import {
   IWithdrawalRepository,
   IWalletRepository,
 } from "@/modules/partner/interface/finance.interface";
-import { Transaction, Withdrawal, PartnerWallet, WithdrawalListResponse } from "@/modules/partner/model/model";
+import {
+  Transaction,
+  Withdrawal,
+  PartnerWallet,
+  WithdrawalListResponse,
+} from "@/modules/partner/model/model";
 import { ListWithdrawalsQueryDTO } from "@/modules/partner/model/dto";
 import { PagingDTO } from "@/share";
 

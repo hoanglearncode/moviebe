@@ -61,6 +61,7 @@ Required responsibilities:
 ## Composition root pattern
 
 Follow pattern used in:
+
 - `src/modules/auth/index.ts`
 - `src/modules/category/index.ts`
 
@@ -101,6 +102,7 @@ Rules:
 4. Prefer `BaseHttpService.handleRequest(...)` for consistent success/error envelope.
 
 Reference:
+
 - `src/modules/auth/infras/transport/http-service.ts`
 - `src/share/transport/http-server.ts`
 
@@ -152,6 +154,7 @@ Do not rely on ad-hoc field checks scattered across transport/repository.
 ## Error and response contract
 
 Central error classes and base response helpers live in:
+
 - `src/share/transport/http-server.ts`
 
 Preferred contract:
@@ -175,6 +178,7 @@ Rules:
 ## Logging
 
 Use Winston logger from:
+
 - `src/modules/system/log/logger.ts`
 
 Rules:
@@ -188,6 +192,7 @@ Rules:
 ## Queue and async jobs
 
 Background tasks must run through BullMQ infrastructure:
+
 - `src/queue/*`
 
 Rules:

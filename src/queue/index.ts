@@ -7,8 +7,14 @@ import { closeNotificationQueue } from "@/queue/config/notification.queue";
 import { closeBroadcastWorker, startBroadcastWorker } from "@/queue/worker/broadcast.worker";
 import { closeEmailWorker, startEmailWorker } from "@/queue/worker/email.worker";
 import { closeLockWorker, startLockWorker } from "@/queue/worker/lock.work";
-import { closeNotificationWorker, startNotificationWorker } from "@/queue/worker/notification.worker";
-import { closeScheduledEmailWorker, startScheduledEmailWorker } from "@/queue/worker/scheduled-email.worker";
+import {
+  closeNotificationWorker,
+  startNotificationWorker,
+} from "@/queue/worker/notification.worker";
+import {
+  closeScheduledEmailWorker,
+  startScheduledEmailWorker,
+} from "@/queue/worker/scheduled-email.worker";
 import { closeSeatCleanupWorker, startSeatCleanupWorker } from "@/queue/worker/seat-cleanup.worker";
 
 export const initializeQueueInfrastructure = async (): Promise<void> => {

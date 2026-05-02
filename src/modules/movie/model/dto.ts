@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 
 export const MovieCondDTOSchema = z.object({
@@ -11,6 +10,5 @@ export const MovieCondDTOSchema = z.object({
   search: z.string().optional(),
   grouped: z.coerce.boolean().optional(),
 });
-
 
 export type MovieCondDTO = z.infer<typeof MovieCondDTOSchema>;

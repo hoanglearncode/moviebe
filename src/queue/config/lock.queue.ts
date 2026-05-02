@@ -1,5 +1,10 @@
 import { Queue } from "bullmq";
-import { createRedisConnection, defaultJobOptions, isQueueEnabled, queuePrefix } from "@/queue/config/config";
+import {
+  createRedisConnection,
+  defaultJobOptions,
+  isQueueEnabled,
+  queuePrefix,
+} from "@/queue/config/config";
 import { LockJobData, LockJobName, QueueName } from "@/queue/modules/types";
 
 let lockQueue: Queue<LockJobData, void, LockJobName> | null = null;
