@@ -192,6 +192,8 @@ export class RequestUseCase implements IPartnerRequestUseCase {
 
     await this.sessionRepo.revokeAllSessionsByUserId(request.userId);
 
+    
+
     return this.repo.updateStatus(id, "APPROVED", adminId, undefined, partnerId);
   }
 

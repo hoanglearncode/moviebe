@@ -27,8 +27,84 @@ export class PartnerRepository implements IPartnerRepository {
   }
 
   async findById(partnerId: string): Promise<PartnerProfile | null> {
-    const row = await this.prisma.partner.findUnique({ where: { id: partnerId } });
-    return row ? this.map(row) : null;
+    const partner = await this.prisma.partner.findUnique({
+      where: { id: partnerId },
+      include: {
+        // Thông tin tài khoản chủ sở hữu
+        user: {
+          select: {
+            id: true,
+            email: true,
+            username: true,
+            name: true,
+            avatar: true,
+            avatarColor: true,
+            phone: true,
+            bio: true,
+            location: true,
+            role: true,
+            status: true,
+            emailVerified: true,
+            lastLoginAt: true,
+            createdAt: true,
+            settings: {
+              select: {
+                notifications: true,
+                marketingEmails: true,
+                pushNotifications: true,
+                smsNotifications: true,
+                shareHistory: true,
+                personalizedRecs: true,
+              },
+            },
+          },
+        },
+
+        // Cài đặt vận hành của partner
+        setting: true,
+
+        // Ví tiền
+        wallet: {
+          select: {
+            balance: true,
+            totalEarned: true,
+            totalWithdrawn: true,
+            totalRefunded: true,
+          },
+        },
+
+        // Danh sách nhân viên (bao gồm chủ rạp có thể là nhiều người)
+        staffs: {
+          select: {
+            id: true,
+            role: true,
+            createdAt: true,
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                avatar: true,
+                avatarColor: true,
+                phone: true,
+                status: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+        },
+
+        // Thống kê phòng chiếu
+        _count: {
+          select: {
+            rooms: true,
+            movies: true,
+          },
+        },
+      },
+    });
+
+    return partner ? this.map(partner) : null;
   }
 
   async findByUserId(userId: string): Promise<PartnerProfile | null> {
@@ -109,9 +185,9 @@ export class PartnerRepository implements IPartnerRepository {
     await this.prisma.partner.delete({ where: { id } });
     return true;
   }
-
   private map(row: any): PartnerProfile {
     return {
+      // ── Partner core ──────────────────────────────
       id: row.id,
       userId: row.userId,
       cinemaName: row.cinemaName,
@@ -123,6 +199,12 @@ export class PartnerRepository implements IPartnerRepository {
       email: row.email,
       website: row.website,
       logo: row.logo,
+      description: row.description,
+      facilities: row.facilities ?? [],
+      lat: row.lat,
+      lng: row.lng,
+
+      // ── Legal documents ───────────────────────────
       taxCode: row.taxCode,
       businessLicense: row.businessLicense,
       businessLicenseFile: row.businessLicenseFile,
@@ -130,17 +212,42 @@ export class PartnerRepository implements IPartnerRepository {
       representativeIdNumber: row.representativeIdNumber,
       representativeIdFile: row.representativeIdFile,
       taxCertificateFile: row.taxCertificateFile,
+
+      // ── Bank ──────────────────────────────────────
       bankAccountName: row.bankAccountName,
       bankAccountNumber: row.bankAccountNumber,
       bankName: row.bankName,
       bankCode: row.bankCode,
+
+      // ── Status ────────────────────────────────────
       status: row.status,
+      commissionRate: row.commissionRate,
       approvedAt: row.approvedAt,
       rejectionReason: row.rejectionReason,
       approvedBy: row.approvedBy,
-      commissionRate: row.commissionRate,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
+
+      ...(row.user && { account: row.user }),
+      ...(row.setting && { setting: row.setting }),
+      ...(row.wallet && { wallet: row.wallet }),
+
+      ...(row.staffs && {
+        staffs: row.staffs.map((s: any) => ({
+          id: s.id,
+          role: s.role,
+          createdAt: s.createdAt,
+          user: s.user,
+        })),
+      }),
+
+      // Stats aggregate
+      ...(row._count && {
+        stats: {
+          totalRooms: row._count.rooms,
+          totalMovies: row._count.movies,
+        },
+      }),
     };
   }
 }
